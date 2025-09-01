@@ -1,0 +1,13 @@
+﻿namespace Kanstraction.Entities;
+
+public class Material
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = "";
+    public string Unit { get; set; } = "";
+    public decimal PricePerUnit { get; set; }
+    public DateTime EffectiveSince { get; set; }
+    public bool IsActive { get; set; } = true;
+
+    public ICollection<MaterialPriceHistory> PriceHistory { get; set; } = new List<MaterialPriceHistory>();
+}

@@ -1,0 +1,316 @@
+﻿<UserControl x:Class="Kanstraction.Views.OperationsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:conv="clr-namespace:Kanstraction.Converters"
+             xmlns:models="clr-namespace:Kanstraction.Entities"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             x:Name="Root"
+             Background="{DynamicResource MaterialDesignPaper}">
+
+    <UserControl.Resources>
+        <conv:StatusToBrushConverter x:Key="StatusToBrush" />
+    </UserControl.Resources>
+
+    <!-- MAIN: breadcrumb + three columns + bottom materials (each grid scrolls independently) -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- breadcrumb -->
+            <RowDefinition Height="*"/>
+            <!-- top: 3 columns -->
+            <RowDefinition Height="6"/>
+            <!-- horizontal splitter -->
+            <RowDefinition Height="240"/>
+            <!-- bottom: materials (initial height) -->
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="6"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="6"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Breadcrumb strip -->
+        <Border Grid.Row="0" Grid.ColumnSpan="5"
+            Padding="8,6"
+            Margin="0,2,0,0"
+            Background="{DynamicResource MaterialDesignCardBackground}"
+            BorderBrush="{DynamicResource MaterialDesignDivider}"
+            BorderThickness="0,0,0,1">
+            <TextBlock Text="{Binding Breadcrumb, ElementName=Root}"
+                 Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+        </Border>
+
+        <!-- BUILDINGS -->
+        <Grid Grid.Row="1" Grid.Column="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Padding="6"
+              Background="{DynamicResource MaterialDesignCardBackground}"
+              BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Title -->
+                    <TextBlock Text="Buildings" FontWeight="SemiBold"
+               VerticalAlignment="Center"/>
+
+                    <!-- Add Building button (small, icon-only) -->
+                    <Button Grid.Column="1"
+            Click="AddBuilding_Click"
+                            Background="#3f51b5"
+            Style="{StaticResource TinyIconButton}"
+            ToolTip="Add building">
+                        <iconPacks:PackIconFontAwesome Foreground="White" Kind="PlusSolid" Width="12" Height="12"/>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <DataGrid Grid.Row="1" x:Name="BuildingsGrid" Margin="10"
+                AutoGenerateColumns="False" IsReadOnly="True"
+                HeadersVisibility="Column" GridLinesVisibility="None"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.CanContentScroll="True"
+                EnableRowVirtualization="True"
+                SelectionChanged="BuildingsGrid_SelectionChanged"
+                Style="{StaticResource MaterialDesignDataGrid}">
+                <DataGrid.Columns>
+                    <DataGridTemplateColumn Header="Status">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="10" Padding="6,2"
+                        Background="{Binding Status, Converter={StaticResource StatusToBrush}}">
+                                    <TextBlock Text="{Binding Status}" Foreground="White" FontWeight="SemiBold"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+
+                    <DataGridTextColumn Header="Code" Binding="{Binding Code}"/>
+                    <DataGridTextColumn Header="Type" Binding="{Binding TypeName}"/>
+                    <DataGridTextColumn Header="%" Binding="{Binding ProgressPercent}"/>
+                    <DataGridTextColumn Header="Current Stage" Binding="{Binding CurrentStageName}"/>
+                    <DataGridTemplateColumn Header="" Width="60">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button x:Name="BtnStop"
+              Click="StopBuilding_Click"
+              Style="{StaticResource TinyIconButton}"
+              ToolTip="Stop building"
+              Background="#e53935">
+                                    <iconPacks:PackIconFontAwesome Kind="BanSolid" Width="12" Height="12" Foreground="White"/>
+                                </Button>
+
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static models:WorkStatus.Stopped}">
+                                        <Setter TargetName="BtnStop" Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static models:WorkStatus.Finished}">
+                                        <Setter TargetName="BtnStop" Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static models:WorkStatus.Paid}">
+                                        <Setter TargetName="BtnStop" Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <!-- Vertical splitter between Buildings and Stages -->
+        <GridSplitter Grid.Row="1" Grid.Column="1"
+                  Width="6" HorizontalAlignment="Stretch"
+                  Background="{DynamicResource MaterialDesignDivider}"
+                  ResizeBehavior="PreviousAndNext" ShowsPreview="True"/>
+
+        <!-- STAGES -->
+        <Grid Grid.Row="1" Grid.Column="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Padding="8"
+              Background="{DynamicResource MaterialDesignCardBackground}"
+              BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1">
+                <TextBlock Text="Stages" FontWeight="SemiBold"/>
+            </Border>
+
+            <DataGrid Grid.Row="1" x:Name="StagesGrid" Margin="10"
+                AutoGenerateColumns="False" IsReadOnly="True"
+                HeadersVisibility="Column" GridLinesVisibility="None"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.CanContentScroll="True"
+                EnableRowVirtualization="True"
+                SelectionChanged="StagesGrid_SelectionChanged"
+                Style="{StaticResource MaterialDesignDataGrid}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Stage" Binding="{Binding Name}"/>
+                    <DataGridTemplateColumn Header="Status">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="10" Padding="6,2"
+                        Background="{Binding Status, Converter={StaticResource StatusToBrush}}">
+                                    <TextBlock Text="{Binding Status}" Foreground="White" FontWeight="SemiBold"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Ongoing Sub-stage" Binding="{Binding OngoingSubStageName}"/>
+                    <DataGridTextColumn Header="%" Binding="{Binding ProgressPercent}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <!-- Vertical splitter between Stages and Sub-stages -->
+        <GridSplitter Grid.Row="1" Grid.Column="3"
+                  Width="6" HorizontalAlignment="Stretch"
+                  Background="{DynamicResource MaterialDesignDivider}"
+                  ResizeBehavior="PreviousAndNext" ShowsPreview="True"/>
+
+        <!-- SUB-STAGES -->
+        <Grid Grid.Row="1" Grid.Column="4">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Padding="8"
+              Background="{DynamicResource MaterialDesignCardBackground}"
+              BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1">
+                <TextBlock Text="Sub-stages" FontWeight="SemiBold"/>
+            </Border>
+
+            <DataGrid Grid.Row="1" x:Name="SubStagesGrid" Margin="10"
+                AutoGenerateColumns="False" IsReadOnly="True"
+                HeadersVisibility="Column" GridLinesVisibility="None"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.CanContentScroll="True"
+                EnableRowVirtualization="True"
+                SelectionChanged="SubStagesGrid_SelectionChanged"
+                Style="{StaticResource MaterialDesignDataGrid}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Name" Binding="{Binding Name}"/>
+                    <DataGridTemplateColumn Header="Status">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Border CornerRadius="10" Padding="6,2"
+                        Background="{Binding Status, Converter={StaticResource StatusToBrush}}">
+                                    <TextBlock Text="{Binding Status}" Foreground="White" FontWeight="SemiBold"/>
+                                </Border>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTextColumn Header="Labor Cost" Binding="{Binding LaborCost}"/>
+                    <DataGridTemplateColumn Header="" Width="160">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+
+                                    <!-- Start (default hidden; shown when NotStarted) -->
+                                    <Button x:Name="BtnStart"
+                Click="StartSubStage_Click"
+                Style="{StaticResource TinyIconButton}"
+                ToolTip="Start sub-stage"
+                Background="#43a047" Margin="2"
+                Visibility="Collapsed">
+                                        <iconPacks:PackIconFontAwesome Kind="PlaySolid" Width="12" Height="12" Foreground="White"/>
+                                    </Button>
+
+                                    <!-- Finish (default hidden; shown when Ongoing) -->
+                                    <Button x:Name="BtnFinish"
+                Click="FinishSubStage_Click"
+                Style="{StaticResource TinyIconButton}"
+                ToolTip="Finish sub-stage"
+                Background="#fb8c00" Margin="2"
+                Visibility="Collapsed">
+                                        <iconPacks:PackIconFontAwesome Kind="CheckSolid" Width="12" Height="12" Foreground="White"/>
+                                    </Button>
+
+                                    <!-- Reset to NotStarted (default hidden; shown when Ongoing) -->
+                                    <Button x:Name="BtnReset"
+                Click="ResetSubStage_Click"
+                Style="{StaticResource TinyIconButton}"
+                ToolTip="Mark as Not Started"
+                Background="#546e7a" Margin="2"
+                Visibility="Collapsed">
+                                        <iconPacks:PackIconFontAwesome Kind="RotateLeftSolid" Width="12" Height="12" Foreground="White"/>
+                                    </Button>
+
+                                </StackPanel>
+
+                                <DataTemplate.Triggers>
+                                    <!-- NotStarted => show Start -->
+                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static models:WorkStatus.NotStarted}">
+                                        <Setter TargetName="BtnStart" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="BtnFinish" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="BtnReset" Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+
+                                    <!-- Ongoing => show Finish + Reset -->
+                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static models:WorkStatus.Ongoing}">
+                                        <Setter TargetName="BtnStart" Property="Visibility" Value="Collapsed"/>
+                                        <Setter TargetName="BtnFinish" Property="Visibility" Value="Visible"/>
+                                        <Setter TargetName="BtnReset" Property="Visibility" Value="Visible"/>
+                                    </DataTrigger>
+
+                                    <!-- Finished / Paid / Stopped => hide all (defaults already collapsed) -->
+                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static models:WorkStatus.Finished}"/>
+                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static models:WorkStatus.Paid}"/>
+                                    <DataTrigger Binding="{Binding Status}" Value="{x:Static models:WorkStatus.Stopped}"/>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+
+        <!-- Horizontal splitter -->
+        <GridSplitter Grid.Row="2" Grid.ColumnSpan="5"
+                  Height="6" HorizontalAlignment="Stretch" VerticalAlignment="Center"
+                  Background="{DynamicResource MaterialDesignDivider}"
+                  ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" ShowsPreview="True"/>
+
+        <!-- MATERIALS -->
+        <Grid Grid.Row="3" Grid.ColumnSpan="5">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <Border Grid.Row="0" Padding="8"
+              Background="{DynamicResource MaterialDesignCardBackground}"
+              BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,1,0,1">
+                <TextBlock Text="Materials" FontWeight="SemiBold"/>
+            </Border>
+
+            <DataGrid Grid.Row="1" x:Name="MaterialsGrid" Margin="10"
+                AutoGenerateColumns="False" IsReadOnly="True"
+                HeadersVisibility="Column" GridLinesVisibility="None"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.CanContentScroll="True"
+                EnableRowVirtualization="True"
+                Style="{StaticResource MaterialDesignDataGrid}">
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Material" Binding="{Binding MaterialName}"/>
+                    <DataGridTextColumn Header="Qty" Binding="{Binding Qty}"/>
+                    <DataGridTextColumn Header="Unit" Binding="{Binding Unit}"/>
+                    <DataGridTextColumn Header="Usage Date" Binding="{Binding UsageDate}"/>
+                    <DataGridTextColumn Header="Unit Price" Binding="{Binding UnitPrice}"/>
+                    <DataGridTextColumn Header="Total" Binding="{Binding Total}"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Grid>
+    </Grid>
+</UserControl>

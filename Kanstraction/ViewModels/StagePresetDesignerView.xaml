@@ -1,0 +1,204 @@
+﻿<UserControl x:Class="Kanstraction.ViewModels.StagePresetDesignerView"
+              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
+             xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             x:Name="Root"
+             Background="{DynamicResource MaterialDesignPaper}">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+    </UserControl.Resources>
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- dirty banner -->
+            <RowDefinition Height="*"/>
+            <!-- content -->
+            <RowDefinition Height="Auto"/>
+            <!-- actions -->
+        </Grid.RowDefinitions>
+
+        <!-- Dirty banner -->
+        <Border Grid.Row="0" Padding="8"
+          Background="#E67E22"
+          Visibility="{Binding IsDirty, ElementName=Root, Converter={StaticResource BoolToVis}}">
+            <TextBlock Text="Unsaved changes" Foreground="White" FontWeight="SemiBold"/>
+        </Border>
+
+        <!-- ===== CONTENT AREA: either Empty State OR Editor ===== -->
+        <Grid Grid.Row="1">
+            <!-- EMPTY STATE -->
+            <Border x:Name="EmptyStatePanel"
+            Padding="24" Margin="12"
+            Background="{DynamicResource MaterialDesignCardBackground}"
+            BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" CornerRadius="8"
+            Visibility="Collapsed">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="No stage preset selected" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock Text="Select an existing preset on the left or create a new one."
+                   Foreground="{DynamicResource MaterialDesignBodyLight}"
+                   TextAlignment="Center" Margin="0,0,0,16"/>
+                    <Button Content="Create New Preset" Click="EmptyStateCreateNew_Click"
+                Style="{StaticResource MaterialDesignOutlinedButton}" Width="180" />
+                </StackPanel>
+            </Border>
+
+            <!-- EDITOR -->
+            <ScrollViewer x:Name="EditorPanel" Visibility="Collapsed" VerticalScrollBarVisibility="Auto">
+                <Grid Margin="12">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <!-- general -->
+                        <RowDefinition Height="12"/>
+                        <RowDefinition Height="*"/>
+                        <!-- sub-stages + materials -->
+                    </Grid.RowDefinitions>
+
+                    <!-- 1) GENERAL -->
+                    <Border Grid.Row="0" Padding="12" Background="{DynamicResource MaterialDesignCardBackground}"
+                BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" CornerRadius="8">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="180"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <DockPanel Margin="0,0,0,8">
+                                    <TextBlock Text="Preset Name" Width="120" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="TxtPresetName" Padding="8" TextChanged="TxtPresetName_TextChanged"
+                         materialDesign:HintAssist.Hint="Required"/>
+                                </DockPanel>
+                                <CheckBox x:Name="ChkActive" Content="Active" Checked="ChkActive_Changed" Unchecked="ChkActive_Changed" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                                <TextBlock Text="Summary" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                <TextBlock x:Name="TxtTotalSubs" Text="Total sub-stages: 0"/>
+                                <TextBlock x:Name="TxtTotalLabor" Text="Total default labor: 0"/>
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <!-- 2) SUB-STAGES + 3) MATERIALS -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="10"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- SUB-STAGES -->
+                        <Border Grid.Column="0" Padding="12" Background="{DynamicResource MaterialDesignCardBackground}"
+                  BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" CornerRadius="8">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="Sub-stages" FontWeight="SemiBold" Margin="0,0,0,8"/>
+
+                                <DataGrid Grid.Row="1" x:Name="SubStagesGrid" Margin="0,0,0,8"
+                        AutoGenerateColumns="False" CanUserAddRows="False"
+                        HeadersVisibility="Column" GridLinesVisibility="None"
+                        SelectionMode="Single"
+                        SelectionChanged="SubStagesGrid_SelectionChanged"
+                        CellEditEnding="SubStagesGrid_CellEditEnding"
+                        Style="{StaticResource MaterialDesignDataGrid}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="40" IsReadOnly="True"/>
+                                        <DataGridTextColumn Header="Name" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
+                                        <DataGridTextColumn Header="Labor" Binding="{Binding LaborCost, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}" Width="100"/>
+                                        <DataGridTemplateColumn Header="Order" Width="120">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                                        <Button Style="{StaticResource TinyIconButton}" Tag="{Binding}" Background="#3f51b5" Click="MoveSubStageUp_Click" Width="20" Height="20">
+                                                            <iconPacks:PackIconFontAwesome Kind="ArrowUpSolid"   Foreground="White" Width="14" Height="14" />
+                                                        </Button>
+                                                        <Button Style="{StaticResource TinyIconButton}" Margin="2" Background="#3f51b5" Tag="{Binding}" Click="MoveSubStageDown_Click" Width="20" Height="20">
+                                                            <iconPacks:PackIconFontAwesome Kind="ArrowDownSolid" Foreground="White" Width="14" Height="14" />
+                                                        </Button>
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+
+                                        <DataGridTemplateColumn Header="" Width="80">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Tag="{Binding}" Style="{StaticResource TinyIconButton}" Click="DeleteSubStage_Click">
+                                                        <iconPacks:PackIconFontAwesome Kind="TrashCanRegular" Width="16" Height="16" Foreground="Red"/>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+
+                                <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Content="Add Sub-stage" Click="AddSubStage_Click" Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+
+                        <!-- MATERIALS (hidden until a sub-stage is selected/created) -->
+                        <Border x:Name="MaterialsPanel" Grid.Column="2" Padding="12"
+                  Background="{DynamicResource MaterialDesignCardBackground}"
+                  BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" CornerRadius="8"
+                  Visibility="Collapsed">
+                            <Grid>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="*"/>
+                                </Grid.RowDefinitions>
+
+                                <TextBlock Grid.Row="0" Text="Materials for selected sub-stage" FontWeight="SemiBold" Margin="0,0,0,8"/>
+
+                                <!-- Add material row -->
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+                                    <ComboBox x:Name="CboMaterial" Width="280" Margin="0,0,8,0"
+                          DisplayMemberPath="Name" SelectedValuePath="Id" SelectionChanged="MaterialSelected"/>
+                                    <TextBox x:Name="TxtQty" Width="120" Margin="0,0,8,0"
+                         materialDesign:HintAssist.Hint="Qty (>= 0)" />
+                                    <TextBlock x:Name="TxtMTUnit" Width="30" Margin="8,0,8,0" VerticalAlignment="Center" FontWeight="Bold"/>
+                                    <Button Content="Add" Click="AddMaterial_Click" />
+                                </StackPanel>
+
+                                <DataGrid Grid.Row="2" x:Name="MaterialsGrid" AutoGenerateColumns="False" CanUserAddRows="False"
+                        HeadersVisibility="Column" GridLinesVisibility="None"
+                        Style="{StaticResource MaterialDesignDataGrid}">
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="Material" Binding="{Binding MaterialName}" IsReadOnly="True" Width="*"/>
+                                        <DataGridTextColumn Header="Unit" Binding="{Binding Unit}" IsReadOnly="True" Width="80"/>
+                                        <DataGridTextColumn Header="Qty" Binding="{Binding Qty, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}" Width="120"/>
+                                        <DataGridTemplateColumn Header="" Width="80">
+                                            <DataGridTemplateColumn.CellTemplate>
+                                                <DataTemplate>
+                                                    <Button Style="{StaticResource TinyIconButton}" Tag="{Binding}" Click="RemoveMaterial_Click">
+                                                        <iconPacks:PackIconFontAwesome Kind="TrashCanRegular" Width="16" Height="16" Foreground="Red"/>
+                                                    </Button>
+                                                </DataTemplate>
+                                            </DataGridTemplateColumn.CellTemplate>
+                                        </DataGridTemplateColumn>
+                                    </DataGrid.Columns>
+                                </DataGrid>
+                            </Grid>
+                        </Border>
+                    </Grid>
+                </Grid>
+            </ScrollViewer>
+        </Grid>
+
+        <!-- ACTIONS (only visible in editor mode) -->
+        <DockPanel x:Name="ActionsPanel" Grid.Row="2" LastChildFill="False" Margin="12,6,12,12" Visibility="Collapsed">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
+                <Button Content="Save" Click="Save_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                <Button Content="Cancel" Click="Cancel_Click" Margin="6,0"/>
+            </StackPanel>
+        </DockPanel>
+    </Grid>
+</UserControl>
