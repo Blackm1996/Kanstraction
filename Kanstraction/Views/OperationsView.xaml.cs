@@ -507,41 +507,83 @@ public partial class OperationsView : UserControl
     private async void StartSubStage_Click(object sender, RoutedEventArgs e)
     {
         if (_db == null) return;
-        var row = SubStagesGrid.SelectedItem as dynamic;
-        if (row == null) return;
-        int subStageId = row.Id;
 
-        // Get substage + its stage + its building
+        // assuming SubStagesGrid binds to SubStage entities (not anonymous)
+        var sel = SubStagesGrid.SelectedItem as SubStage;
+        if (sel == null) return;
+
+        // Load full entity + its stage and building
         var ss = await _db.SubStages
             .Include(x => x.Stage)
                 .ThenInclude(s => s.Building)
-            .FirstAsync(x => x.Id == subStageId);
+            .FirstAsync(x => x.Id == sel.Id);
 
-        // Enforce: only one Ongoing substage in the entire building
+        // Rule: only one Ongoing sub-stage in the building
         bool hasOngoingElsewhere = await _db.SubStages
             .AnyAsync(x => x.Stage.BuildingId == ss.Stage.BuildingId && x.Status == WorkStatus.Ongoing && x.Id != ss.Id);
         if (hasOngoingElsewhere)
         {
-            MessageBox.Show("Another sub-stage is already ongoing in this building. Finish it before starting a new one.",
+            MessageBox.Show("Another sub-stage is already ongoing in this building. Finish it first.",
                 "Rule", MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
+        // ❗ Order rule #1: previous sub-stage (same stage) must be Finished or Paid
+        if (ss.OrderIndex > 1)
+        {
+            var prevSub = await _db.SubStages
+                .Where(x => x.StageId == ss.StageId && x.OrderIndex == ss.OrderIndex - 1)
+                .Select(x => new { x.Id, x.Status })
+                .FirstOrDefaultAsync();
+
+            if (prevSub == null || (prevSub.Status != WorkStatus.Finished && prevSub.Status != WorkStatus.Paid))
+            {
+                MessageBox.Show("You must finish the previous sub-stage first.", "Order rule",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
+
+        // ❗ Order rule #2: all earlier stages must be Finished or Paid
+        if (ss.Stage.OrderIndex > 1)
+        {
+            bool allPrevStagesDone = await _db.Stages
+                .Where(s => s.BuildingId == ss.Stage.BuildingId && s.OrderIndex < ss.Stage.OrderIndex)
+                .AllAsync(s => s.Status == WorkStatus.Finished || s.Status == WorkStatus.Paid);
+
+            if (!allPrevStagesDone)
+            {
+                MessageBox.Show("You must finish all earlier stages before starting this stage.", "Order rule",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
+
+        // State checks
         if (ss.Status == WorkStatus.Finished || ss.Status == WorkStatus.Paid || ss.Status == WorkStatus.Stopped)
         {
-            MessageBox.Show("This sub-stage cannot be started in its current state.", "Rule", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("This sub-stage cannot be started in its current state.", "Rule",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
+        // ✅ Start sub-stage
         ss.Status = WorkStatus.Ongoing;
+        if (ss.StartDate == null) ss.StartDate = DateTime.Today;
+
+        // Bubble up to stage/building
         if (ss.Stage.Status == WorkStatus.NotStarted)
+        {
             ss.Stage.Status = WorkStatus.Ongoing;
+            if (ss.Stage.StartDate == null) ss.Stage.StartDate = DateTime.Today;
+        }
         if (ss.Stage.Building.Status == WorkStatus.NotStarted)
+        {
             ss.Stage.Building.Status = WorkStatus.Ongoing;
+        }
 
         await _db.SaveChangesAsync();
 
-        // Refresh UI
         await ReloadBuildingsAsync(ss.Stage.BuildingId);
         await ReloadStagesAndSubStagesAsync(ss.Stage.BuildingId, ss.StageId);
     }
@@ -549,39 +591,31 @@ public partial class OperationsView : UserControl
     private async void FinishSubStage_Click(object sender, RoutedEventArgs e)
     {
         if (_db == null) return;
-        var row = SubStagesGrid.SelectedItem as dynamic;
-        if (row == null) return;
-        int subStageId = row.Id;
+
+        var sel = SubStagesGrid.SelectedItem as SubStage;
+        if (sel == null) return;
 
         var ss = await _db.SubStages
             .Include(x => x.Stage)
                 .ThenInclude(s => s.SubStages)
             .Include(x => x.Stage.Building)
                 .ThenInclude(b => b.Stages)
-            .FirstAsync(x => x.Id == subStageId);
+            .FirstAsync(x => x.Id == sel.Id);
 
-        if (ss.Status != WorkStatus.Ongoing && ss.Status != WorkStatus.NotStarted)
+        // ✅ Only Ongoing can be finished
+        if (ss.Status != WorkStatus.Ongoing)
         {
-            MessageBox.Show("Only NotStarted/Ongoing sub-stages can be finished.", "Rule", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("You can only finish a sub-stage that is Ongoing.", "Rule",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         ss.Status = WorkStatus.Finished;
+        if (ss.EndDate == null) ss.EndDate = DateTime.Today;
 
-        // If all sub-stages finished → stage finished
-        if (ss.Stage.SubStages.All(sx => sx.Status == WorkStatus.Finished || sx.Status == WorkStatus.Paid))
-            ss.Stage.Status = WorkStatus.Finished;
-        else if (ss.Stage.SubStages.Any(sx => sx.Status == WorkStatus.Ongoing))
-            ss.Stage.Status = WorkStatus.Ongoing;
-        else
-            ss.Stage.Status = WorkStatus.NotStarted; // edge case if others are not started
-
-        // If all stages finished → building finished
-        if (ss.Stage.Building.Stages.All(st => st.Status == WorkStatus.Finished || st.Status == WorkStatus.Paid))
-            ss.Stage.Building.Status = WorkStatus.Finished;
-        else if (ss.Stage.Building.Stages.Any(st => st.Status == WorkStatus.Ongoing))
-            ss.Stage.Building.Status = WorkStatus.Ongoing;
-        // else leave as-is (could be mixed finished/not started)
+        // Recompute parents (also sets dates)
+        UpdateStageStatusFromSubStages(ss.Stage);
+        UpdateBuildingStatusFromStages(ss.Stage.Building);
 
         await _db.SaveChangesAsync();
 
@@ -592,46 +626,35 @@ public partial class OperationsView : UserControl
     private async void ResetSubStage_Click(object sender, RoutedEventArgs e)
     {
         if (_db == null) return;
-        var row = SubStagesGrid.SelectedItem as dynamic;
-        if (row == null) return;
-        int subStageId = row.Id;
+
+        var sel = SubStagesGrid.SelectedItem as SubStage;
+        if (sel == null) return;
 
         var ss = await _db.SubStages
             .Include(x => x.Stage)
                 .ThenInclude(s => s.SubStages)
             .Include(x => x.Stage.Building)
                 .ThenInclude(b => b.Stages)
-            .FirstAsync(x => x.Id == subStageId);
+            .FirstAsync(x => x.Id == sel.Id);
 
         if (ss.Status != WorkStatus.Ongoing)
         {
-            MessageBox.Show("Only an ongoing sub-stage can be reset to Not Started.", "Rule", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Only an Ongoing sub-stage can be reset to Not Started.", "Rule",
+                MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         ss.Status = WorkStatus.NotStarted;
+        ss.StartDate = null;
+        ss.EndDate = null;
 
-        // Stage status recompute
-        if (ss.Stage.SubStages.All(sx => sx.Status == WorkStatus.NotStarted))
-            ss.Stage.Status = WorkStatus.NotStarted;
-        else if (ss.Stage.SubStages.Any(sx => sx.Status == WorkStatus.Ongoing))
-            ss.Stage.Status = WorkStatus.Ongoing;
-        else if (ss.Stage.SubStages.All(sx => sx.Status == WorkStatus.Finished || sx.Status == WorkStatus.Paid))
-            ss.Stage.Status = WorkStatus.Finished;
-
-        // Building status recompute
-        var b = ss.Stage.Building;
-        if (b.Stages.All(st => st.Status == WorkStatus.NotStarted))
-            b.Status = WorkStatus.NotStarted;
-        else if (b.Stages.Any(st => st.Status == WorkStatus.Ongoing))
-            b.Status = WorkStatus.Ongoing;
-        else if (b.Stages.All(st => st.Status == WorkStatus.Finished || st.Status == WorkStatus.Paid))
-            b.Status = WorkStatus.Finished;
+        UpdateStageStatusFromSubStages(ss.Stage);
+        UpdateBuildingStatusFromStages(ss.Stage.Building);
 
         await _db.SaveChangesAsync();
 
-        await ReloadBuildingsAsync(b.Id);
-        await ReloadStagesAndSubStagesAsync(b.Id, ss.StageId);
+        await ReloadBuildingsAsync(ss.Stage.BuildingId);
+        await ReloadStagesAndSubStagesAsync(ss.Stage.BuildingId, ss.StageId);
     }
 
     private async Task ReloadStagesAndSubStagesAsync(int buildingId, int? preferredStageId = null)
@@ -663,4 +686,62 @@ public partial class OperationsView : UserControl
             MaterialsGrid.ItemsSource = null;
         }
     }
+
+    private static void UpdateStageStatusFromSubStages(Stage s)
+    {
+        if (s.SubStages == null || s.SubStages.Count == 0) return;
+
+        bool allPaid = s.SubStages.All(ss => ss.Status == WorkStatus.Paid);
+        bool anyOngoing = s.SubStages.Any(ss => ss.Status == WorkStatus.Ongoing);
+        bool allNotStarted = s.SubStages.All(ss => ss.Status == WorkStatus.NotStarted);
+        bool allDoneLike = s.SubStages.All(ss => ss.Status == WorkStatus.Finished || ss.Status == WorkStatus.Paid);
+
+        var prev = s.Status;
+
+        if (allPaid)
+            s.Status = WorkStatus.Paid;
+        else if (anyOngoing)
+            s.Status = WorkStatus.Ongoing;
+        else if (allNotStarted)
+            s.Status = WorkStatus.NotStarted;
+        else if (allDoneLike)
+            s.Status = WorkStatus.Finished;
+        // else: mixed — leave as-is, or set to Ongoing if you prefer
+
+        // Dates
+        if (s.Status == WorkStatus.Ongoing && s.StartDate == null)
+            s.StartDate = DateTime.Today;
+
+        if ((s.Status == WorkStatus.Finished || s.Status == WorkStatus.Paid) && s.EndDate == null)
+            s.EndDate = DateTime.Today;
+
+        if (s.Status == WorkStatus.NotStarted)
+        {
+            s.StartDate = null;
+            s.EndDate = null;
+        }
+    }
+
+    private static void UpdateBuildingStatusFromStages(Building b)
+    {
+        if (b.Stages == null || b.Stages.Count == 0) return;
+
+        bool allPaid = b.Stages.All(st => st.Status == WorkStatus.Paid);
+        bool anyOngoing = b.Stages.Any(st => st.Status == WorkStatus.Ongoing);
+        bool allNotStarted = b.Stages.All(st => st.Status == WorkStatus.NotStarted);
+        bool allDoneLike = b.Stages.All(st => st.Status == WorkStatus.Finished || st.Status == WorkStatus.Paid);
+
+        var prev = b.Status;
+
+        if (allPaid)
+            b.Status = WorkStatus.Paid;
+        else if (anyOngoing)
+            b.Status = WorkStatus.Ongoing;
+        else if (allNotStarted)
+            b.Status = WorkStatus.NotStarted;
+        else if (allDoneLike)
+            b.Status = WorkStatus.Finished;
+        // else: mixed — leave as-is or set Ongoing if you prefer
+    }
+
 }
