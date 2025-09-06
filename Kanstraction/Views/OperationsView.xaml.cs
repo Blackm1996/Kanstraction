@@ -96,10 +96,10 @@ public partial class OperationsView : UserControl
 
         _currentStageId = (int)s.Id;
 
+        // Load tracked entities (NO AsNoTracking) so edits persist
         var subStages = await _db.SubStages
             .Where(ss => ss.StageId == _currentStageId)
             .OrderBy(ss => ss.OrderIndex)
-            .Select(ss => new { ss.Id, ss.Name, ss.Status, ss.LaborCost })
             .ToListAsync();
 
         SubStagesGrid.ItemsSource = subStages;
@@ -109,29 +109,60 @@ public partial class OperationsView : UserControl
     private async void SubStagesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_db == null) return;
-        dynamic? ss = SubStagesGrid.SelectedItem;
-        if (ss == null) return;
+        var ss = SubStagesGrid.SelectedItem as SubStage;
+        if (ss == null)
+        {
+            MaterialsGrid.ItemsSource = null;
+            return;
+        }
 
-        int subStageId = (int)ss.Id;
-
-        var rows = await _db.MaterialUsages
-            .Where(mu => mu.SubStageId == subStageId)
-            .Join(_db.Materials, mu => mu.MaterialId, m => m.Id, (mu, m) => new
-            {
-                mu.Id,
-                MaterialName = m.Name,
-                mu.Qty,
-                m.Unit,
-                mu.UsageDate,
-                UnitPrice = m.PricePerUnit,
-                Total = m.PricePerUnit * mu.Qty
-            })
-            .OrderBy(r => r.UsageDate)
+        // Load tracked usages + material (no AsNoTracking so edits persist)
+        var usages = await _db.MaterialUsages
+            .Include(mu => mu.Material)
+            .Where(mu => mu.SubStageId == ss.Id)
+            .OrderBy(mu => mu.Material.Name)
             .ToListAsync();
 
-        MaterialsGrid.ItemsSource = rows;
+        MaterialsGrid.ItemsSource = usages;
     }
+    private async void SubStagesGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+    {
+        if (_db == null) return;
+        if (e.EditAction != DataGridEditAction.Commit) return;
 
+        if (e.Column is DataGridTextColumn col &&
+            (col.Header?.ToString()?.Equals("Labor", StringComparison.OrdinalIgnoreCase) ?? false))
+        {
+            var ss = e.Row.Item as SubStage;   // now valid
+            if (ss == null) return;
+
+            if (ss.LaborCost < 0)
+            {
+                MessageBox.Show("Labor cost cannot be negative.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ss.LaborCost = 0;
+            }
+
+            await _db.SaveChangesAsync();
+        }
+    }
+    private async void MaterialsGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+    {
+        if (_db == null) return;
+        if (e.EditAction != DataGridEditAction.Commit) return;
+
+        if (e.Row.Item is MaterialUsage mu)
+        {
+            // Validate: non-negative
+            if (mu.Qty < 0)
+            {
+                MessageBox.Show("Quantity cannot be negative.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                mu.Qty = 0;
+            }
+
+            await _db.SaveChangesAsync();
+            // If you show any totals elsewhere, refresh them here
+        }
+    }
     private string UpdateBreadcrumbWithBuilding(string code)
     {
         var baseText = Breadcrumb;
@@ -250,19 +281,7 @@ public partial class OperationsView : UserControl
             await tx.CommitAsync();
 
             // 4) Refresh grid and select new building
-            var buildings = await _db.Buildings
-                .Where(b => b.ProjectId == _currentProject.Id)
-                .OrderBy(b => b.Code)
-                .ToListAsync();
-
-            BuildingsGrid.ItemsSource = buildings;
-
-            var newly = buildings.FirstOrDefault(b => b.Code == code);
-            if (newly != null)
-            {
-                BuildingsGrid.SelectedItem = newly;
-                BuildingsGrid.ScrollIntoView(newly);
-            }
+            await ReloadBuildingsAsync(building.Id);
         }
         catch (Exception ex)
         {
