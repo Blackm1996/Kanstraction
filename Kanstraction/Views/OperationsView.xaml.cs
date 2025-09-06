@@ -763,4 +763,63 @@ public partial class OperationsView : UserControl
         // else: mixed — leave as-is or set Ongoing if you prefer
     }
 
+    private async void AddMaterialToSubStage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null)
+            return;
+
+        // We require a selected SubStage (you’re already binding real SubStage entities)
+        var ss = SubStagesGrid.SelectedItem as SubStage;
+        if (ss == null)
+        {
+            MessageBox.Show("Select a sub-stage first.", "No sub-stage", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        // Open your dialog (filters active materials not already used by this sub-stage)
+        var dlg = new Kanstraction.Views.AddMaterialToSubStageDialog(_db, ss.Id)
+        {
+            Owner = Window.GetWindow(this)
+        };
+
+        if (dlg.ShowDialog() != true)
+            return;
+
+        // Defensive checks (dialog already validates)
+        if (dlg.MaterialId == null)
+        {
+            MessageBox.Show("Please select a material.", "Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        // Create a MaterialUsage row (instance-only, does not touch presets)
+        var mu = new MaterialUsage
+        {
+            SubStageId = ss.Id,
+            MaterialId = dlg.MaterialId.Value,
+            Qty = dlg.Qty,
+            UsageDate = DateTime.Today,
+            Notes = null
+        };
+
+        try
+        {
+            _db.MaterialUsages.Add(mu);
+            await _db.SaveChangesAsync();
+
+            // Refresh the materials list for this sub-stage
+            var usages = await _db.MaterialUsages
+                .Include(x => x.Material)
+                .Where(x => x.SubStageId == ss.Id)
+                .OrderBy(x => x.Material.Name)
+                .ToListAsync();
+
+            MaterialsGrid.ItemsSource = usages;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Failed to add material:\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
 }

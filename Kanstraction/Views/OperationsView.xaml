@@ -11,6 +11,7 @@
     <UserControl.Resources>
         <conv:StatusToBrushConverter x:Key="StatusToBrush" />
         <conv:TotalCostConverter x:Key="TotalCostConverter"/>
+        <conv:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
     </UserControl.Resources>
 
     <!-- MAIN: breadcrumb + three columns + bottom materials (each grid scrolls independently) -->
@@ -295,9 +296,26 @@
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" Padding="8"
-              Background="{DynamicResource MaterialDesignCardBackground}"
-              BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,1,0,1">
-                <TextBlock Text="Materials" FontWeight="SemiBold"/>
+        Background="{DynamicResource MaterialDesignCardBackground}"
+        BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="Materials" FontWeight="SemiBold" VerticalAlignment="Center"/>
+
+                    <Button Grid.Column="1"
+        Style="{StaticResource TinyIconButton}"
+        ToolTip="Add material to this sub-stage"
+        Background="#3f51b5"
+        Click="AddMaterialToSubStage_Click"
+        Visibility="{Binding SelectedItem, ElementName=SubStagesGrid,
+                             Converter={StaticResource NullToVisibilityConverter}}">
+                        <iconPacks:PackIconFontAwesome Kind="PlusSolid" Width="12" Height="12" Foreground="White"/>
+                    </Button>
+                </Grid>
             </Border>
 
             <DataGrid Grid.Row="1" x:Name="MaterialsGrid" Margin="10"
