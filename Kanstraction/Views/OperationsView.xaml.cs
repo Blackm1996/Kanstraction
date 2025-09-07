@@ -56,34 +56,7 @@ public partial class OperationsView : UserControl
 
         _currentBuildingId = (int)b.Id;
 
-        var stageRows = await _db.Stages
-            .Where(s => s.BuildingId == _currentBuildingId)
-            .OrderBy(s => s.OrderIndex)
-            .Select(s => new
-            {
-                s.Id,
-                s.Name,
-                s.Status,
-                OngoingSubStageName = _db.SubStages.Where(ss => ss.StageId == s.Id && ss.Status == WorkStatus.Ongoing)
-                                                   .OrderBy(ss => ss.OrderIndex)
-                                                   .Select(ss => ss.Name).FirstOrDefault() ?? ""
-            })
-            .ToListAsync();
-
-        var stageProgress = await ProgressService.ComputeStagesProgressAsync(_db, stageRows.Select(r => r.Id));
-
-        var stages = stageRows.Select(r => new
-        {
-            r.Id,
-            r.Name,
-            r.Status,
-            r.OngoingSubStageName,
-            ProgressPercent = (int)Math.Round((stageProgress.TryGetValue(r.Id, out var v) ? v : 0.0) * 100.0)
-        }).ToList();
-
-        StagesGrid.ItemsSource = stages;
-        SubStagesGrid.ItemsSource = null;
-        MaterialsGrid.ItemsSource = null;
+        await ReloadStagesAndSubStagesAsync((int)b.Id);
 
         Breadcrumb = UpdateBreadcrumbWithBuilding(b.Code);
     }
@@ -103,7 +76,24 @@ public partial class OperationsView : UserControl
             .ToListAsync();
 
         SubStagesGrid.ItemsSource = subStages;
-        MaterialsGrid.ItemsSource = null;
+        var firstSub = subStages.FirstOrDefault();
+        if (firstSub != null)
+        {
+            SubStagesGrid.SelectedItem = firstSub;
+            SubStagesGrid.ScrollIntoView(firstSub);
+
+            var usages = await _db.MaterialUsages
+                .Include(mu => mu.Material)
+                .Where(mu => mu.SubStageId == firstSub.Id)
+                .OrderBy(mu => mu.Material.Name)
+                .ToListAsync();
+
+            MaterialsGrid.ItemsSource = usages;
+        }
+        else
+        {
+            MaterialsGrid.ItemsSource = null;
+        }
     }
 
     private async void SubStagesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -689,19 +679,47 @@ public partial class OperationsView : UserControl
         // Select preferred stage (or first)
         int stageId = preferredStageId ?? stages.FirstOrDefault()?.Id ?? 0;
 
-        if (stageId != 0)
+        if (stageId == 0)
         {
-            var subs = await _db.SubStages
-                .Where(ss => ss.StageId == stageId)
-                .OrderBy(ss => ss.OrderIndex)
-                .AsNoTracking()
+            SubStagesGrid.ItemsSource = null;
+            MaterialsGrid.ItemsSource = null;
+            _currentStageId = null;
+            return;
+        }
+
+        var stageToSelect = stages.FirstOrDefault(s => s.Id == stageId);
+        if (stageToSelect != null)
+        {
+            StagesGrid.SelectedItem = stageToSelect;
+            StagesGrid.ScrollIntoView(stageToSelect);
+        }
+        _currentStageId = stageId;
+
+        // Load tracked sub-stages for that stage
+        var subs = await _db.SubStages
+            .Where(ss => ss.StageId == stageId)
+            .OrderBy(ss => ss.OrderIndex)
+            .ToListAsync();
+
+        SubStagesGrid.ItemsSource = subs;
+
+        // Auto-select first sub-stage (if any) and load its materials
+        var firstSub = subs.FirstOrDefault();
+        if (firstSub != null)
+        {
+            SubStagesGrid.SelectedItem = firstSub;
+            SubStagesGrid.ScrollIntoView(firstSub);
+
+            var usages = await _db.MaterialUsages
+                .Include(mu => mu.Material)
+                .Where(mu => mu.SubStageId == firstSub.Id)
+                .OrderBy(mu => mu.Material.Name)
                 .ToListAsync();
-            SubStagesGrid.ItemsSource = subs;
-            // materials list can be reloaded similarly if needed
+
+            MaterialsGrid.ItemsSource = usages;
         }
         else
         {
-            SubStagesGrid.ItemsSource = null;
             MaterialsGrid.ItemsSource = null;
         }
     }
