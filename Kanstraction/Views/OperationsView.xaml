@@ -188,9 +188,26 @@
             </Grid.RowDefinitions>
 
             <Border Grid.Row="0" Padding="8"
-              Background="{DynamicResource MaterialDesignCardBackground}"
-              BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1">
-                <TextBlock Text="Sub-stages" FontWeight="SemiBold"/>
+        Background="{DynamicResource MaterialDesignCardBackground}"
+        BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Text="Sub-stages" FontWeight="SemiBold" VerticalAlignment="Center"/>
+
+                    <Button Grid.Column="1"
+            Click="AddSubStage_Click"
+            Style="{StaticResource TinyIconButton}"
+            ToolTip="Add sub-stage to selected stage"
+            Background="#3f51b5"
+            Visibility="{Binding SelectedItem, ElementName=StagesGrid,
+                                 Converter={StaticResource NullToVisibilityConverter}}">
+                        <iconPacks:PackIconFontAwesome Kind="PlusSolid" Width="12" Height="12" Foreground="White"/>
+                    </Button>
+                </Grid>
             </Border>
 
             <DataGrid Grid.Row="1" x:Name="SubStagesGrid" Margin="10"

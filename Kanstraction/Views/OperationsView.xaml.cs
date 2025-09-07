@@ -822,4 +822,88 @@ public partial class OperationsView : UserControl
         }
     }
 
+    private async void AddSubStage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null) return;
+
+        // Identify selected Stage (entity preferred)
+        int stageId;
+        var stageEntity = StagesGrid.SelectedItem as Stage;
+        if (stageEntity != null)
+        {
+            stageId = stageEntity.Id;
+        }
+        else
+        {
+            // fallback if the grid is bound to a projection
+            var dyn = StagesGrid.SelectedItem as dynamic;
+            if (dyn == null) return;
+            stageId = (int)dyn.Id;
+        }
+
+        // Count current sub-stages to suggest max order
+        var currentCount = await _db.SubStages.CountAsync(x => x.StageId == stageId);
+
+        // Open dialog
+        var dlg = new Kanstraction.Views.AddSubStageDialog(currentCount)
+        {
+            Owner = Window.GetWindow(this)
+        };
+
+        if (dlg.ShowDialog() != true) return;
+
+        using var tx = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            // Clamp order again server-side: 1..currentCount+1
+            var desiredOrder = Math.Max(1, Math.Min(dlg.OrderIndex, currentCount + 1));
+
+            // Shift existing ≥ desiredOrder
+            var toShift = await _db.SubStages
+                .Where(ss => ss.StageId == stageId && ss.OrderIndex >= desiredOrder)
+                .OrderBy(ss => ss.OrderIndex)
+                .ToListAsync();
+
+            foreach (var s in toShift)
+                s.OrderIndex += 1;
+
+            // Create new sub-stage (instance-only)
+            var newSub = new SubStage
+            {
+                StageId = stageId,
+                Name = dlg.SubStageName,
+                OrderIndex = desiredOrder,
+                LaborCost = dlg.LaborCost,
+                Status = WorkStatus.NotStarted
+            };
+            _db.SubStages.Add(newSub);
+
+            await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            // Reload sub-stages for this stage and select the new one
+            var subs = await _db.SubStages
+                .Where(ss => ss.StageId == stageId)
+                .OrderBy(ss => ss.OrderIndex)
+                .ToListAsync();
+
+            SubStagesGrid.ItemsSource = subs;
+
+            var select = subs.FirstOrDefault(x => x.Id == newSub.Id);
+            if (select != null)
+            {
+                SubStagesGrid.SelectedItem = select;
+                SubStagesGrid.ScrollIntoView(select);
+            }
+
+            // Optionally clear materials and wait for user to add
+            MaterialsGrid.ItemsSource = null;
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            MessageBox.Show("Failed to add sub-stage:\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
 }
