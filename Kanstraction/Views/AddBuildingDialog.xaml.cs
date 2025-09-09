@@ -1,4 +1,4 @@
-﻿using Kanstraction.Data;
+using Kanstraction.Data;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
 
@@ -37,12 +37,12 @@ public partial class AddBuildingDialog : Window
         var code = TxtCode.Text?.Trim();
         if (string.IsNullOrWhiteSpace(code))
         {
-            MessageBox.Show("Enter a building code.", "Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Entrez un code de bâtiment.", "Obligatoire", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (CboType.SelectedValue is not int typeId)
         {
-            MessageBox.Show("Select a building type.", "Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Sélectionnez un type de bâtiment.", "Obligatoire", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -58,8 +58,8 @@ public partial class AddBuildingDialog : Window
         if (!hasAnyPreset)
         {
             var res = MessageBox.Show(
-                "This building type has no stage presets assigned. Create anyway?",
-                "No presets", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                "Ce type de bâtiment n'a aucun préréglage d'étape assigné. Créer quand même?",
+                "Aucun préréglage", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (res != MessageBoxResult.Yes) return;
         }
 

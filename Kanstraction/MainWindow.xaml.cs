@@ -174,9 +174,9 @@ public partial class MainWindow : Window
     private void Reporting_Click(object sender, RoutedEventArgs e)
     {
         if (MainContentHost.Content != _opsView)
-            MessageBox.Show("Switch to Projects to run reports tied to a project selection.", "Reporting");
+            MessageBox.Show("Passez à Projets pour exécuter des rapports liés à une sélection de projet.", "Rapports");
         else
-            MessageBox.Show("TODO: Open reporting wizard / monthly summary.", "Reporting");
+            MessageBox.Show("TODO : ouvrir l'assistant de rapports / résumé mensuel.", "Rapports");
     }
 
     private void Export_Click(object sender, RoutedEventArgs e)
@@ -192,13 +192,13 @@ public partial class MainWindow : Window
             if (dlg.ShowDialog() == true)
             {
                 File.WriteAllText(dlg.FileName, "This is a placeholder export.\n");
-                MessageBox.Show($"Exported to:\n{dlg.FileName}", "Export",
+                MessageBox.Show($"Exporté vers :\n{dlg.FileName}", "Export",
                                 MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show("Export failed:\n" + ex.Message, "Export",
+            MessageBox.Show("Échec de l'export :\n" + ex.Message, "Export",
                             MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }

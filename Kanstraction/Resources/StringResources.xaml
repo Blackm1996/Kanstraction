@@ -1,0 +1,125 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <!-- Common -->
+    <sys:String x:Key="Common_Create">Create</sys:String>
+    <sys:String x:Key="Common_Cancel">Cancel</sys:String>
+    <sys:String x:Key="Common_Add">Add</sys:String>
+    <sys:String x:Key="Common_Save">Save</sys:String>
+    <sys:String x:Key="Common_New">New</sys:String>
+    <sys:String x:Key="Common_OK">OK</sys:String>
+    <sys:String x:Key="Common_Required">Required</sys:String>
+
+    <!-- MainWindow -->
+    <sys:String x:Key="MainWindow_Projects">Projects</sys:String>
+    <sys:String x:Key="MainWindow_Admin">Admin</sys:String>
+    <sys:String x:Key="MainWindow_SearchProjectsHint">Search projects</sys:String>
+    <sys:String x:Key="MainWindow_AddProject">Add Project</sys:String>
+
+    <!-- AddBuildingDialog -->
+    <sys:String x:Key="AddBuildingDialog_Title">Add Building</sys:String>
+    <sys:String x:Key="AddBuildingDialog_NewBuilding">New Building</sys:String>
+    <sys:String x:Key="AddBuildingDialog_Code">Code</sys:String>
+    <sys:String x:Key="AddBuildingDialog_CodeHint">Unique per project</sys:String>
+    <sys:String x:Key="AddBuildingDialog_BuildingType">Building Type</sys:String>
+    <sys:String x:Key="AddBuildingDialog_StageInfo">Stages will be created from the type's stage presets.</sys:String>
+
+    <!-- AddStageToBuildingDialog -->
+    <sys:String x:Key="AddStageToBuildingDialog_Title">Add Stage</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_Header">Add Stage from Preset</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_Preset">Stage preset</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_Order">Order</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_OrderHint">1..N</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_AddAtEnd">Add at the end</sys:String>
+
+    <!-- AddSubStageDialog -->
+    <sys:String x:Key="AddSubStageDialog_Title">Add Sub-stage</sys:String>
+    <sys:String x:Key="AddSubStageDialog_Header">New Sub-stage</sys:String>
+    <sys:String x:Key="AddSubStageDialog_Name">Name</sys:String>
+    <sys:String x:Key="AddSubStageDialog_NameHint">Sub-stage name</sys:String>
+    <sys:String x:Key="AddSubStageDialog_LaborCost">Labor cost</sys:String>
+    <sys:String x:Key="AddSubStageDialog_LaborCostHint">0.00</sys:String>
+    <sys:String x:Key="AddSubStageDialog_Order">Order</sys:String>
+    <sys:String x:Key="AddSubStageDialog_OrderHint">1..N</sys:String>
+    <sys:String x:Key="AddSubStageDialog_AddAtEnd">Add at the end</sys:String>
+
+    <!-- AddMaterialToSubStageDialog -->
+    <sys:String x:Key="AddMaterialToSubStageDialog_Title">Add Material</sys:String>
+    <sys:String x:Key="AddMaterialToSubStageDialog_Header">Add Material to Sub-stage</sys:String>
+    <sys:String x:Key="AddMaterialToSubStageDialog_Material">Material</sys:String>
+    <sys:String x:Key="AddMaterialToSubStageDialog_Quantity">Quantity</sys:String>
+    <sys:String x:Key="AddMaterialToSubStageDialog_QuantityHint">Qty (>= 0)</sys:String>
+
+    <!-- PromptTextDialog -->
+    <sys:String x:Key="PromptTextDialog_Title">Enter value</sys:String>
+    <sys:String x:Key="PromptTextDialog_InputHint">Project name (required)</sys:String>
+
+    <!-- AdminHubView -->
+    <sys:String x:Key="AdminHubView_Title">Administration</sys:String>
+    <sys:String x:Key="AdminHubView_MaterialsTab">Materials</sys:String>
+    <sys:String x:Key="AdminHubView_SearchMaterialsHint">Search materials</sys:String>
+    <sys:String x:Key="AdminHubView_ActiveOnly">Active only</sys:String>
+    <sys:String x:Key="AdminHubView_New">New</sys:String>
+    <sys:String x:Key="AdminHubView_MaterialHeader">Material</sys:String>
+    <sys:String x:Key="AdminHubView_Name">Name</sys:String>
+    <sys:String x:Key="AdminHubView_Unit">Unit</sys:String>
+    <sys:String x:Key="AdminHubView_PricePerUnit">Price / Unit</sys:String>
+    <sys:String x:Key="AdminHubView_Active">Active</sys:String>
+    <sys:String x:Key="AdminHubView_PriceHistory">Price History</sys:String>
+    <sys:String x:Key="AdminHubView_Start">Start</sys:String>
+    <sys:String x:Key="AdminHubView_End">End</sys:String>
+    <sys:String x:Key="AdminHubView_Save">Save</sys:String>
+    <sys:String x:Key="AdminHubView_Cancel">Cancel</sys:String>
+    <sys:String x:Key="AdminHubView_StagePresetsTab">Stage Presets</sys:String>
+    <sys:String x:Key="AdminHubView_SearchPresetsHint">Search presets</sys:String>
+    <sys:String x:Key="AdminHubView_BuildingTypes">Building Types</sys:String>
+    <sys:String x:Key="AdminHubView_FilterBuildingTypes">Filter building types</sys:String>
+    <sys:String x:Key="AdminHubView_NewBuildingType">New Building Type</sys:String>
+    <sys:String x:Key="AdminHubView_AssignedPresets">Preset</sys:String>
+    <sys:String x:Key="AdminHubView_SubStages">Sub-stages</sys:String>
+    <sys:String x:Key="AdminHubView_Order">Order</sys:String>
+    <sys:String x:Key="AdminHubView_Remove">Remove</sys:String>
+    <sys:String x:Key="AdminHubView_SelectedPresetTitle">Select a preset to preview its sub-stages</sys:String>
+    <sys:String x:Key="AdminHubView_Tip">Tip: order reflects execution sequence when a building of this type is created.</sys:String>
+    <sys:String x:Key="AdminHubView_AssignStagePresets">Assign Stage Presets</sys:String>
+    <sys:String x:Key="AdminHubView_ChoosePresetHint">Choose a preset to add</sys:String>
+    <sys:String x:Key="AdminHubView_SaveBuildingType">Save</sys:String>
+    <sys:String x:Key="AdminHubView_CancelBuildingType">Cancel</sys:String>
+
+    <!-- OperationsView -->
+    <sys:String x:Key="OperationsView_ResolvePayment">Resolve Payment</sys:String>
+    <sys:String x:Key="OperationsView_ResolvePaymentTooltip">Generate a payment resolution PDF for this project and mark finished items as Paid</sys:String>
+    <sys:String x:Key="OperationsView_Buildings">Buildings</sys:String>
+    <sys:String x:Key="OperationsView_AddBuildingTooltip">Add building</sys:String>
+    <sys:String x:Key="OperationsView_Materials">Materials</sys:String>
+    <sys:String x:Key="OperationsView_AddMaterialTooltip">Add material to this sub-stage</sys:String>
+    <sys:String x:Key="OperationsView_Status">Status</sys:String>
+    <sys:String x:Key="OperationsView_Code">Code</sys:String>
+    <sys:String x:Key="OperationsView_Type">Type</sys:String>
+    <sys:String x:Key="OperationsView_Percent">%</sys:String>
+    <sys:String x:Key="OperationsView_StartSubStageTooltip">Start sub-stage</sys:String>
+    <sys:String x:Key="OperationsView_FinishSubStageTooltip">Finish sub-stage</sys:String>
+    <sys:String x:Key="OperationsView_ResetSubStageTooltip">Mark as Not Started</sys:String>
+    <sys:String x:Key="OperationsView_Stages">Stages</sys:String>
+    <sys:String x:Key="OperationsView_SubStages">Sub-stages</sys:String>
+    <sys:String x:Key="OperationsView_MaterialHeader">Material</sys:String>
+    <sys:String x:Key="OperationsView_Qty">Qty</sys:String>
+    <sys:String x:Key="OperationsView_Unit">Unit</sys:String>
+    <sys:String x:Key="OperationsView_UsageDate">Usage Date</sys:String>
+    <sys:String x:Key="OperationsView_UnitPrice">Unit Price</sys:String>
+    <sys:String x:Key="OperationsView_Total">Total</sys:String>
+
+    <!-- StagePresetDesignerView -->
+    <sys:String x:Key="StagePresetDesignerView_UnsavedChanges">Unsaved changes</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_NoPresetSelected">No stage preset selected</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_SelectPresetOrCreate">Select an existing preset on the left or create a new one.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_CreateNewPreset">Create New Preset</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_PresetName">Preset Name</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_Summary">Summary</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_TotalSubStages">Total sub-stages: {0}</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_TotalLabor">Total default labor: {0:0.##}</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_Labor">Labor</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_AddSubStage">Add Sub-stage</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_MaterialsForSelected">Materials for selected sub-stage</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_NewSubStage">New sub-stage</sys:String>
+</ResourceDictionary>
