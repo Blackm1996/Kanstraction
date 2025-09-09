@@ -121,14 +121,14 @@
                     <DataGridTextColumn Header="{DynamicResource OperationsView_Code}" Binding="{Binding Code}"/>
                     <DataGridTextColumn Header="{DynamicResource OperationsView_Type}" Binding="{Binding TypeName}"/>
                     <DataGridTextColumn Header="{DynamicResource OperationsView_Percent}" Binding="{Binding ProgressPercent}"/>
-                    <DataGridTextColumn Header="Current Stage" Binding="{Binding CurrentStageName}"/>
+                    <DataGridTextColumn Header="{DynamicResource OperationsView_CurrentStage}" Binding="{Binding CurrentStageName}"/>
                     <DataGridTemplateColumn Header="" Width="60">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Button x:Name="BtnStop"
               Click="StopBuilding_Click"
               Style="{StaticResource TinyIconButton}"
-              ToolTip="Stop building"
+              ToolTip="{DynamicResource OperationsView_StopBuildingTooltip}"
               Background="#e53935">
                                     <iconPacks:PackIconFontAwesome Kind="BanSolid" Width="12" Height="12" Foreground="White"/>
                                 </Button>
@@ -175,10 +175,10 @@
 
             <TextBlock Text="{DynamicResource OperationsView_Stages}" FontWeight="SemiBold" VerticalAlignment="Center"/>
 
-                    <Button Grid.Column="1"
+            <Button Grid.Column="1"
             Click="AddStageToBuilding_Click"
             Style="{StaticResource TinyIconButton}"
-            ToolTip="Add stage from preset to this building"
+            ToolTip="{DynamicResource OperationsView_AddStageTooltip}"
             Background="#3f51b5"
             Visibility="{Binding SelectedItem, ElementName=BuildingsGrid,
                                  Converter={StaticResource NullToVisibilityConverter}}">
@@ -196,8 +196,8 @@
                 SelectionChanged="StagesGrid_SelectionChanged"
                 Style="{StaticResource MaterialDesignDataGrid}">
                 <DataGrid.Columns>
-                    <DataGridTextColumn Header="Stage" Binding="{Binding Name}"/>
-                    <DataGridTemplateColumn Header="Status">
+                    <DataGridTextColumn Header="{DynamicResource OperationsView_Stage}" Binding="{Binding Name}"/>
+                    <DataGridTemplateColumn Header="{DynamicResource OperationsView_Status}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Border CornerRadius="10" Padding="6,2"
@@ -207,8 +207,8 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Ongoing Sub-stage" Binding="{Binding OngoingSubStageName}"/>
-                    <DataGridTextColumn Header="%" Binding="{Binding ProgressPercent}"/>
+                    <DataGridTextColumn Header="{DynamicResource OperationsView_OngoingSubStage}" Binding="{Binding OngoingSubStageName}"/>
+                    <DataGridTextColumn Header="{DynamicResource OperationsView_Percent}" Binding="{Binding ProgressPercent}"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>
@@ -240,7 +240,7 @@
                     <Button Grid.Column="1"
             Click="AddSubStage_Click"
             Style="{StaticResource TinyIconButton}"
-            ToolTip="Add sub-stage to selected stage"
+            ToolTip="{DynamicResource OperationsView_AddSubStageTooltip}"
             Background="#3f51b5"
             Visibility="{Binding SelectedItem, ElementName=StagesGrid,
                                  Converter={StaticResource NullToVisibilityConverter}}">
@@ -259,9 +259,9 @@
                 SelectionChanged="SubStagesGrid_SelectionChanged" 
                 CellEditEnding="SubStagesGrid_CellEditEnding" 
                 Style="{StaticResource MaterialDesignDataGrid}">
-                <DataGrid.Columns>
-                    <DataGridTextColumn IsReadOnly="True" Header="Name" Binding="{Binding Name}"/>
-                    <DataGridTemplateColumn IsReadOnly="True" Header="Status">
+                    <DataGrid.Columns>
+                    <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_Name}" Binding="{Binding Name}"/>
+                    <DataGridTemplateColumn IsReadOnly="True" Header="{DynamicResource OperationsView_Status}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Border CornerRadius="10" Padding="6,2"
@@ -271,7 +271,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="Labor" Width="120" IsReadOnly="False"
+                    <DataGridTextColumn Header="{DynamicResource OperationsView_Labor}" Width="120" IsReadOnly="False"
                       Binding="{Binding LaborCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"/>
 
                     <DataGridTemplateColumn Header="" Width="160">

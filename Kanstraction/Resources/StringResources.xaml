@@ -100,6 +100,14 @@
     <sys:String x:Key="OperationsView_Code">Code</sys:String>
     <sys:String x:Key="OperationsView_Type">Type</sys:String>
     <sys:String x:Key="OperationsView_Percent">%</sys:String>
+    <sys:String x:Key="OperationsView_CurrentStage">Current Stage</sys:String>
+    <sys:String x:Key="OperationsView_StopBuildingTooltip">Stop building</sys:String>
+    <sys:String x:Key="OperationsView_AddStageTooltip">Add stage from preset to this building</sys:String>
+    <sys:String x:Key="OperationsView_Stage">Stage</sys:String>
+    <sys:String x:Key="OperationsView_OngoingSubStage">Ongoing Sub-stage</sys:String>
+    <sys:String x:Key="OperationsView_AddSubStageTooltip">Add sub-stage to selected stage</sys:String>
+    <sys:String x:Key="OperationsView_Name">Name</sys:String>
+    <sys:String x:Key="OperationsView_Labor">Labor</sys:String>
     <sys:String x:Key="OperationsView_StartSubStageTooltip">Start sub-stage</sys:String>
     <sys:String x:Key="OperationsView_FinishSubStageTooltip">Finish sub-stage</sys:String>
     <sys:String x:Key="OperationsView_ResetSubStageTooltip">Mark as Not Started</sys:String>

@@ -98,6 +98,14 @@
     <sys:String x:Key="OperationsView_Code">Code</sys:String>
     <sys:String x:Key="OperationsView_Type">Type</sys:String>
     <sys:String x:Key="OperationsView_Percent">%</sys:String>
+    <sys:String x:Key="OperationsView_CurrentStage">Étape actuelle</sys:String>
+    <sys:String x:Key="OperationsView_StopBuildingTooltip">Arrêter la construction</sys:String>
+    <sys:String x:Key="OperationsView_AddStageTooltip">Ajouter une étape depuis un préréglage à ce bâtiment</sys:String>
+    <sys:String x:Key="OperationsView_Stage">Étape</sys:String>
+    <sys:String x:Key="OperationsView_OngoingSubStage">Sous-étape en cours</sys:String>
+    <sys:String x:Key="OperationsView_AddSubStageTooltip">Ajouter une sous-étape à l'étape sélectionnée</sys:String>
+    <sys:String x:Key="OperationsView_Name">Nom</sys:String>
+    <sys:String x:Key="OperationsView_Labor">Main-d'œuvre</sys:String>
     <sys:String x:Key="OperationsView_StartSubStageTooltip">Commencer la sous-étape</sys:String>
     <sys:String x:Key="OperationsView_FinishSubStageTooltip">Terminer la sous-étape</sys:String>
     <sys:String x:Key="OperationsView_ResetSubStageTooltip">Marquer comme non commencé</sys:String>
