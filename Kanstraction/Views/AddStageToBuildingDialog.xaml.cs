@@ -27,7 +27,7 @@ public partial class AddStageToBuildingDialog : Window
 
         Loaded += (_, __) =>
         {
-            LblOrderHelp.Text = $"Allowed order: 1..{_maxOrder}";
+            LblOrderHelp.Text = $"Ordre autorisé : 1..{_maxOrder}";
             TxtOrder.Text = _maxOrder.ToString(CultureInfo.InvariantCulture);
             TxtOrder.IsEnabled = false;
             ChkAddAtEnd.IsChecked = true;
@@ -55,7 +55,7 @@ public partial class AddStageToBuildingDialog : Window
     {
         if (CboPreset.SelectedValue == null)
         {
-            MessageBox.Show("Please choose a stage preset.", "Required",
+            MessageBox.Show("Veuillez choisir un préréglage d'étape.", "Obligatoire",
                 MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
@@ -69,7 +69,7 @@ public partial class AddStageToBuildingDialog : Window
         {
             if (!int.TryParse(TxtOrder.Text?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out order) || order < 1)
             {
-                MessageBox.Show("Invalid order index.", "Validation",
+                MessageBox.Show("Indice d'ordre invalide.", "Validation",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }

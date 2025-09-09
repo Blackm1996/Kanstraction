@@ -219,7 +219,7 @@ namespace Kanstraction.Views
                 if (row != null) MaterialsList.SelectedItem = row;
             }
 
-            MessageBox.Show("Saved.", "Material", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Enregistré.", "Matériau", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
         private void CancelMaterial_Click(object sender, RoutedEventArgs e)
@@ -594,7 +594,7 @@ namespace Kanstraction.Views
         {
             if (BtPresetPicker?.SelectedValue is not int presetId)
             {
-                MessageBox.Show("Select a stage preset to add.");
+                MessageBox.Show("Sélectionnez un préréglage d'étape à ajouter.");
                 return;
             }
             var preset = (_allPresets ?? new List<StagePreset>()).FirstOrDefault(p => p.Id == presetId);
@@ -692,7 +692,7 @@ namespace Kanstraction.Views
             var name = BtName?.Text?.Trim();
             if (string.IsNullOrWhiteSpace(name))
             {
-                MessageBox.Show("Name is required.");
+                MessageBox.Show("Le nom est requis.");
                 return;
             }
             var isActive = BtActive?.IsChecked == true;
@@ -766,12 +766,12 @@ namespace Kanstraction.Views
                     if (row != null) BuildingTypesList.SelectedItem = row;
                 }
 
-                MessageBox.Show("Building type saved.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show("Type de bâtiment enregistré.", "Succès", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
                 await tx.RollbackAsync();
-                MessageBox.Show("Save failed:\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show("Échec de l'enregistrement :\n" + ex.Message, "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

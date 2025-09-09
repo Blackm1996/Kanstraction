@@ -133,7 +133,7 @@ public partial class StagePresetDesignerView : UserControl
 
         if (preset == null)
         {
-            MessageBox.Show("Preset not found.");
+            MessageBox.Show("Préréglage introuvable.");
             return;
         }
 
@@ -240,7 +240,7 @@ public partial class StagePresetDesignerView : UserControl
         var vm = (sender as FrameworkElement)?.Tag as SubStageVm;
         if (vm == null) return;
 
-        if (MessageBox.Show($"Delete sub-stage '{vm.Name}'?", "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+        if (MessageBox.Show($"Supprimer la sous-étape '{vm.Name}' ?", "Confirmer", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
         _subStages.Remove(vm);
@@ -337,26 +337,26 @@ public partial class StagePresetDesignerView : UserControl
     {
         if (_selectedSubStage == null)
         {
-            MessageBox.Show("Select a sub-stage first.");
+            MessageBox.Show("Sélectionnez d'abord une sous-étape.");
             return;
         }
 
         if (CboMaterial.SelectedValue is not int matId)
         {
-            MessageBox.Show("Choose a material.");
+            MessageBox.Show("Choisissez un matériau.");
             return;
         }
 
         if (!decimal.TryParse(TxtQty.Text?.Trim(), out var qty) || qty < 0)
         {
-            MessageBox.Show("Qty must be a non-negative number.");
+            MessageBox.Show("La quantité doit être un nombre non négatif.");
             return;
         }
 
         // prevent duplicates
         if (_selectedSubStage.Materials.Any(m => m.MaterialId == matId))
         {
-            MessageBox.Show("This material is already added to the sub-stage.");
+            MessageBox.Show("Ce matériau est déjà ajouté à la sous-étape.");
             return;
         }
 
@@ -433,7 +433,7 @@ public partial class StagePresetDesignerView : UserControl
         var name = TxtPresetName.Text?.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
-            MessageBox.Show("Preset name is required.");
+            MessageBox.Show("Le nom du préréglage est requis.");
             return;
         }
 
@@ -442,19 +442,19 @@ public partial class StagePresetDesignerView : UserControl
         {
             if (string.IsNullOrWhiteSpace(s.Name))
             {
-                MessageBox.Show("Each sub-stage must have a name.");
+                MessageBox.Show("Chaque sous-étape doit avoir un nom.");
                 return;
             }
             if (s.LaborCost < 0)
             {
-                MessageBox.Show("Labor cost must be ≥ 0.");
+                MessageBox.Show("Le coût de main-d'œuvre doit être ≥ 0.");
                 return;
             }
             foreach (var mu in s.Materials)
             {
                 if (mu.Qty < 0)
                 {
-                    MessageBox.Show("Material quantity must be ≥ 0.");
+                    MessageBox.Show("La quantité de matériau doit être ≥ 0.");
                     return;
                 }
             }
@@ -581,13 +581,13 @@ public partial class StagePresetDesignerView : UserControl
             await tx.CommitAsync();
 
             SetDirty(false);
-            MessageBox.Show("Preset saved.", "Stage Preset", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show("Préréglage enregistré.", "Préréglage d'étape", MessageBoxButton.OK, MessageBoxImage.Information);
             Saved?.Invoke(this, _currentPresetId!.Value);
         }
         catch (Exception ex)
         {
             await tx.RollbackAsync();
-            MessageBox.Show("Save failed:\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show("Échec de l'enregistrement :\n" + ex.Message, "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 

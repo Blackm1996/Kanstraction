@@ -19,7 +19,7 @@ namespace Kanstraction.Views
 
             Loaded += (_, __) =>
             {
-                LblOrderHelp.Text = $"Allowed order: 1..{_maxOrder}";
+                LblOrderHelp.Text = $"Ordre autorisé : 1..{_maxOrder}";
                 // Default: add at end
                 TxtOrder.Text = _maxOrder.ToString(CultureInfo.InvariantCulture);
                 TxtOrder.IsEnabled = false;
@@ -48,14 +48,14 @@ namespace Kanstraction.Views
             var name = TxtName.Text?.Trim();
             if (string.IsNullOrWhiteSpace(name))
             {
-                MessageBox.Show("Please enter a sub-stage name.", "Required",
+                MessageBox.Show("Veuillez entrer un nom de sous-étape.", "Obligatoire",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
             if (!decimal.TryParse(TxtLabor.Text?.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var labor) || labor < 0m)
             {
-                MessageBox.Show("Invalid labor cost.", "Validation",
+                MessageBox.Show("Coût de main-d'œuvre invalide.", "Validation",
                     MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -69,7 +69,7 @@ namespace Kanstraction.Views
             {
                 if (!int.TryParse(TxtOrder.Text?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out order) || order < 1)
                 {
-                    MessageBox.Show("Invalid order index.", "Validation",
+                    MessageBox.Show("Indice d'ordre invalide.", "Validation",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }

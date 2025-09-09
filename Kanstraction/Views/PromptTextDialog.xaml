@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
-        Title="Enter value"
+        Title="{DynamicResource PromptTextDialog_Title}"
         Width="420" Height="195"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
@@ -21,14 +21,14 @@
              Grid.Row="1"
              Margin="0,10,0,10"
              Style="{StaticResource MaterialDesignOutlinedTextBox}"
-             materialDesign:HintAssist.Hint="Project name (required)"
+             materialDesign:HintAssist.Hint="{DynamicResource PromptTextDialog_InputHint}"
              Padding="10"
              FontSize="14"
              KeyDown="InputBox_KeyDown"/>
 
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Content="OK" Width="80" Margin="0,0,8,0" IsDefault="True" Click="Ok_Click"/>
-            <Button Content="Cancel" Width="80" IsCancel="True"/>
+            <Button Content="{DynamicResource Common_OK}" Width="80" Margin="0,0,8,0" IsDefault="True" Click="Ok_Click"/>
+            <Button Content="{DynamicResource Common_Cancel}" Width="80" IsCancel="True"/>
         </StackPanel>
     </Grid>
 </Window>

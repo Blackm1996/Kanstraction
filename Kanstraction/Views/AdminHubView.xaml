@@ -18,7 +18,7 @@
         <Border Grid.Row="0" Padding="10"
             Background="{DynamicResource MaterialDesignPaper}"
             BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1">
-            <TextBlock Text="Administration" FontWeight="SemiBold" />
+            <TextBlock Text="{DynamicResource AdminHubView_Title}" FontWeight="SemiBold" />
         </Border>
 
         <TabControl x:Name="AdminTabs"
@@ -26,7 +26,7 @@
             Background="{DynamicResource MaterialDesignPaper}"
             SelectionChanged="AdminTabs_SelectionChanged">
             <!-- MATERIALS -->
-            <TabItem Header="Materials">
+            <TabItem Header="{DynamicResource AdminHubView_MaterialsTab}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="320"/>
@@ -44,11 +44,11 @@
 
                         <StackPanel Grid.Row="0" Margin="10,10,10,4">
                             <TextBox x:Name="MatSearchBox"
-                       materialDesign:HintAssist.Hint="Search materials"
+                       materialDesign:HintAssist.Hint="{DynamicResource AdminHubView_SearchMaterialsHint}"
                        Padding="8" TextChanged="MatSearchBox_TextChanged"
                        Style="{StaticResource MaterialDesignOutlinedTextBox}" />
                             <CheckBox x:Name="MatActiveOnly"
-                        Content="Active only" Margin="0,8,0,0"
+                        Content="{DynamicResource AdminHubView_ActiveOnly}" Margin="0,8,0,0"
                         IsChecked="True" Checked="MatFilterChanged" Unchecked="MatFilterChanged"/>
                         </StackPanel>
 
@@ -57,7 +57,7 @@
                       DisplayMemberPath="Name" />
 
                         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10,4,10,10" HorizontalAlignment="Right">
-                            <Button Content="New" Click="NewMaterial_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                            <Button Content="{DynamicResource AdminHubView_New}" Click="NewMaterial_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
                         </StackPanel>
                     </Grid>
 
@@ -67,46 +67,46 @@
                     <!-- Detail -->
                     <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
                         <StackPanel Margin="16" MinWidth="360">
-                            <TextBlock Text="Material" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBlock Text="{DynamicResource AdminHubView_MaterialHeader}" FontWeight="SemiBold" Margin="0,0,0,8"/>
                             <DockPanel Margin="0,0,0,8">
-                                <TextBlock Text="Name" Width="120" VerticalAlignment="Center"/>
+                                <TextBlock Text="{DynamicResource AdminHubView_Name}" Width="120" VerticalAlignment="Center"/>
                                 <TextBox x:Name="MatName" Padding="8" />
                             </DockPanel>
                             <DockPanel Margin="0,0,0,8">
-                                <TextBlock Text="Unit" Width="120" VerticalAlignment="Center"/>
+                                <TextBlock Text="{DynamicResource AdminHubView_Unit}" Width="120" VerticalAlignment="Center"/>
                                 <TextBox x:Name="MatUnit" Padding="8" />
                             </DockPanel>
                             <DockPanel Margin="0,0,0,8">
-                                <TextBlock Text="Price / Unit" Width="120" VerticalAlignment="Center"/>
+                                <TextBlock Text="{DynamicResource AdminHubView_PricePerUnit}" Width="120" VerticalAlignment="Center"/>
                                 <TextBox x:Name="MatPrice" Padding="8" />
                             </DockPanel>
 
-                            <CheckBox x:Name="MatIsActive" Content="Active" Margin="0,0,0,8" IsChecked="True"/>
+                            <CheckBox x:Name="MatIsActive" Content="{DynamicResource AdminHubView_Active}" Margin="0,0,0,8" IsChecked="True"/>
 
                             <Separator Margin="0,8,0,8"/>
 
-                            <TextBlock Text="Price History" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                            <TextBlock Text="{DynamicResource AdminHubView_PriceHistory}" FontWeight="SemiBold" Margin="0,0,0,8"/>
                             <DataGrid x:Name="MatHistoryGrid" AutoGenerateColumns="False" IsReadOnly="True"
                         HeadersVisibility="Column" GridLinesVisibility="None"
                         Height="200" Margin="0,0,0,8"
                         Style="{StaticResource MaterialDesignDataGrid}">
                                 <DataGrid.Columns>
-                                    <DataGridTextColumn Header="Start" Binding="{Binding StartDate}"/>
-                                    <DataGridTextColumn Header="End" Binding="{Binding EndDate}"/>
-                                    <DataGridTextColumn Header="Price / Unit" Binding="{Binding PricePerUnit}"/>
+                                    <DataGridTextColumn Header="{DynamicResource AdminHubView_Start}" Binding="{Binding StartDate}"/>
+                                    <DataGridTextColumn Header="{DynamicResource AdminHubView_End}" Binding="{Binding EndDate}"/>
+                                    <DataGridTextColumn Header="{DynamicResource AdminHubView_PricePerUnit}" Binding="{Binding PricePerUnit}"/>
                                 </DataGrid.Columns>
                             </DataGrid>
 
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="Save" Click="SaveMaterial_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
-                                <Button Content="Cancel" Click="CancelMaterial_Click" Margin="6,0"/>
+                                <Button Content="{DynamicResource AdminHubView_Save}" Click="SaveMaterial_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                                <Button Content="{DynamicResource AdminHubView_Cancel}" Click="CancelMaterial_Click" Margin="6,0"/>
                             </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
                 </Grid>
             </TabItem>
 
-            <TabItem Header="Stage Presets">
+            <TabItem Header="{DynamicResource AdminHubView_StagePresetsTab}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="320"/>
@@ -160,7 +160,7 @@
             </TabItem>
 
             <!-- BUILDING TYPES -->
-            <TabItem Header="Building Types">
+            <TabItem Header="{DynamicResource AdminHubView_BuildingTypes}">
                 <Grid>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="320"/>
@@ -178,11 +178,11 @@
 
                         <StackPanel Grid.Row="0" Margin="10,10,10,4">
                             <TextBox x:Name="BtSearchBox"
-                 materialDesign:HintAssist.Hint="Search building types"
+                 materialDesign:HintAssist.Hint="{DynamicResource AdminHubView_FilterBuildingTypes}"
                  Padding="8" TextChanged="BtSearchBox_TextChanged"
                  Style="{StaticResource MaterialDesignOutlinedTextBox}" />
                             <CheckBox x:Name="BtActiveOnly"
-                  Content="Active only" Margin="0,8,0,0"
+                  Content="{DynamicResource AdminHubView_ActiveOnly}" Margin="0,8,0,0"
                   IsChecked="True" Checked="BtFilterChanged" Unchecked="BtFilterChanged"/>
                         </StackPanel>
 
@@ -191,7 +191,7 @@
                 DisplayMemberPath="Name" />
 
                         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10,4,10,10" HorizontalAlignment="Right">
-                            <Button Content="New" Click="NewBuildingType_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                            <Button Content="{DynamicResource AdminHubView_New}" Click="NewBuildingType_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
                         </StackPanel>
                     </Grid>
 
@@ -215,19 +215,19 @@
                                     </Grid.ColumnDefinitions>
 
                                     <StackPanel Grid.Column="0">
-                                        <TextBlock Text="Building Type" FontWeight="SemiBold"/>
+                                        <TextBlock Text="{DynamicResource AdminHubView_BuildingTypes}" FontWeight="SemiBold"/>
                                         <TextBox x:Name="BtName"
                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                       materialDesign:HintAssist.Hint="Name (required)"
+                       materialDesign:HintAssist.Hint="{DynamicResource AdminHubView_Name}" 
                        Padding="10"
                        FontSize="14"
                        Margin="0,6,0,4"/>
-                                        <TextBlock Text="Give this building type a clear, unique name."
+                                        <TextBlock Text="{DynamicResource AdminHubView_NewBuildingType}" 
                          Foreground="{DynamicResource MaterialDesignBodyLight}" FontSize="12"/>
                                     </StackPanel>
 
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                        <CheckBox x:Name="BtActive" Content="Active" IsChecked="True"/>
+                                        <CheckBox x:Name="BtActive" Content="{DynamicResource AdminHubView_Active}" IsChecked="True"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>
@@ -251,7 +251,7 @@
 
                                     <!-- Header + Picker -->
                                     <StackPanel Grid.Row="0" Margin="0,0,0,4">
-                                        <TextBlock Text="Assign Stage Presets" FontWeight="SemiBold" />
+                                        <TextBlock Text="{DynamicResource AdminHubView_AssignStagePresets}" FontWeight="SemiBold" />
                                         <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
                                             <ComboBox x:Name="BtPresetPicker"
                   Width="320"
@@ -333,7 +333,7 @@
 
                                                 <!-- Title shows selected preset name -->
                                                 <TextBlock x:Name="BtSelectedPresetTitle"
-                 Text="Select a preset to preview its sub-stages"
+                 Text="{DynamicResource AdminHubView_SelectedPresetTitle}"
                  FontWeight="SemiBold"
                  Margin="0,0,0,8"/>
 
@@ -355,7 +355,7 @@
 
                                     <!-- Tip -->
                                     <TextBlock Grid.Row="3"
-               Text="Tip: order reflects execution sequence when a building of this type is created."
+               Text="{DynamicResource AdminHubView_Tip}"
                Foreground="{DynamicResource MaterialDesignBodyLight}" FontSize="12" Margin="0,8,0,0"/>
                                 </Grid>
                             </Border>
