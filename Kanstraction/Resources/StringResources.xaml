@@ -72,6 +72,7 @@
     <sys:String x:Key="AdminHubView_Cancel">Cancel</sys:String>
     <sys:String x:Key="AdminHubView_StagePresetsTab">Stage Presets</sys:String>
     <sys:String x:Key="AdminHubView_SearchPresetsHint">Search presets</sys:String>
+
     <sys:String x:Key="AdminHubView_BuildingTypes">Building Types</sys:String>
     <sys:String x:Key="AdminHubView_FilterBuildingTypes">Filter building types</sys:String>
     <sys:String x:Key="AdminHubView_NewBuildingType">New Building Type</sys:String>
@@ -83,6 +84,7 @@
     <sys:String x:Key="AdminHubView_Tip">Tip: order reflects execution sequence when a building of this type is created.</sys:String>
     <sys:String x:Key="AdminHubView_AssignStagePresets">Assign Stage Presets</sys:String>
     <sys:String x:Key="AdminHubView_ChoosePresetHint">Choose a preset to add</sys:String>
+
     <sys:String x:Key="AdminHubView_SaveBuildingType">Save</sys:String>
     <sys:String x:Key="AdminHubView_CancelBuildingType">Cancel</sys:String>
 
@@ -122,4 +124,5 @@
     <sys:String x:Key="StagePresetDesignerView_AddSubStage">Add Sub-stage</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialsForSelected">Materials for selected sub-stage</sys:String>
     <sys:String x:Key="StagePresetDesignerView_NewSubStage">New sub-stage</sys:String>
+
 </ResourceDictionary>

@@ -122,4 +122,5 @@
     <sys:String x:Key="StagePresetDesignerView_AddSubStage">Ajouter une sous-étape</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialsForSelected">Matériaux pour la sous-étape sélectionnée</sys:String>
     <sys:String x:Key="StagePresetDesignerView_NewSubStage">Nouvelle sous-étape</sys:String>
+
 </ResourceDictionary>
