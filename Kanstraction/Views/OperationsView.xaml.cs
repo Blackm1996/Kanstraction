@@ -1059,4 +1059,140 @@ public partial class OperationsView : UserControl
             MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
+    // Small DTO matching the dialog's PresetVm
+    private sealed class StagePresetPick
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+    }
+
+    private async void AddStageToBuilding_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null) return;
+
+        // We need a selected building (your BuildingsGrid binds to an anonymous projection)
+        var bRow = BuildingsGrid.SelectedItem as dynamic;
+        if (bRow == null) return;
+
+        int buildingId = (int)bRow.Id;
+
+        // Load current building stages (names + count)
+        var currentStages = await _db.Stages
+            .Where(s => s.BuildingId == buildingId)
+            .OrderBy(s => s.OrderIndex)
+            .Select(s => new { s.Id, s.Name, s.OrderIndex })
+            .ToListAsync();
+
+        var existingNames = currentStages.Select(s => s.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        int currentCount = currentStages.Count;
+
+        // Available presets = active StagePresets NOT already present by name in this building
+        var availablePresets = await _db.StagePresets
+            .Where(p => p.IsActive && !existingNames.Contains(p.Name))
+            .OrderBy(p => p.Name)
+            .Select(p => new StagePresetPick { Id = p.Id, Name = p.Name })
+            .ToListAsync();
+
+        if (availablePresets.Count == 0)
+        {
+            MessageBox.Show("All active stage presets are already in this building.", "No presets",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        // Open dialog
+        var dlg = new Kanstraction.Views.AddStageToBuildingDialog(
+            availablePresets.ConvertAll(p => new Kanstraction.Views.AddStageToBuildingDialog.PresetVm { Id = p.Id, Name = p.Name }),
+            currentCount)
+        {
+            Owner = Window.GetWindow(this)
+        };
+
+        if (dlg.ShowDialog() != true) return;
+
+        int presetId = dlg.SelectedPresetId!.Value;
+        int desiredOrder = dlg.OrderIndex; // already clamped by dialog
+
+        using var tx = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            // Shift existing stages with OrderIndex >= desiredOrder
+            var toShift = await _db.Stages
+                .Where(s => s.BuildingId == buildingId && s.OrderIndex >= desiredOrder)
+                .OrderBy(s => s.OrderIndex)
+                .ToListAsync();
+
+            foreach (var s in toShift)
+                s.OrderIndex += 1;
+
+            // Resolve the preset's name
+            var presetName = await _db.StagePresets
+                .Where(p => p.Id == presetId)
+                .Select(p => p.Name)
+                .FirstAsync();
+
+            // Create the new Stage (instance-only)
+            var newStage = new Stage
+            {
+                BuildingId = buildingId,
+                Name = presetName,
+                OrderIndex = desiredOrder,
+                Status = WorkStatus.NotStarted
+            };
+            _db.Stages.Add(newStage);
+            await _db.SaveChangesAsync(); // need newStage.Id for children
+
+            // Clone SubStagePresets (+ material usage presets) into instance
+            var subPresets = await _db.SubStagePresets
+                .Where(sp => sp.StagePresetId == presetId)
+                .OrderBy(sp => sp.OrderIndex)
+                .ToListAsync();
+
+            foreach (var sp in subPresets)
+            {
+                var sub = new SubStage
+                {
+                    StageId = newStage.Id,
+                    Name = sp.Name,
+                    OrderIndex = sp.OrderIndex,
+                    Status = WorkStatus.NotStarted,
+                    LaborCost = sp.LaborCost
+                };
+                _db.SubStages.Add(sub);
+                await _db.SaveChangesAsync(); // need sub.Id to attach usages
+
+                var muPresets = await _db.MaterialUsagesPreset
+                    .Where(mup => mup.SubStagePresetId == sp.Id)
+                    .ToListAsync();
+
+                foreach (var mup in muPresets)
+                {
+                    var mu = new MaterialUsage
+                    {
+                        SubStageId = sub.Id,
+                        MaterialId = mup.MaterialId,
+                        Qty = mup.Qty,
+                        UsageDate = DateTime.Today,
+                        Notes = null
+                    };
+                    _db.MaterialUsages.Add(mu);
+                }
+            }
+
+            await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            // Refresh UI: reload stages for this building and select the new stage
+            await ReloadStagesAndSubStagesAsync(buildingId, newStage.Id);
+            // Also refresh buildings row (progress / current stage)
+            await ReloadBuildingsAsync(buildingId);
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            MessageBox.Show("Failed to add stage:\n" + ex.Message, "Error",
+                MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
 }

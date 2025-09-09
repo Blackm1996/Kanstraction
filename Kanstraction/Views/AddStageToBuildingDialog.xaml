@@ -1,0 +1,49 @@
+﻿<Window x:Class="Kanstraction.Views.AddStageToBuildingDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        Title="Add Stage" Width="520" Height="260"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize" ShowInTaskbar="False" WindowStyle="ToolWindow">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="Add Stage from Preset" FontSize="16" FontWeight="SemiBold"/>
+
+        <StackPanel Grid.Row="1" Margin="0,10,0,10">
+            <DockPanel Margin="0,0,0,8">
+                <TextBlock Text="Stage preset" Width="120" VerticalAlignment="Center"/>
+                <ComboBox x:Name="CboPreset"
+                  Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                  DisplayMemberPath="Name"
+                  SelectedValuePath="Id"
+                  Padding="6" MinWidth="280"/>
+            </DockPanel>
+
+            <DockPanel Margin="0,0,0,8">
+                <TextBlock Text="Order" Width="120" VerticalAlignment="Center"/>
+                <TextBox x:Name="TxtOrder"
+                 Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                 materialDesign:HintAssist.Hint="1..N"
+                 Padding="10" FontSize="14" Width="120" IsEnabled="False"/>
+                <TextBlock x:Name="LblOrderHelp" Margin="8,0,0,0" VerticalAlignment="Center"
+                   Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+            </DockPanel>
+
+            <CheckBox x:Name="ChkAddAtEnd"
+                Content="Add at the end"
+                IsChecked="True"
+                Checked="ChkAddAtEnd_Checked"
+                Unchecked="ChkAddAtEnd_Unchecked"/>
+        </StackPanel>
+
+        <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button Content="Add" Width="90" Margin="0,0,8,0" IsDefault="True" Click="Add_Click"/>
+            <Button Content="Cancel" Width="90" IsCancel="True"/>
+        </StackPanel>
+    </Grid>
+</Window>
