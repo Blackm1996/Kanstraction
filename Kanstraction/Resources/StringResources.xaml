@@ -78,6 +78,7 @@
     <sys:String x:Key="AdminHubView_NewBuildingType">New Building Type</sys:String>
     <sys:String x:Key="AdminHubView_AssignedPresets">Preset</sys:String>
     <sys:String x:Key="AdminHubView_SubStages">Sub-stages</sys:String>
+    <sys:String x:Key="AdminHubView_Labor">Labor</sys:String>
     <sys:String x:Key="AdminHubView_Order">Order</sys:String>
     <sys:String x:Key="AdminHubView_Remove">Remove</sys:String>
     <sys:String x:Key="AdminHubView_SelectedPresetTitle">Select a preset to preview its sub-stages</sys:String>

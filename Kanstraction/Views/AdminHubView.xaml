@@ -345,8 +345,8 @@
                 Style="{StaticResource MaterialDesignDataGrid}">
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="60"/>
-                                                        <DataGridTextColumn Header="Sub-stage" Binding="{Binding Name}" Width="*"/>
-                                                        <DataGridTextColumn Header="Labor" Binding="{Binding LaborCost, StringFormat={}{0:0.##}}" Width="120"/>
+                                                        <DataGridTextColumn Header="{DynamicResource AdminHubView_SubStages}" Binding="{Binding Name}" Width="*"/>
+                                                        <DataGridTextColumn Header="{DynamicResource AdminHubView_Labor}" Binding="{Binding LaborCost, StringFormat={}{0:0.##}}" Width="120"/>
                                                     </DataGrid.Columns>
                                                 </DataGrid>
                                             </Grid>
