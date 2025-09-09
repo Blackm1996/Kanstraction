@@ -1,317 +1,240 @@
-﻿using Kanstraction.Entities;
+﻿using System;
+using System.Linq;
+using System.Collections.Generic;
+using Kanstraction.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kanstraction.Data;
 
 public static class DbSeeder
 {
+    /// <summary>
+    /// Seeds presets ONLY:
+    /// - Materials (+ a bit of price history)
+    /// - StagePresets WITH SubStagePresets and MaterialUsagePresets
+    /// - BuildingTypes WITH StagePreset assignments
+    /// Safe to call multiple times; skips existing by name.
+    /// </summary>
     public static void Seed(AppDbContext db)
     {
-        if (db.Projects.Any()) return; // already seeded
+        if (db.Materials.Any() && db.StagePresets.Any() && db.BuildingTypes.Any())
+            return;
 
-        // ---------- MATERIALS ----------
-        var cement = new Material { Name = "Cement", Unit = "bag", PricePerUnit = 6.50m, EffectiveSince = DateTime.Today.AddMonths(-4), IsActive = true };
-        var sand = new Material { Name = "Sand", Unit = "m³", PricePerUnit = 12.0m, EffectiveSince = DateTime.Today.AddMonths(-3), IsActive = true };
-        var gravel = new Material { Name = "Gravel", Unit = "m³", PricePerUnit = 15.0m, EffectiveSince = DateTime.Today.AddMonths(-3), IsActive = true };
-        var rebar = new Material { Name = "Rebar", Unit = "kg", PricePerUnit = 1.20m, EffectiveSince = DateTime.Today.AddMonths(-5), IsActive = true };
-        var blocks = new Material { Name = "Blocks", Unit = "pcs", PricePerUnit = 0.90m, EffectiveSince = DateTime.Today.AddMonths(-2), IsActive = true };
-        var paint = new Material { Name = "Paint", Unit = "gal", PricePerUnit = 18.0m, EffectiveSince = DateTime.Today.AddMonths(-1), IsActive = true };
-        var wiring = new Material { Name = "Wiring", Unit = "m", PricePerUnit = 0.35m, EffectiveSince = DateTime.Today.AddMonths(-6), IsActive = true };
-        var pipes = new Material { Name = "Pipes", Unit = "m", PricePerUnit = 0.80m, EffectiveSince = DateTime.Today.AddMonths(-6), IsActive = true };
-        var plaster = new Material { Name = "Plaster", Unit = "bag", PricePerUnit = 7.20m, EffectiveSince = DateTime.Today.AddMonths(-2), IsActive = true };
+        // ============ MATERIALS ============
+        var materials = EnsureMaterials(db);
 
-        db.Materials.AddRange(cement, sand, gravel, rebar, blocks, paint, wiring, pipes, plaster);
+        // ============ STAGE PRESETS (+ SUBS + MATERIAL USAGES) ============
+        EnsureStagePresets(db, materials);
 
-        // Optional price history to exercise the UI
-        db.MaterialPriceHistory.AddRange(
-            new MaterialPriceHistory { Material = cement, PricePerUnit = 6.20m, StartDate = DateTime.Today.AddMonths(-4), EndDate = null },
-            new MaterialPriceHistory { Material = paint, PricePerUnit = 16.00m, StartDate = DateTime.Today.AddMonths(-7), EndDate = DateTime.Today.AddMonths(-1) },
-            new MaterialPriceHistory { Material = paint, PricePerUnit = 18.00m, StartDate = DateTime.Today.AddMonths(-1), EndDate = null }
-        );
+        // ============ BUILDING TYPES ============
+        EnsureBuildingTypes(db);
+    }
 
-        db.SaveChanges();
-
-        // ---------- STAGE PRESETS (+ sub-stages + material-usage presets) ----------
-        var foundation = MakeStagePreset("Foundation",
-            (1, "Excavation", 800m, new[] { (sand, 5m), (gravel, 3m) }),
-            (2, "Rebar", 1200m, new[] { (rebar, 500m) }),
-            (3, "Pouring", 1500m, new[] { (cement, 60m), (sand, 10m), (gravel, 10m) })
-        );
-
-        var structure = MakeStagePreset("Structure",
-            (1, "Columns", 1400m, new[] { (rebar, 600m), (cement, 40m) }),
-            (2, "Beams", 1200m, new[] { (rebar, 400m), (cement, 30m) }),
-            (3, "Slab", 1300m, new[] { (rebar, 300m), (cement, 35m) })
-        );
-
-        var walls = MakeStagePreset("Walls",
-            (1, "Blockwork", 900m, new[] { (blocks, 1000m), (cement, 20m), (sand, 8m) }),
-            (2, "Plastering", 700m, new[] { (plaster, 30m) })
-        );
-
-        var mep = MakeStagePreset("MEP",
-            (1, "Plumbing Rough-in", 800m, new[] { (pipes, 120m) }),
-            (2, "Electrical Rough-in", 900m, new[] { (wiring, 300m) })
-        );
-
-        var finishing = MakeStagePreset("Finishing",
-            (1, "Primer", 500m, new[] { (paint, 5m) }),
-            (2, "Final Paint", 700m, new[] { (paint, 10m) })
-        );
-
-        db.StagePresets.AddRange(foundation.Preset, structure.Preset, walls.Preset, mep.Preset, finishing.Preset);
-        db.SaveChanges();
-
-        // ---------- BUILDING TYPES + assignments ----------
-        var villa = new BuildingType { Name = "Villa", IsActive = true };
-        var duplex = new BuildingType { Name = "Duplex", IsActive = true };
-        var apartment = new BuildingType { Name = "Apartment", IsActive = true };
-        db.BuildingTypes.AddRange(villa, duplex, apartment);
-        db.SaveChanges();
-
-        void Assign(BuildingType t, StagePreset p, int order) =>
-            db.BuildingTypeStagePresets.Add(new BuildingTypeStagePreset { BuildingType = t, StagePreset = p, OrderIndex = order });
-
-        // Villa: full pipeline
-        Assign(villa, foundation.Preset, 1);
-        Assign(villa, structure.Preset, 2);
-        Assign(villa, walls.Preset, 3);
-        Assign(villa, mep.Preset, 4);
-        Assign(villa, finishing.Preset, 5);
-
-        // Duplex: no MEP in presets (for variety)
-        Assign(duplex, foundation.Preset, 1);
-        Assign(duplex, structure.Preset, 2);
-        Assign(duplex, walls.Preset, 3);
-        Assign(duplex, finishing.Preset, 4);
-
-        // Apartment: no finishing (for variety)
-        Assign(apartment, foundation.Preset, 1);
-        Assign(apartment, structure.Preset, 2);
-        Assign(apartment, mep.Preset, 3);
-
-        db.SaveChanges();
-
-        // ---------- PROJECTS ----------
-        var p1 = new Project { Name = "Hills Compound", StartDate = DateTime.Today.AddMonths(-5) };
-        var p2 = new Project { Name = "Seaside Villas", StartDate = DateTime.Today.AddMonths(-3) };
-        var p3 = new Project { Name = "Urban Towers", StartDate = DateTime.Today.AddMonths(-6) };
-        db.Projects.AddRange(p1, p2, p3);
-        db.SaveChanges();
-
-        // ---------- BUILDINGS (copy presets → real stages/sub-stages/usages) ----------
-        // p1: showcase NotStarted, Ongoing (stage2/sub1), Finished
-        AddBuildingFromType(db, p1, villa, "V-101", make: NotStarted);
-        AddBuildingFromType(db, p1, villa, "V-102", make: b => OngoingAt(db, b, stageOrder: 2, subOrder: 1));
-        AddBuildingFromType(db, p1, duplex, "D-201", make: FinishedAll);
-
-        // p2: showcase Stopped (after some progress), and Ongoing (stage1/sub2)
-        AddBuildingFromType(db, p2, duplex, "D-202", make: b => ProgressSomeThenStop(db, b));
-        AddBuildingFromType(db, p2, apartment, "A-301", make: b => OngoingAt(db, b, stageOrder: 1, subOrder: 2));
-
-        // p3: showcase Paid (everything paid)
-        AddBuildingFromType(db, p3, apartment, "A-302", make: PaidAll);
-
-        db.SaveChanges();
-
-        // ---------------- local helpers ----------------
-
-        static (StagePreset Preset, List<SubStagePreset> Subs) MakeStagePreset(
-            string name,
-            params (int order, string title, decimal labor, (Material mat, decimal qty)[] mats)[] subs)
+    // ---------------- MATERIALS ----------------
+    private static Dictionary<string, Material> EnsureMaterials(AppDbContext db)
+    {
+        var want = new[]
         {
-            var preset = new StagePreset { Name = name, IsActive = true };
-            var list = new List<SubStagePreset>();
+            new Material { Name = "Cement",  Unit = "bag", PricePerUnit = 6.50m,  EffectiveSince = DateTime.Today.AddMonths(-4), IsActive = true },
+            new Material { Name = "Sand",    Unit = "m³",  PricePerUnit = 12.00m, EffectiveSince = DateTime.Today.AddMonths(-3), IsActive = true },
+            new Material { Name = "Gravel",  Unit = "m³",  PricePerUnit = 15.00m, EffectiveSince = DateTime.Today.AddMonths(-3), IsActive = true },
+            new Material { Name = "Rebar",   Unit = "kg",  PricePerUnit = 1.20m,  EffectiveSince = DateTime.Today.AddMonths(-5), IsActive = true },
+            new Material { Name = "Blocks",  Unit = "pcs", PricePerUnit = 0.90m,  EffectiveSince = DateTime.Today.AddMonths(-2), IsActive = true },
+            new Material { Name = "Paint",   Unit = "gal", PricePerUnit = 18.00m, EffectiveSince = DateTime.Today.AddMonths(-1), IsActive = true },
+            new Material { Name = "Wiring",  Unit = "m",   PricePerUnit = 0.35m,  EffectiveSince = DateTime.Today.AddMonths(-6), IsActive = true },
+            new Material { Name = "Pipes",   Unit = "m",   PricePerUnit = 0.80m,  EffectiveSince = DateTime.Today.AddMonths(-6), IsActive = true },
+            new Material { Name = "Plaster", Unit = "bag", PricePerUnit = 7.20m,  EffectiveSince = DateTime.Today.AddMonths(-2), IsActive = true },
+        };
 
+        foreach (var m in want)
+        {
+            var exists = db.Materials.FirstOrDefault(x => x.Name == m.Name);
+            if (exists == null)
+                db.Materials.Add(m);
+        }
+        db.SaveChanges();
+
+        // Small history sample
+        var paint = db.Materials.First(x => x.Name == "Paint");
+        if (!db.MaterialPriceHistory.Any(h => h.MaterialId == paint.Id))
+        {
+            db.MaterialPriceHistory.AddRange(
+                new MaterialPriceHistory { MaterialId = paint.Id, PricePerUnit = 16.00m, StartDate = DateTime.Today.AddMonths(-7), EndDate = DateTime.Today.AddMonths(-1) },
+                new MaterialPriceHistory { MaterialId = paint.Id, PricePerUnit = 18.00m, StartDate = DateTime.Today.AddMonths(-1), EndDate = null }
+            );
+            db.SaveChanges();
+        }
+
+        return db.Materials.ToDictionary(x => x.Name, x => x);
+    }
+
+    // ---------------- STAGE PRESETS ----------------
+    private static void EnsureStagePresets(AppDbContext db, Dictionary<string, Material> m)
+    {
+        // Helper to upsert a StagePreset + its sub-stages + materials
+        void UpsertStagePreset(string presetName, (int order, string name, decimal labor, (string mat, decimal qty)[] uses)[] subs)
+        {
+            var preset = db.StagePresets.FirstOrDefault(p => p.Name == presetName);
+            if (preset == null)
+            {
+                preset = new StagePreset { Name = presetName, IsActive = true };
+                db.StagePresets.Add(preset);
+                db.SaveChanges(); // need ID
+            }
+
+            // Ensure sub-stages
             foreach (var s in subs.OrderBy(x => x.order))
             {
-                var sp = new SubStagePreset
-                {
-                    StagePreset = preset,
-                    Name = s.title,
-                    OrderIndex = s.order,
-                    LaborCost = s.labor
-                };
-                list.Add(sp);
+                var sub = db.SubStagePresets
+                    .FirstOrDefault(ss => ss.StagePresetId == preset.Id && ss.Name == s.name);
 
-                // material usage presets for this sub
-                foreach (var (mat, qty) in s.mats)
+                if (sub == null)
                 {
-                    var mup = new MaterialUsagePreset
+                    sub = new SubStagePreset
                     {
-                        SubStagePreset = sp,
-                        Material = mat,
-                        Qty = qty
+                        StagePresetId = preset.Id,
+                        Name = s.name,
+                        OrderIndex = s.order,
+                        LaborCost = s.labor
                     };
-                    // EF will pick it up since it's attached to SubStagePreset
+                    db.SubStagePresets.Add(sub);
+                    db.SaveChanges();
                 }
-            }
-            return (preset, list);
-        }
-
-        static void AddBuildingFromType(AppDbContext ctx, Project proj, BuildingType type, string code, Action<Building> make)
-        {
-            // create building
-            var b = new Building
-            {
-                Project = proj,
-                BuildingType = type,
-                Code = code,
-                Status = WorkStatus.NotStarted
-            };
-            ctx.Buildings.Add(b);
-            ctx.SaveChanges();
-
-            // copy assigned stage presets in order
-            var presetIds = ctx.BuildingTypeStagePresets
-                .Where(x => x.BuildingTypeId == type.Id)
-                .OrderBy(x => x.OrderIndex)
-                .Select(x => x.StagePresetId)
-                .ToList();
-
-            int order = 1;
-            foreach (var pid in presetIds)
-            {
-                var sp = ctx.StagePresets
-                    .Include(s => s.SubStages)
-                    .First(s => s.Id == pid);
-
-                var stage = new Stage
+                else
                 {
-                    Building = b,
-                    Name = sp.Name,
-                    OrderIndex = order++,
-                    Status = WorkStatus.NotStarted
-                };
-                ctx.Stages.Add(stage);
-                ctx.SaveChanges();
+                    // keep it updated
+                    sub.OrderIndex = s.order;
+                    sub.LaborCost = s.labor;
+                    db.SaveChanges();
+                }
 
-                foreach (var ssp in sp.SubStages.OrderBy(x => x.OrderIndex))
+                // Ensure material usages for this sub-stage
+                foreach (var (matName, qty) in s.uses)
                 {
-                    var sub = new SubStage
-                    {
-                        Stage = stage,
-                        Name = ssp.Name,
-                        OrderIndex = ssp.OrderIndex,
-                        Status = WorkStatus.NotStarted,
-                        LaborCost = ssp.LaborCost
-                    };
-                    ctx.SubStages.Add(sub);
-                    ctx.SaveChanges();
+                    if (!m.TryGetValue(matName, out var mat)) continue;
 
-                    // copy material usage presets
-                    var muPresets = ctx.Set<MaterialUsagePreset>()
-                        .Where(mup => mup.SubStagePresetId == ssp.Id)
-                        .Include(mup => mup.Material)
-                        .ToList();
+                    var exists = db.MaterialUsagesPreset.FirstOrDefault(mu =>
+                        mu.SubStagePresetId == sub.Id && mu.MaterialId == mat.Id);
 
-                    foreach (var mup in muPresets)
+                    if (exists == null)
                     {
-                        var mu = new MaterialUsage
+                        db.MaterialUsagesPreset.Add(new MaterialUsagePreset
                         {
-                            SubStage = sub,
-                            Material = mup.Material,
-                            Qty = mup.Qty,
-                            UsageDate = DateTime.Today
-                        };
-                        ctx.MaterialUsages.Add(mu);
+                            SubStagePresetId = sub.Id,
+                            MaterialId = mat.Id,
+                            Qty = qty
+                        });
                     }
-                    ctx.SaveChanges();
+                    else
+                    {
+                        exists.Qty = qty; // update qty if changed
+                    }
                 }
-            }
-
-            // apply desired final state
-            make(b);
-
-            ctx.SaveChanges();
-        }
-
-        // simple “do-nothing” state
-        static void NotStarted(Building b) { /* leaves all as NotStarted */ }
-
-        // mark everything Finished
-        static void FinishedAll(Building b)
-        {
-            foreach (var s in b.Stages.OrderBy(x => x.OrderIndex))
-            {
-                foreach (var ss in s.SubStages.OrderBy(x => x.OrderIndex))
-                    ss.Status = WorkStatus.Finished;
-                s.Status = WorkStatus.Finished;
-            }
-            b.Status = WorkStatus.Finished;
-        }
-
-        // mark everything Paid
-        static void PaidAll(Building b)
-        {
-            foreach (var s in b.Stages.OrderBy(x => x.OrderIndex))
-            {
-                foreach (var ss in s.SubStages.OrderBy(x => x.OrderIndex))
-                    ss.Status = WorkStatus.Paid;
-                s.Status = WorkStatus.Paid;
-            }
-            b.Status = WorkStatus.Paid;
-        }
-
-        // finish earlier stages, in target stage finish previous sub-stages, start target sub-stage
-        static void OngoingAt(AppDbContext ctx, Building b, int stageOrder, int subOrder)
-        {
-            foreach (var s in b.Stages.Where(s => s.OrderIndex < stageOrder).OrderBy(s => s.OrderIndex))
-            {
-                foreach (var ss in s.SubStages.OrderBy(x => x.OrderIndex))
-                    ss.Status = WorkStatus.Finished;
-                s.Status = WorkStatus.Finished;
-            }
-
-            var targetStage = b.Stages.FirstOrDefault(s => s.OrderIndex == stageOrder);
-            if (targetStage == null) return;
-
-            foreach (var ss in targetStage.SubStages.Where(x => x.OrderIndex < subOrder).OrderBy(x => x.OrderIndex))
-                ss.Status = WorkStatus.Finished;
-
-            var targetSub = targetStage.SubStages.FirstOrDefault(x => x.OrderIndex == subOrder);
-            if (targetSub != null)
-            {
-                targetSub.Status = WorkStatus.Ongoing;
-                targetStage.Status = WorkStatus.Ongoing;
-                b.Status = WorkStatus.Ongoing;
+                db.SaveChanges();
             }
         }
 
-        // progress a bit then stop everything not finished/paid
-        static void ProgressSomeThenStop(AppDbContext ctx, Building b)
+        // Foundation
+        UpsertStagePreset("Foundation", new[]
         {
-            var first = b.Stages.OrderBy(s => s.OrderIndex).FirstOrDefault();
-            if (first != null)
-            {
-                foreach (var ss in first.SubStages.OrderBy(x => x.OrderIndex))
-                    ss.Status = WorkStatus.Finished;
-                first.Status = WorkStatus.Finished;
-            }
+            (1, "Excavation", 800m,  new[] { ("Sand", 5m), ("Gravel", 3m) }),
+            (2, "Rebar",      1200m, new[] { ("Rebar", 500m) }),
+            (3, "Pouring",    1500m, new[] { ("Cement", 60m), ("Sand", 10m), ("Gravel", 10m) })
+        });
 
-            var second = b.Stages.OrderBy(s => s.OrderIndex).Skip(1).FirstOrDefault();
-            if (second != null)
+        // Structure
+        UpsertStagePreset("Structure", new[]
+        {
+            (1, "Columns", 1400m, new[] { ("Rebar", 600m), ("Cement", 40m) }),
+            (2, "Beams",   1200m, new[] { ("Rebar", 400m), ("Cement", 30m) }),
+            (3, "Slab",    1300m, new[] { ("Rebar", 300m), ("Cement", 35m) })
+        });
+
+        // Walls
+        UpsertStagePreset("Walls", new[]
+        {
+            (1, "Blockwork",  900m, new[] { ("Blocks", 1000m), ("Cement", 20m), ("Sand", 8m) }),
+            (2, "Plastering", 700m, new[] { ("Plaster", 30m) })
+        });
+
+        // MEP
+        UpsertStagePreset("MEP", new[]
+        {
+            (1, "Plumbing Rough-in",   800m, new[] { ("Pipes", 120m) }),
+            (2, "Electrical Rough-in", 900m, new[] { ("Wiring", 300m) })
+        });
+
+        // Finishing
+        UpsertStagePreset("Finishing", new[]
+        {
+            (1, "Primer",      500m, new[] { ("Paint", 5m) }),
+            (2, "Final Paint", 700m, new[] { ("Paint", 10m) })
+        });
+    }
+
+    // ---------------- BUILDING TYPES ----------------
+    private static void EnsureBuildingTypes(AppDbContext db)
+    {
+        // Ensure types
+        BuildingType EnsureType(string name)
+        {
+            var t = db.BuildingTypes.FirstOrDefault(x => x.Name == name);
+            if (t != null) return t;
+            t = new BuildingType { Name = name, IsActive = true };
+            db.BuildingTypes.Add(t);
+            db.SaveChanges();
+            return t;
+        }
+
+        var villa = EnsureType("Villa");
+        var duplex = EnsureType("Duplex");
+        var apartment = EnsureType("Apartment");
+
+        // Load presets
+        var presets = db.StagePresets.AsNoTracking().ToList();
+        StagePreset P(string name) => presets.First(x => x.Name == name);
+
+        // Helper: ensure assignment
+        void Assign(BuildingType t, StagePreset p, int order)
+        {
+            var exists = db.BuildingTypeStagePresets
+                .FirstOrDefault(x => x.BuildingTypeId == t.Id && x.StagePresetId == p.Id);
+            if (exists == null)
             {
-                var s1 = second.SubStages.OrderBy(x => x.OrderIndex).FirstOrDefault();
-                if (s1 != null)
+                db.BuildingTypeStagePresets.Add(new BuildingTypeStagePreset
                 {
-                    s1.Status = WorkStatus.Ongoing;
-                    second.Status = WorkStatus.Ongoing;
-                    b.Status = WorkStatus.Ongoing;
+                    BuildingTypeId = t.Id,
+                    StagePresetId = p.Id,
+                    OrderIndex = order
+                });
+                db.SaveChanges();
+            }
+            else
+            {
+                if (exists.OrderIndex != order)
+                {
+                    exists.OrderIndex = order;
+                    db.SaveChanges();
                 }
             }
-
-            // now stop building
-            b.Status = WorkStatus.Stopped;
-            foreach (var s in b.Stages)
-            {
-                if (s.Status != WorkStatus.Finished && s.Status != WorkStatus.Paid)
-                    s.Status = WorkStatus.Stopped;
-
-                foreach (var ss in s.SubStages)
-                    if (ss.Status != WorkStatus.Finished && ss.Status != WorkStatus.Paid)
-                        ss.Status = WorkStatus.Stopped;
-            }
         }
+
+        // Villa: Foundation → Structure → Walls → MEP → Finishing
+        Assign(villa, P("Foundation"), 1);
+        Assign(villa, P("Structure"), 2);
+        Assign(villa, P("Walls"), 3);
+        Assign(villa, P("MEP"), 4);
+        Assign(villa, P("Finishing"), 5);
+
+        // Duplex: Foundation → Structure → Walls → Finishing
+        Assign(duplex, P("Foundation"), 1);
+        Assign(duplex, P("Structure"), 2);
+        Assign(duplex, P("Walls"), 3);
+        Assign(duplex, P("Finishing"), 4);
+
+        // Apartment: Foundation → Structure → MEP
+        Assign(apartment, P("Foundation"), 1);
+        Assign(apartment, P("Structure"), 2);
+        Assign(apartment, P("MEP"), 3);
     }
 }

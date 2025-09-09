@@ -4,6 +4,7 @@ using Kanstraction.Services;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Win32;
 
 namespace Kanstraction.Views;
 
@@ -922,6 +923,140 @@ public partial class OperationsView : UserControl
             await tx.RollbackAsync();
             MessageBox.Show("Failed to add sub-stage:\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
         }
+    }
+
+    private async void ResolvePayment_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null || _currentProject == null)
+        {
+            MessageBox.Show("Select a project first.", "No project", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        // 1) Gather eligible sub-stages: Finished (not Paid/Stopped) for current project
+        var eligible = await _db.SubStages
+            .Where(ss => ss.Stage.Building.ProjectId == _currentProject.Id
+                      && ss.Status == WorkStatus.Finished)
+            .Include(ss => ss.Stage)
+                .ThenInclude(st => st.Building)
+            .OrderBy(ss => ss.Stage.Building.Code)
+            .ThenBy(ss => ss.Stage.OrderIndex)
+            .ThenBy(ss => ss.OrderIndex)
+            .ToListAsync();
+
+        if (eligible.Count == 0)
+        {
+            MessageBox.Show("No finished sub-stages to resolve.", "Nothing to do",
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        // 2) Build report DTO (grouped) for PDF
+        var data = new PaymentReportRenderer.ReportData
+        {
+            ProjectName = _currentProject.Name,
+            GeneratedAt = DateTime.Now
+        };
+
+        var byBuilding = eligible.GroupBy(ss => ss.Stage.Building);
+        foreach (var bgroup in byBuilding)
+        {
+            var b = bgroup.Key; // Building
+            var bDto = new PaymentReportRenderer.BuildingGroup { BuildingCode = b.Code };
+
+            var byStage = bgroup.GroupBy(ss => ss.Stage)
+                                .OrderBy(g => g.Key.OrderIndex);
+
+            foreach (var sgroup in byStage)
+            {
+                var st = sgroup.Key; // Stage
+                var sDto = new PaymentReportRenderer.StageGroup { StageName = st.Name };
+
+                foreach (var ss in sgroup.OrderBy(x => x.OrderIndex))
+                {
+                    sDto.Items.Add(new PaymentReportRenderer.SubStageRow
+                    {
+                        SubStageName = ss.Name,
+                        StageName = st.Name,
+                        LaborCost = ss.LaborCost
+                    });
+                }
+
+                sDto.StageSubtotal = sDto.Items.Sum(i => i.LaborCost);
+                bDto.Stages.Add(sDto);
+            }
+
+            bDto.BuildingSubtotal = bDto.Stages.Sum(s => s.StageSubtotal);
+            data.Buildings.Add(bDto);
+        }
+
+        data.GrandTotal = data.Buildings.Sum(b => b.BuildingSubtotal);
+
+        // 3) Ask where to save
+        var sfd = new SaveFileDialog
+        {
+            Title = "Save payment resolution report",
+            Filter = "PDF files (*.pdf)|*.pdf",
+            FileName = $"Payment_{_currentProject.Name}_{DateTime.Now:yyyyMMdd_HHmm}.pdf"
+        };
+        if (sfd.ShowDialog(Window.GetWindow(this)) != true)
+            return;
+
+        // 4) Render PDF (temp → final inside renderer)
+        try
+        {
+            var renderer = new PaymentReportRenderer();
+            renderer.Render(data, sfd.FileName);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show("Failed to generate PDF:\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }
+
+        // 5) On success, mark as Paid and cascade (transaction)
+        /*using var tx = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            // Mark each eligible sub-stage as Paid
+            foreach (var ss in eligible)
+            {
+                ss.Status = WorkStatus.Paid;
+                // keep EndDate as is (already set when finished)
+            }
+
+            // Cascade: update each involved Stage and Building
+            // We already have Stage and Building loaded for these sub-stages
+            var affectedStages = eligible.Select(e1 => e1.Stage).Distinct().ToList();
+            foreach (var st in affectedStages)
+            {
+                // Make sure st.SubStages is loaded (it is, because eligible share the same context; but ensure anyway)
+                await _db.Entry(st).Collection(x => x.SubStages).LoadAsync();
+                UpdateStageStatusFromSubStages(st); // your existing helper
+            }
+
+            var affectedBuildings = eligible.Select(e1 => e1.Stage.Building).Distinct().ToList();
+            foreach (var b in affectedBuildings)
+            {
+                await _db.Entry(b).Collection(x => x.Stages).LoadAsync();
+                UpdateBuildingStatusFromStages(b);  // your existing helper
+            }
+
+            await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            MessageBox.Show("Failed to mark items as Paid after generating the PDF:\n" + ex.Message,
+                "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            return;
+        }*/
+
+        // 6) Refresh UI
+        await ReloadBuildingsAsync();
+        MessageBox.Show("Payment resolution complete.", "Done",
+            MessageBoxButton.OK, MessageBoxImage.Information);
     }
 
 }
