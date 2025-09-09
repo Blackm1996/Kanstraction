@@ -31,6 +31,7 @@ public partial class StagePresetDesignerView : UserControl
         SubStagesGrid.ItemsSource = _subStages;
         SubStagesGrid.SelectionChanged += (_, __) => UpdateSelectedSubStageFromGrid();
         MaterialsGrid.ItemsSource = new ObservableCollection<MaterialUsageVm>();
+        UpdateSummary();
     }
     private void ShowEmptyState()
     {
@@ -220,7 +221,7 @@ public partial class StagePresetDesignerView : UserControl
         var vm = new SubStageVm
         {
             Id = null,
-            Name = "New sub-stage",
+            Name = (string)FindResource("StagePresetDesignerView_NewSubStage"),
             LaborCost = 0,
             OrderIndex = nextIndex,
             Materials = new ObservableCollection<MaterialUsageVm>()
@@ -408,9 +409,9 @@ public partial class StagePresetDesignerView : UserControl
     // -------------------- Summary --------------------
     private void UpdateSummary()
     {
-        TxtTotalSubs.Text = $"Total sub-stages: {_subStages.Count}";
+        TxtTotalSubs.Text = string.Format((string)FindResource("StagePresetDesignerView_TotalSubStages"), _subStages.Count);
         var totalLabor = _subStages.Sum(s => s.LaborCost);
-        TxtTotalLabor.Text = $"Total default labor: {totalLabor:0.##}";
+        TxtTotalLabor.Text = string.Format((string)FindResource("StagePresetDesignerView_TotalLabor"), totalLabor);
     }
 
     // When editing cells, mark dirty and update summary (for labor changes)

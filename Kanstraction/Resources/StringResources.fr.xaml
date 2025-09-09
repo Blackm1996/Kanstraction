@@ -8,6 +8,7 @@
     <sys:String x:Key="Common_Save">Enregistrer</sys:String>
     <sys:String x:Key="Common_New">Nouveau</sys:String>
     <sys:String x:Key="Common_OK">OK</sys:String>
+    <sys:String x:Key="Common_Required">Requis</sys:String>
 
     <!-- MainWindow -->
     <sys:String x:Key="MainWindow_Projects">Projets</sys:String>
@@ -70,6 +71,7 @@
     <sys:String x:Key="AdminHubView_Save">Enregistrer</sys:String>
     <sys:String x:Key="AdminHubView_Cancel">Annuler</sys:String>
     <sys:String x:Key="AdminHubView_StagePresetsTab">Préréglages d'étape</sys:String>
+    <sys:String x:Key="AdminHubView_SearchPresetsHint">Rechercher des préréglages</sys:String>
     <sys:String x:Key="AdminHubView_BuildingTypes">Types de bâtiment</sys:String>
     <sys:String x:Key="AdminHubView_FilterBuildingTypes">Filtrer les types de bâtiment</sys:String>
     <sys:String x:Key="AdminHubView_NewBuildingType">Nouveau type de bâtiment</sys:String>
@@ -80,6 +82,7 @@
     <sys:String x:Key="AdminHubView_SelectedPresetTitle">Sélectionnez un préréglage pour prévisualiser ses sous-étapes</sys:String>
     <sys:String x:Key="AdminHubView_Tip">Astuce : l'ordre reflète la séquence d'exécution lors de la création d'un bâtiment de ce type.</sys:String>
     <sys:String x:Key="AdminHubView_AssignStagePresets">Attribuer des préréglages d'étape</sys:String>
+    <sys:String x:Key="AdminHubView_ChoosePresetHint">Choisissez un préréglage à ajouter</sys:String>
     <sys:String x:Key="AdminHubView_SaveBuildingType">Enregistrer</sys:String>
     <sys:String x:Key="AdminHubView_CancelBuildingType">Annuler</sys:String>
 
@@ -105,4 +108,19 @@
     <sys:String x:Key="OperationsView_UsageDate">Date d'utilisation</sys:String>
     <sys:String x:Key="OperationsView_UnitPrice">Prix unitaire</sys:String>
     <sys:String x:Key="OperationsView_Total">Total</sys:String>
+
+    <!-- StagePresetDesignerView -->
+    <sys:String x:Key="StagePresetDesignerView_UnsavedChanges">Modifications non enregistrées</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_NoPresetSelected">Aucun préréglage d'étape sélectionné</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_SelectPresetOrCreate">Sélectionnez un préréglage existant à gauche ou créez-en un nouveau.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_CreateNewPreset">Créer un nouveau préréglage</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_PresetName">Nom du préréglage</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_Summary">Résumé</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_TotalSubStages">Total des sous-étapes : {0}</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_TotalLabor">Total de la main-d'œuvre par défaut : {0:0.##}</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_Labor">Main-d'œuvre</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_AddSubStage">Ajouter une sous-étape</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_MaterialsForSelected">Matériaux pour la sous-étape sélectionnée</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_NewSubStage">Nouvelle sous-étape</sys:String>
+
 </ResourceDictionary>

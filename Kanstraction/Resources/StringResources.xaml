@@ -8,6 +8,7 @@
     <sys:String x:Key="Common_Save">Save</sys:String>
     <sys:String x:Key="Common_New">New</sys:String>
     <sys:String x:Key="Common_OK">OK</sys:String>
+    <sys:String x:Key="Common_Required">Required</sys:String>
 
     <!-- MainWindow -->
     <sys:String x:Key="MainWindow_Projects">Projects</sys:String>
@@ -70,6 +71,8 @@
     <sys:String x:Key="AdminHubView_Save">Save</sys:String>
     <sys:String x:Key="AdminHubView_Cancel">Cancel</sys:String>
     <sys:String x:Key="AdminHubView_StagePresetsTab">Stage Presets</sys:String>
+    <sys:String x:Key="AdminHubView_SearchPresetsHint">Search presets</sys:String>
+
     <sys:String x:Key="AdminHubView_BuildingTypes">Building Types</sys:String>
     <sys:String x:Key="AdminHubView_FilterBuildingTypes">Filter building types</sys:String>
     <sys:String x:Key="AdminHubView_NewBuildingType">New Building Type</sys:String>
@@ -80,6 +83,8 @@
     <sys:String x:Key="AdminHubView_SelectedPresetTitle">Select a preset to preview its sub-stages</sys:String>
     <sys:String x:Key="AdminHubView_Tip">Tip: order reflects execution sequence when a building of this type is created.</sys:String>
     <sys:String x:Key="AdminHubView_AssignStagePresets">Assign Stage Presets</sys:String>
+    <sys:String x:Key="AdminHubView_ChoosePresetHint">Choose a preset to add</sys:String>
+
     <sys:String x:Key="AdminHubView_SaveBuildingType">Save</sys:String>
     <sys:String x:Key="AdminHubView_CancelBuildingType">Cancel</sys:String>
 
@@ -105,4 +110,19 @@
     <sys:String x:Key="OperationsView_UsageDate">Usage Date</sys:String>
     <sys:String x:Key="OperationsView_UnitPrice">Unit Price</sys:String>
     <sys:String x:Key="OperationsView_Total">Total</sys:String>
+
+    <!-- StagePresetDesignerView -->
+    <sys:String x:Key="StagePresetDesignerView_UnsavedChanges">Unsaved changes</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_NoPresetSelected">No stage preset selected</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_SelectPresetOrCreate">Select an existing preset on the left or create a new one.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_CreateNewPreset">Create New Preset</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_PresetName">Preset Name</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_Summary">Summary</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_TotalSubStages">Total sub-stages: {0}</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_TotalLabor">Total default labor: {0:0.##}</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_Labor">Labor</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_AddSubStage">Add Sub-stage</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_MaterialsForSelected">Materials for selected sub-stage</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_NewSubStage">New sub-stage</sys:String>
+
 </ResourceDictionary>

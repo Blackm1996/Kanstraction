@@ -128,12 +128,12 @@
                         <!-- Search + filter -->
                         <StackPanel Grid.Row="0" Margin="10,10,10,4">
                             <TextBox x:Name="PresetSearchBox"
-                 materialDesign:HintAssist.Hint="Search presets"
+                 materialDesign:HintAssist.Hint="{DynamicResource AdminHubView_SearchPresetsHint}"
                  Padding="8"
                  TextChanged="PresetSearchBox_TextChanged"
                  Style="{StaticResource MaterialDesignOutlinedTextBox}" />
                             <CheckBox x:Name="PresetActiveOnly"
-                  Content="Active only" Margin="0,8,0,0"
+                  Content="{DynamicResource AdminHubView_ActiveOnly}" Margin="0,8,0,0"
                   IsChecked="True"
                   Checked="PresetFilterChanged" Unchecked="PresetFilterChanged"/>
                         </StackPanel>
@@ -145,7 +145,7 @@
 
                         <!-- Actions -->
                         <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10,4,10,10" HorizontalAlignment="Right">
-                            <Button Content="New" Click="NewPreset_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                            <Button Content="{DynamicResource AdminHubView_New}" Click="NewPreset_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
                         </StackPanel>
                     </Grid>
 
@@ -257,9 +257,9 @@
                   Width="320"
                   Style="{StaticResource MaterialDesignOutlinedComboBox}"
                   DisplayMemberPath="Name" SelectedValuePath="Id"
-                  materialDesign:HintAssist.Hint="Choose a preset to add"
+                  materialDesign:HintAssist.Hint="{DynamicResource AdminHubView_ChoosePresetHint}"
                   Margin="0,0,8,0"/>
-                                            <Button Content="Add" Click="AddPresetToBuildingType_Click"/>
+                                            <Button Content="{DynamicResource Common_Add}" Click="AddPresetToBuildingType_Click"/>
                                         </StackPanel>
                                     </StackPanel>
 
@@ -282,9 +282,9 @@
             Style="{StaticResource MaterialDesignDataGrid}">
                                             <DataGrid.Columns>
                                                 <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="50" IsReadOnly="True"/>
-                                                <DataGridTextColumn Header="Preset" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
-                                                <DataGridTextColumn Header="Sub-stages" Binding="{Binding SubStageCount}" Width="110" IsReadOnly="True"/>
-                                                <DataGridTemplateColumn Header="Order" Width="120">
+                                                <DataGridTextColumn Header="{DynamicResource AdminHubView_AssignedPresets}" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
+                                                <DataGridTextColumn Header="{DynamicResource AdminHubView_SubStages}" Binding="{Binding SubStageCount}" Width="110" IsReadOnly="True"/>
+                                                <DataGridTemplateColumn Header="{DynamicResource AdminHubView_Order}" Width="120">
                                                     <DataGridTemplateColumn.CellTemplate>
                                                         <DataTemplate>
                                                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
@@ -362,9 +362,9 @@
 
                             <!-- 3) ACTIONS -->
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="Save" Click="SaveBuildingType_Click"
+                                <Button Content="{DynamicResource AdminHubView_SaveBuildingType}" Click="SaveBuildingType_Click"
                   Style="{StaticResource MaterialDesignOutlinedButton}" Margin="0,0,8,0"/>
-                                <Button Content="Cancel" Click="CancelBuildingType_Click"/>
+                                <Button Content="{DynamicResource AdminHubView_CancelBuildingType}" Click="CancelBuildingType_Click"/>
                             </StackPanel>
                         </StackPanel>
                     </ScrollViewer>
