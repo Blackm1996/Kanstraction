@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Linq;
 using System.Collections.Generic;
 using Kanstraction.Entities;
@@ -35,15 +35,15 @@ public static class DbSeeder
     {
         var want = new[]
         {
-            new Material { Name = "Cement",  Unit = "bag", PricePerUnit = 6.50m,  EffectiveSince = DateTime.Today.AddMonths(-4), IsActive = true },
-            new Material { Name = "Sand",    Unit = "m³",  PricePerUnit = 12.00m, EffectiveSince = DateTime.Today.AddMonths(-3), IsActive = true },
-            new Material { Name = "Gravel",  Unit = "m³",  PricePerUnit = 15.00m, EffectiveSince = DateTime.Today.AddMonths(-3), IsActive = true },
-            new Material { Name = "Rebar",   Unit = "kg",  PricePerUnit = 1.20m,  EffectiveSince = DateTime.Today.AddMonths(-5), IsActive = true },
-            new Material { Name = "Blocks",  Unit = "pcs", PricePerUnit = 0.90m,  EffectiveSince = DateTime.Today.AddMonths(-2), IsActive = true },
-            new Material { Name = "Paint",   Unit = "gal", PricePerUnit = 18.00m, EffectiveSince = DateTime.Today.AddMonths(-1), IsActive = true },
-            new Material { Name = "Wiring",  Unit = "m",   PricePerUnit = 0.35m,  EffectiveSince = DateTime.Today.AddMonths(-6), IsActive = true },
-            new Material { Name = "Pipes",   Unit = "m",   PricePerUnit = 0.80m,  EffectiveSince = DateTime.Today.AddMonths(-6), IsActive = true },
-            new Material { Name = "Plaster", Unit = "bag", PricePerUnit = 7.20m,  EffectiveSince = DateTime.Today.AddMonths(-2), IsActive = true },
+            new Material { Name = "Ciment",  Unit = "sac", PricePerUnit = 6.50m,  EffectiveSince = DateTime.Today.AddMonths(-4), IsActive = true },
+            new Material { Name = "Sable",    Unit = "m³",  PricePerUnit = 12.00m, EffectiveSince = DateTime.Today.AddMonths(-3), IsActive = true },
+            new Material { Name = "Gravier",  Unit = "m³",  PricePerUnit = 15.00m, EffectiveSince = DateTime.Today.AddMonths(-3), IsActive = true },
+            new Material { Name = "Armature",   Unit = "kg",  PricePerUnit = 1.20m,  EffectiveSince = DateTime.Today.AddMonths(-5), IsActive = true },
+            new Material { Name = "Blocs",  Unit = "pcs", PricePerUnit = 0.90m,  EffectiveSince = DateTime.Today.AddMonths(-2), IsActive = true },
+            new Material { Name = "Peinture",   Unit = "gal", PricePerUnit = 18.00m, EffectiveSince = DateTime.Today.AddMonths(-1), IsActive = true },
+            new Material { Name = "Câblage",  Unit = "m",   PricePerUnit = 0.35m,  EffectiveSince = DateTime.Today.AddMonths(-6), IsActive = true },
+            new Material { Name = "Tuyaux",   Unit = "m",   PricePerUnit = 0.80m,  EffectiveSince = DateTime.Today.AddMonths(-6), IsActive = true },
+            new Material { Name = "Plâtre", Unit = "sac", PricePerUnit = 7.20m,  EffectiveSince = DateTime.Today.AddMonths(-2), IsActive = true },
         };
 
         foreach (var m in want)
@@ -134,41 +134,41 @@ public static class DbSeeder
             }
         }
 
-        // Foundation
-        UpsertStagePreset("Foundation", new[]
+        // Fondation
+        UpsertStagePreset("Fondation", new[]
         {
-            (1, "Excavation", 800m,  new[] { ("Sand", 5m), ("Gravel", 3m) }),
-            (2, "Rebar",      1200m, new[] { ("Rebar", 500m) }),
-            (3, "Pouring",    1500m, new[] { ("Cement", 60m), ("Sand", 10m), ("Gravel", 10m) })
+            (1, "Excavation", 800m,  new[] { ("Sable", 5m), ("Gravier", 3m) }),
+            (2, "Armature",      1200m, new[] { ("Armature", 500m) }),
+            (3, "Coulage",    1500m, new[] { ("Ciment", 60m), ("Sable", 10m), ("Gravier", 10m) })
         });
 
         // Structure
         UpsertStagePreset("Structure", new[]
         {
-            (1, "Columns", 1400m, new[] { ("Rebar", 600m), ("Cement", 40m) }),
-            (2, "Beams",   1200m, new[] { ("Rebar", 400m), ("Cement", 30m) }),
-            (3, "Slab",    1300m, new[] { ("Rebar", 300m), ("Cement", 35m) })
+            (1, "Colonnes", 1400m, new[] { ("Armature", 600m), ("Ciment", 40m) }),
+            (2, "Poutres",   1200m, new[] { ("Armature", 400m), ("Ciment", 30m) }),
+            (3, "Dalle",    1300m, new[] { ("Armature", 300m), ("Ciment", 35m) })
         });
 
-        // Walls
-        UpsertStagePreset("Walls", new[]
+        // Murs
+        UpsertStagePreset("Murs", new[]
         {
-            (1, "Blockwork",  900m, new[] { ("Blocks", 1000m), ("Cement", 20m), ("Sand", 8m) }),
-            (2, "Plastering", 700m, new[] { ("Plaster", 30m) })
+            (1, "Maçonnerie de blocs",  900m, new[] { ("Blocs", 1000m), ("Ciment", 20m), ("Sable", 8m) }),
+            (2, "Plâtrage", 700m, new[] { ("Plâtre", 30m) })
         });
 
         // MEP
         UpsertStagePreset("MEP", new[]
         {
-            (1, "Plumbing Rough-in",   800m, new[] { ("Pipes", 120m) }),
-            (2, "Electrical Rough-in", 900m, new[] { ("Wiring", 300m) })
+            (1, "Préinstallation plomberie",   800m, new[] { ("Tuyaux", 120m) }),
+            (2, "Préinstallation électrique", 900m, new[] { ("Câblage", 300m) })
         });
 
-        // Finishing
-        UpsertStagePreset("Finishing", new[]
+        // Finitions
+        UpsertStagePreset("Finitions", new[]
         {
-            (1, "Primer",      500m, new[] { ("Paint", 5m) }),
-            (2, "Final Paint", 700m, new[] { ("Paint", 10m) })
+            (1, "Apprêt",      500m, new[] { ("Peinture", 5m) }),
+            (2, "Peinture finale", 700m, new[] { ("Peinture", 10m) })
         });
     }
 
@@ -188,7 +188,7 @@ public static class DbSeeder
 
         var villa = EnsureType("Villa");
         var duplex = EnsureType("Duplex");
-        var apartment = EnsureType("Apartment");
+        var apartment = EnsureType("Appartement");
 
         // Load presets
         var presets = db.StagePresets.AsNoTracking().ToList();
@@ -219,21 +219,21 @@ public static class DbSeeder
             }
         }
 
-        // Villa: Foundation → Structure → Walls → MEP → Finishing
-        Assign(villa, P("Foundation"), 1);
+        // Villa: Fondation → Structure → Murs → MEP → Finitions
+        Assign(villa, P("Fondation"), 1);
         Assign(villa, P("Structure"), 2);
-        Assign(villa, P("Walls"), 3);
+        Assign(villa, P("Murs"), 3);
         Assign(villa, P("MEP"), 4);
-        Assign(villa, P("Finishing"), 5);
+        Assign(villa, P("Finitions"), 5);
 
-        // Duplex: Foundation → Structure → Walls → Finishing
-        Assign(duplex, P("Foundation"), 1);
+        // Duplex: Fondation → Structure → Murs → Finitions
+        Assign(duplex, P("Fondation"), 1);
         Assign(duplex, P("Structure"), 2);
-        Assign(duplex, P("Walls"), 3);
-        Assign(duplex, P("Finishing"), 4);
+        Assign(duplex, P("Murs"), 3);
+        Assign(duplex, P("Finitions"), 4);
 
-        // Apartment: Foundation → Structure → MEP
-        Assign(apartment, P("Foundation"), 1);
+        // Appartement: Fondation → Structure → MEP
+        Assign(apartment, P("Fondation"), 1);
         Assign(apartment, P("Structure"), 2);
         Assign(apartment, P("MEP"), 3);
     }

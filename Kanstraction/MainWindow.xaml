@@ -53,14 +53,14 @@
             <Border Grid.Column="0" Background="#F4F4F6" BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,1,0">
                 <StackPanel VerticalAlignment="Stretch" HorizontalAlignment="Center" Margin="0,8">
                     <!-- Projects -->
-                    <Button Margin="0,6" Padding="1" ToolTip="Projects" Height="30"
+                    <Button Margin="0,6" Padding="1" ToolTip="{DynamicResource MainWindow_Projects}" Height="30"
                   Click="ProjectsRail_Click"
                   Style="{StaticResource MaterialDesignOutlinedButton}">
                         <TextBlock Text="📁" FontSize="18" HorizontalAlignment="Center"/>
                     </Button>
 
                     <!-- Admin -->
-                    <Button Margin="0,6" Padding="1" ToolTip="Admin" Height="30"
+                    <Button Margin="0,6" Padding="1" ToolTip="{DynamicResource MainWindow_Admin}" Height="30"
                   Click="AdminRail_Click"
                   Style="{StaticResource MaterialDesignOutlinedButton}">
                         <TextBlock Text="⚙️" FontSize="18" HorizontalAlignment="Center"/>
@@ -90,7 +90,7 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Title -->
-                        <TextBlock Text="Projects" FontWeight="SemiBold"
+                        <TextBlock Text="{DynamicResource MainWindow_Projects}" FontWeight="SemiBold"
                             VerticalAlignment="Center"/>
 
                         <!-- Add Building button (small, icon-only) -->
@@ -98,7 +98,7 @@
                             Click="NewProject_Click"
                                             Background="#3f51b5"
                             Style="{StaticResource TinyIconButton}"
-                            ToolTip="Add Project">
+                            ToolTip="{DynamicResource MainWindow_AddProject}">
                             <iconPacks:PackIconFontAwesome Foreground="White" Kind="PlusSolid" Width="12" Height="12"/>
                         </Button>
                     </Grid>
@@ -107,7 +107,7 @@
                 <!-- Search -->
                 <DockPanel Grid.Row="1" Margin="10,8,10,0">
                     <TextBox x:Name="ProjectSearchBox"
-                   materialDesign:HintAssist.Hint="Search projects"
+                   materialDesign:HintAssist.Hint="{DynamicResource MainWindow_SearchProjectsHint}"
                    TextChanged="ProjectSearchBox_TextChanged"
                    Padding="8"
                    Style="{StaticResource MaterialDesignOutlinedTextBox}" />

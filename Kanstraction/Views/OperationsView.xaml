@@ -55,13 +55,13 @@
             Click="ResolvePayment_Click"
             Margin="8,0,0,0"
             Padding="10,6"
-            ToolTip="Generate a payment resolution PDF for this project and mark finished items as Paid"
+            ToolTip="{DynamicResource OperationsView_ResolvePaymentTooltip}"
             Background="#3f51b5"
             Foreground="White"
             Style="{StaticResource MaterialDesignRaisedButton}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconFontAwesome Kind="FileInvoiceDollarSolid" Width="14" Height="14" Margin="0,0,6,0"/>
-                        <TextBlock Text="Resolve Payment"/>
+                        <TextBlock Text="{DynamicResource OperationsView_ResolvePayment}"/>
                     </StackPanel>
                 </Button>
             </Grid>
@@ -84,7 +84,7 @@
                     </Grid.ColumnDefinitions>
 
                     <!-- Title -->
-                    <TextBlock Text="Buildings" FontWeight="SemiBold"
+                    <TextBlock Text="{DynamicResource OperationsView_Buildings}" FontWeight="SemiBold"
                VerticalAlignment="Center"/>
 
                     <!-- Add Building button (small, icon-only) -->
@@ -92,7 +92,7 @@
             Click="AddBuilding_Click"
                             Background="#3f51b5"
             Style="{StaticResource TinyIconButton}"
-            ToolTip="Add building">
+            ToolTip="{DynamicResource OperationsView_AddBuildingTooltip}">
                         <iconPacks:PackIconFontAwesome Foreground="White" Kind="PlusSolid" Width="12" Height="12"/>
                     </Button>
                 </Grid>
@@ -107,7 +107,7 @@
                 SelectionChanged="BuildingsGrid_SelectionChanged"
                 Style="{StaticResource MaterialDesignDataGrid}">
                 <DataGrid.Columns>
-                    <DataGridTemplateColumn Header="Status">
+                    <DataGridTemplateColumn Header="{DynamicResource OperationsView_Status}">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <Border CornerRadius="10" Padding="6,2"
@@ -118,9 +118,9 @@
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
 
-                    <DataGridTextColumn Header="Code" Binding="{Binding Code}"/>
-                    <DataGridTextColumn Header="Type" Binding="{Binding TypeName}"/>
-                    <DataGridTextColumn Header="%" Binding="{Binding ProgressPercent}"/>
+                    <DataGridTextColumn Header="{DynamicResource OperationsView_Code}" Binding="{Binding Code}"/>
+                    <DataGridTextColumn Header="{DynamicResource OperationsView_Type}" Binding="{Binding TypeName}"/>
+                    <DataGridTextColumn Header="{DynamicResource OperationsView_Percent}" Binding="{Binding ProgressPercent}"/>
                     <DataGridTextColumn Header="Current Stage" Binding="{Binding CurrentStageName}"/>
                     <DataGridTemplateColumn Header="" Width="60">
                         <DataGridTemplateColumn.CellTemplate>
@@ -173,7 +173,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="Stages" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            <TextBlock Text="{DynamicResource OperationsView_Stages}" FontWeight="SemiBold" VerticalAlignment="Center"/>
 
                     <Button Grid.Column="1"
             Click="AddStageToBuilding_Click"
@@ -235,7 +235,7 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="Sub-stages" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            <TextBlock Text="{DynamicResource OperationsView_SubStages}" FontWeight="SemiBold" VerticalAlignment="Center"/>
 
                     <Button Grid.Column="1"
             Click="AddSubStage_Click"
@@ -283,7 +283,7 @@
                                     <Button x:Name="BtnStart"
                 Click="StartSubStage_Click"
                 Style="{StaticResource TinyIconButton}"
-                ToolTip="Start sub-stage"
+                ToolTip="{DynamicResource OperationsView_StartSubStageTooltip}"
                 Background="#43a047" Margin="2"
                 Visibility="Collapsed">
                                         <iconPacks:PackIconFontAwesome Kind="PlaySolid" Width="12" Height="12" Foreground="White"/>
@@ -293,7 +293,7 @@
                                     <Button x:Name="BtnFinish"
                 Click="FinishSubStage_Click"
                 Style="{StaticResource TinyIconButton}"
-                ToolTip="Finish sub-stage"
+                ToolTip="{DynamicResource OperationsView_FinishSubStageTooltip}"
                 Background="#fb8c00" Margin="2"
                 Visibility="Collapsed">
                                         <iconPacks:PackIconFontAwesome Kind="CheckSolid" Width="12" Height="12" Foreground="White"/>
@@ -303,7 +303,7 @@
                                     <Button x:Name="BtnReset"
                 Click="ResetSubStage_Click"
                 Style="{StaticResource TinyIconButton}"
-                ToolTip="Mark as Not Started"
+                ToolTip="{DynamicResource OperationsView_ResetSubStageTooltip}"
                 Background="#546e7a" Margin="2"
                 Visibility="Collapsed">
                                         <iconPacks:PackIconFontAwesome Kind="RotateLeftSolid" Width="12" Height="12" Foreground="White"/>
@@ -360,11 +360,11 @@
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Text="Materials" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                    <TextBlock Text="{DynamicResource OperationsView_Materials}" FontWeight="SemiBold" VerticalAlignment="Center"/>
 
                     <Button Grid.Column="1"
         Style="{StaticResource TinyIconButton}"
-        ToolTip="Add material to this sub-stage"
+        ToolTip="{DynamicResource OperationsView_AddMaterialTooltip}"
         Background="#3f51b5"
         Click="AddMaterialToSubStage_Click"
         Visibility="{Binding SelectedItem, ElementName=SubStagesGrid,
@@ -384,13 +384,13 @@
                 Style="{StaticResource MaterialDesignDataGrid}"
                 CellEditEnding="MaterialsGrid_CellEditEnding">
                 <DataGrid.Columns>
-                    <DataGridTextColumn IsReadOnly="True" Header="Material" Binding="{Binding Material.Name}"/>
-                    <DataGridTextColumn Header="Qty" Width="100" IsReadOnly="False"
+                    <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_MaterialHeader}" Binding="{Binding Material.Name}"/>
+                    <DataGridTextColumn Header="{DynamicResource OperationsView_Qty}" Width="100" IsReadOnly="False"
                         Binding="{Binding Qty, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"/>
-                    <DataGridTextColumn IsReadOnly="True" Header="Unit" Binding="{Binding Material.Unit}"/>
-                    <DataGridTextColumn IsReadOnly="True" Header="Usage Date" Binding="{Binding UsageDate}"/>
-                    <DataGridTextColumn IsReadOnly="True" Header="Unit Price" Binding="{Binding Material.PricePerUnit}"/>
-                    <DataGridTemplateColumn Header="Total" Width="120" IsReadOnly="True">
+                    <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_Unit}" Binding="{Binding Material.Unit}"/>
+                    <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_UsageDate}" Binding="{Binding UsageDate}"/>
+                    <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_UnitPrice}" Binding="{Binding Material.PricePerUnit}"/>
+                    <DataGridTemplateColumn Header="{DynamicResource OperationsView_Total}" Width="120" IsReadOnly="True">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <TextBlock HorizontalAlignment="Right">

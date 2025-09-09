@@ -35,7 +35,7 @@ public partial class PromptTextDialog : Window
         var v = InputBox.Text?.Trim();
         if (string.IsNullOrWhiteSpace(v))
         {
-            MessageBox.Show("Please enter a value.", "Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Veuillez entrer une valeur.", "Obligatoire", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         Value = v;

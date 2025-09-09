@@ -1,0 +1,108 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+    <!-- Common -->
+    <sys:String x:Key="Common_Create">Créer</sys:String>
+    <sys:String x:Key="Common_Cancel">Annuler</sys:String>
+    <sys:String x:Key="Common_Add">Ajouter</sys:String>
+    <sys:String x:Key="Common_Save">Enregistrer</sys:String>
+    <sys:String x:Key="Common_New">Nouveau</sys:String>
+    <sys:String x:Key="Common_OK">OK</sys:String>
+
+    <!-- MainWindow -->
+    <sys:String x:Key="MainWindow_Projects">Projets</sys:String>
+    <sys:String x:Key="MainWindow_Admin">Admin</sys:String>
+    <sys:String x:Key="MainWindow_SearchProjectsHint">Rechercher des projets</sys:String>
+    <sys:String x:Key="MainWindow_AddProject">Ajouter un projet</sys:String>
+
+    <!-- AddBuildingDialog -->
+    <sys:String x:Key="AddBuildingDialog_Title">Ajouter un bâtiment</sys:String>
+    <sys:String x:Key="AddBuildingDialog_NewBuilding">Nouveau bâtiment</sys:String>
+    <sys:String x:Key="AddBuildingDialog_Code">Code</sys:String>
+    <sys:String x:Key="AddBuildingDialog_CodeHint">Unique par projet</sys:String>
+    <sys:String x:Key="AddBuildingDialog_BuildingType">Type de bâtiment</sys:String>
+    <sys:String x:Key="AddBuildingDialog_StageInfo">Les étapes seront créées à partir des préréglages de type.</sys:String>
+
+    <!-- AddStageToBuildingDialog -->
+    <sys:String x:Key="AddStageToBuildingDialog_Title">Ajouter une étape</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_Header">Ajouter une étape depuis un préréglage</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_Preset">Préréglage d'étape</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_Order">Ordre</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_OrderHint">1..N</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_AddAtEnd">Ajouter à la fin</sys:String>
+
+    <!-- AddSubStageDialog -->
+    <sys:String x:Key="AddSubStageDialog_Title">Ajouter une sous-étape</sys:String>
+    <sys:String x:Key="AddSubStageDialog_Header">Nouvelle sous-étape</sys:String>
+    <sys:String x:Key="AddSubStageDialog_Name">Nom</sys:String>
+    <sys:String x:Key="AddSubStageDialog_NameHint">Nom de la sous-étape</sys:String>
+    <sys:String x:Key="AddSubStageDialog_LaborCost">Coût de main-d'œuvre</sys:String>
+    <sys:String x:Key="AddSubStageDialog_LaborCostHint">0,00</sys:String>
+    <sys:String x:Key="AddSubStageDialog_Order">Ordre</sys:String>
+    <sys:String x:Key="AddSubStageDialog_OrderHint">1..N</sys:String>
+    <sys:String x:Key="AddSubStageDialog_AddAtEnd">Ajouter à la fin</sys:String>
+
+    <!-- AddMaterialToSubStageDialog -->
+    <sys:String x:Key="AddMaterialToSubStageDialog_Title">Ajouter un matériau</sys:String>
+    <sys:String x:Key="AddMaterialToSubStageDialog_Header">Ajouter un matériau à la sous-étape</sys:String>
+    <sys:String x:Key="AddMaterialToSubStageDialog_Material">Matériau</sys:String>
+    <sys:String x:Key="AddMaterialToSubStageDialog_Quantity">Quantité</sys:String>
+    <sys:String x:Key="AddMaterialToSubStageDialog_QuantityHint">Qté (>= 0)</sys:String>
+
+    <!-- PromptTextDialog -->
+    <sys:String x:Key="PromptTextDialog_Title">Entrer une valeur</sys:String>
+    <sys:String x:Key="PromptTextDialog_InputHint">Nom du projet (obligatoire)</sys:String>
+
+    <!-- AdminHubView -->
+    <sys:String x:Key="AdminHubView_Title">Administration</sys:String>
+    <sys:String x:Key="AdminHubView_MaterialsTab">Matériaux</sys:String>
+    <sys:String x:Key="AdminHubView_SearchMaterialsHint">Rechercher des matériaux</sys:String>
+    <sys:String x:Key="AdminHubView_ActiveOnly">Actifs uniquement</sys:String>
+    <sys:String x:Key="AdminHubView_New">Nouveau</sys:String>
+    <sys:String x:Key="AdminHubView_MaterialHeader">Matériau</sys:String>
+    <sys:String x:Key="AdminHubView_Name">Nom</sys:String>
+    <sys:String x:Key="AdminHubView_Unit">Unité</sys:String>
+    <sys:String x:Key="AdminHubView_PricePerUnit">Prix / Unité</sys:String>
+    <sys:String x:Key="AdminHubView_Active">Actif</sys:String>
+    <sys:String x:Key="AdminHubView_PriceHistory">Historique des prix</sys:String>
+    <sys:String x:Key="AdminHubView_Start">Début</sys:String>
+    <sys:String x:Key="AdminHubView_End">Fin</sys:String>
+    <sys:String x:Key="AdminHubView_Save">Enregistrer</sys:String>
+    <sys:String x:Key="AdminHubView_Cancel">Annuler</sys:String>
+    <sys:String x:Key="AdminHubView_StagePresetsTab">Préréglages d'étape</sys:String>
+    <sys:String x:Key="AdminHubView_BuildingTypes">Types de bâtiment</sys:String>
+    <sys:String x:Key="AdminHubView_FilterBuildingTypes">Filtrer les types de bâtiment</sys:String>
+    <sys:String x:Key="AdminHubView_NewBuildingType">Nouveau type de bâtiment</sys:String>
+    <sys:String x:Key="AdminHubView_AssignedPresets">Préréglage</sys:String>
+    <sys:String x:Key="AdminHubView_SubStages">Sous-étapes</sys:String>
+    <sys:String x:Key="AdminHubView_Order">Ordre</sys:String>
+    <sys:String x:Key="AdminHubView_Remove">Supprimer</sys:String>
+    <sys:String x:Key="AdminHubView_SelectedPresetTitle">Sélectionnez un préréglage pour prévisualiser ses sous-étapes</sys:String>
+    <sys:String x:Key="AdminHubView_Tip">Astuce : l'ordre reflète la séquence d'exécution lors de la création d'un bâtiment de ce type.</sys:String>
+    <sys:String x:Key="AdminHubView_AssignStagePresets">Attribuer des préréglages d'étape</sys:String>
+    <sys:String x:Key="AdminHubView_SaveBuildingType">Enregistrer</sys:String>
+    <sys:String x:Key="AdminHubView_CancelBuildingType">Annuler</sys:String>
+
+    <!-- OperationsView -->
+    <sys:String x:Key="OperationsView_ResolvePayment">Résoudre le paiement</sys:String>
+    <sys:String x:Key="OperationsView_ResolvePaymentTooltip">Générer un PDF de résolution de paiement pour ce projet et marquer les éléments terminés comme payés</sys:String>
+    <sys:String x:Key="OperationsView_Buildings">Bâtiments</sys:String>
+    <sys:String x:Key="OperationsView_AddBuildingTooltip">Ajouter un bâtiment</sys:String>
+    <sys:String x:Key="OperationsView_Materials">Matériaux</sys:String>
+    <sys:String x:Key="OperationsView_AddMaterialTooltip">Ajouter un matériau à cette sous-étape</sys:String>
+    <sys:String x:Key="OperationsView_Status">Statut</sys:String>
+    <sys:String x:Key="OperationsView_Code">Code</sys:String>
+    <sys:String x:Key="OperationsView_Type">Type</sys:String>
+    <sys:String x:Key="OperationsView_Percent">%</sys:String>
+    <sys:String x:Key="OperationsView_StartSubStageTooltip">Commencer la sous-étape</sys:String>
+    <sys:String x:Key="OperationsView_FinishSubStageTooltip">Terminer la sous-étape</sys:String>
+    <sys:String x:Key="OperationsView_ResetSubStageTooltip">Marquer comme non commencé</sys:String>
+    <sys:String x:Key="OperationsView_Stages">Étapes</sys:String>
+    <sys:String x:Key="OperationsView_SubStages">Sous-étapes</sys:String>
+    <sys:String x:Key="OperationsView_MaterialHeader">Matériau</sys:String>
+    <sys:String x:Key="OperationsView_Qty">Qté</sys:String>
+    <sys:String x:Key="OperationsView_Unit">Unité</sys:String>
+    <sys:String x:Key="OperationsView_UsageDate">Date d'utilisation</sys:String>
+    <sys:String x:Key="OperationsView_UnitPrice">Prix unitaire</sys:String>
+    <sys:String x:Key="OperationsView_Total">Total</sys:String>
+</ResourceDictionary>

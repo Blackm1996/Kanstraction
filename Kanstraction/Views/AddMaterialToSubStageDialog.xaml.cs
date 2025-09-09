@@ -59,12 +59,12 @@ public partial class AddMaterialToSubStageDialog : Window
     {
         if (CboMaterial.SelectedValue is not int matId)
         {
-            MessageBox.Show("Select a material.", "Required", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Sélectionnez un matériau.", "Obligatoire", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
         if (!decimal.TryParse(TxtQty.Text?.Trim(), out var qty) || qty < 0)
         {
-            MessageBox.Show("Enter a valid quantity (>= 0).", "Invalid", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show("Entrez une quantité valide (>= 0).", "Invalide", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
