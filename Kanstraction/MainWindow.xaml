@@ -5,6 +5,7 @@
         Title="Kanstraction"
         Height="800" Width="1280"
         WindowStartupLocation="CenterScreen"
+        xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
         WindowState="Maximized"
         Background="{DynamicResource MaterialDesignPaper}"
         TextElement.Foreground="{DynamicResource MaterialDesignBody}"
@@ -19,14 +20,11 @@
         </Grid.RowDefinitions>
 
         <!-- TOP BAR: simple actions -->
-        <Border Grid.Row="0" Padding="10"
+        <!--<Border Grid.Row="0" Padding="10"
             Background="{DynamicResource MaterialDesignPaper}"
             BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1">
             <DockPanel>
-                <!-- left side (empty for now; you can add a tiny logo later) -->
                 <StackPanel Orientation="Horizontal" />
-
-                <!-- actions on the right -->
                 <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
                     <Button Content="New Project" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"
                   Click="NewProject_Click"/>
@@ -36,7 +34,7 @@
                   Click="Export_Click"/>
                 </StackPanel>
             </DockPanel>
-        </Border>
+        </Border> -->
 
         <!-- BODY: Left Rail | Explorer (collapsible) | Splitter | Host -->
         <Grid Grid.Row="1" Background="{DynamicResource MaterialDesignPaper}">
@@ -82,11 +80,28 @@
                 </Grid.RowDefinitions>
 
                 <!-- Title -->
-                <Border Grid.Row="0" Padding="10" Background="{DynamicResource MaterialDesignCardBackground}"
-                BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1">
-                    <DockPanel>
-                        <TextBlock Text="Projects" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    </DockPanel>
+                <Border Grid.Row="0" Padding="6"
+                  Background="{DynamicResource MaterialDesignCardBackground}"
+                  BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Title -->
+                        <TextBlock Text="Projects" FontWeight="SemiBold"
+                            VerticalAlignment="Center"/>
+
+                        <!-- Add Building button (small, icon-only) -->
+                        <Button Grid.Column="1"
+                            Click="NewProject_Click"
+                                            Background="#3f51b5"
+                            Style="{StaticResource TinyIconButton}"
+                            ToolTip="Add Project">
+                            <iconPacks:PackIconFontAwesome Foreground="White" Kind="PlusSolid" Width="12" Height="12"/>
+                        </Button>
+                    </Grid>
                 </Border>
 
                 <!-- Search -->
