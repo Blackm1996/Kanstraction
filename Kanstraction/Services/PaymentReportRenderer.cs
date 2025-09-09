@@ -108,7 +108,6 @@ namespace Kanstraction.Services
                     foreach (var item in st.Items)
                     {
                         var rr = table.AddRow();
-
                         if (alt)
                         {
                             rr.Cells[0].Shading.Color = Colors.LightGray;
