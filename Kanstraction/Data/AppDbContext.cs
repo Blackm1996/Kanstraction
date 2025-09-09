@@ -24,7 +24,7 @@ public class AppDbContext : DbContext
     public AppDbContext()
     {
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-        var dir = Path.Combine(appData, "ConstructionSuite");
+        var dir = Path.Combine(appData, "Kanstraction");
         if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
         DbPath = Path.Combine(dir, "app.db");
     }
