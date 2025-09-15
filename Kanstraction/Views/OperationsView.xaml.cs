@@ -36,7 +36,7 @@ public partial class OperationsView : UserControl
         if (_db == null) return;
 
         _currentProject = p;
-        Breadcrumb = $"Project: {p.Name}";
+        Breadcrumb = $"{p.Name}";
 
         // Clear right-side panels & selection state before loading
         StagesGrid.ItemsSource = null;
@@ -157,9 +157,9 @@ public partial class OperationsView : UserControl
     private string UpdateBreadcrumbWithBuilding(string code)
     {
         var baseText = Breadcrumb;
-        var idx = baseText.IndexOf(" > Building", StringComparison.OrdinalIgnoreCase);
+        var idx = baseText.IndexOf(" > ", StringComparison.OrdinalIgnoreCase);
         if (idx >= 0) baseText = baseText.Substring(0, idx);
-        return $"{baseText} > Building {code}";
+        return $"{baseText} > {code}";
     }
 
     private async void AddBuilding_Click(object sender, RoutedEventArgs e)
@@ -1015,7 +1015,7 @@ public partial class OperationsView : UserControl
         }
 
         // 5) On success, mark as Paid and cascade (transaction)
-        /*using var tx = await _db.Database.BeginTransactionAsync();
+        using var tx = await _db.Database.BeginTransactionAsync();
         try
         {
             // Mark each eligible sub-stage as Paid
@@ -1051,7 +1051,7 @@ public partial class OperationsView : UserControl
             MessageBox.Show("Échec du marquage des éléments comme payés après la génération du PDF :\n" + ex.Message,
                 "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
             return;
-        }*/
+        }
 
         // 6) Refresh UI
         await ReloadBuildingsAsync();
