@@ -12,6 +12,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
+using Kanstraction;
+
 namespace Kanstraction.Views;
 
 /// <summary>
@@ -35,7 +37,11 @@ public partial class PromptTextDialog : Window
         var v = InputBox.Text?.Trim();
         if (string.IsNullOrWhiteSpace(v))
         {
-            MessageBox.Show("Veuillez entrer une valeur.", "Obligatoire", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                ResourceHelper.GetString("PromptTextDialog_ValueRequired", "Please enter a value."),
+                ResourceHelper.GetString("Common_RequiredTitle", "Required"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             return;
         }
         Value = v;

@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
+using Kanstraction;
+
 namespace Kanstraction.Views;
 
 /// <summary>
@@ -59,12 +61,20 @@ public partial class AddMaterialToSubStageDialog : Window
     {
         if (CboMaterial.SelectedValue is not int matId)
         {
-            MessageBox.Show("Sélectionnez un matériau.", "Obligatoire", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                ResourceHelper.GetString("AddMaterialToSubStageDialog_SelectMaterial", "Select a material."),
+                ResourceHelper.GetString("Common_RequiredTitle", "Required"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             return;
         }
         if (!decimal.TryParse(TxtQty.Text?.Trim(), out var qty) || qty < 0)
         {
-            MessageBox.Show("Entrez une quantité valide (>= 0).", "Invalide", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                ResourceHelper.GetString("AddMaterialToSubStageDialog_InvalidQuantity", "Enter a valid quantity (>= 0)."),
+                ResourceHelper.GetString("Common_InvalidTitle", "Invalid"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             return;
         }
 

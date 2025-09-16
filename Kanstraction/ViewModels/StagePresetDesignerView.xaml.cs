@@ -1,4 +1,5 @@
-﻿using Kanstraction.Data;
+﻿using Kanstraction;
+using Kanstraction.Data;
 using Kanstraction.Entities;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -147,7 +148,7 @@ public partial class StagePresetDesignerView : UserControl
 
         if (preset == null)
         {
-            MessageBox.Show("Préréglage introuvable.");
+            MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_PresetNotFound", "Preset not found."));
             return;
         }
 
@@ -254,7 +255,11 @@ public partial class StagePresetDesignerView : UserControl
         var vm = (sender as FrameworkElement)?.Tag as SubStageVm;
         if (vm == null) return;
 
-        if (MessageBox.Show($"Supprimer la sous-étape '{vm.Name}' ?", "Confirmer", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes)
+        if (MessageBox.Show(
+                string.Format(ResourceHelper.GetString("StagePresetDesignerView_DeleteSubStageConfirmFormat", "Delete sub-stage '{0}'?"), vm.Name),
+                ResourceHelper.GetString("Common_ConfirmTitle", "Confirm"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question) != MessageBoxResult.Yes)
             return;
 
         _subStages.Remove(vm);
@@ -351,26 +356,26 @@ public partial class StagePresetDesignerView : UserControl
     {
         if (_selectedSubStage == null)
         {
-            MessageBox.Show("Sélectionnez d'abord une sous-étape.");
+            MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_SelectSubStageFirst", "Select a sub-stage first."));
             return;
         }
 
         if (CboMaterial.SelectedValue is not int matId)
         {
-            MessageBox.Show("Choisissez un matériau.");
+            MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_SelectMaterial", "Choose a material."));
             return;
         }
 
         if (!decimal.TryParse(TxtQty.Text?.Trim(), out var qty) || qty < 0)
         {
-            MessageBox.Show("La quantité doit être un nombre non négatif.");
+            MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_QtyMustBeNonNegative", "Quantity must be a non-negative number."));
             return;
         }
 
         // prevent duplicates
         if (_selectedSubStage.Materials.Any(m => m.MaterialId == matId))
         {
-            MessageBox.Show("Ce matériau est déjà ajouté à la sous-étape.");
+            MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_MaterialAlreadyAdded", "This material is already added to the sub-stage."));
             return;
         }
 
@@ -422,12 +427,10 @@ public partial class StagePresetDesignerView : UserControl
     // -------------------- Summary --------------------
     private void UpdateSummary()
     {
-        var totalSubStagesFormat = TryFindResource("StagePresetDesignerView_TotalSubStages") as string
-            ?? "Total sub-stages: {0}";
+        var totalSubStagesFormat = ResourceHelper.GetString("StagePresetDesignerView_TotalSubStages", "Total sub-stages: {0}");
         TxtTotalSubs.Text = string.Format(totalSubStagesFormat, _subStages.Count);
         var totalLabor = _subStages.Sum(s => s.LaborCost);
-        var totalLaborFormat = TryFindResource("StagePresetDesignerView_TotalLabor") as string
-            ?? "Total labor: {0:C}";
+        var totalLaborFormat = ResourceHelper.GetString("StagePresetDesignerView_TotalLabor", "Total default labor: {0:0.##}");
         TxtTotalLabor.Text = string.Format(totalLaborFormat, totalLabor);
     }
 
@@ -451,7 +454,7 @@ public partial class StagePresetDesignerView : UserControl
         var name = TxtPresetName.Text?.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
-            MessageBox.Show("Le nom du préréglage est requis.");
+            MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_PresetNameRequired", "Preset name is required."));
             return;
         }
 
@@ -460,19 +463,19 @@ public partial class StagePresetDesignerView : UserControl
         {
             if (string.IsNullOrWhiteSpace(s.Name))
             {
-                MessageBox.Show("Chaque sous-étape doit avoir un nom.");
+                MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_SubStageNameRequired", "Each sub-stage must have a name."));
                 return;
             }
             if (s.LaborCost < 0)
             {
-                MessageBox.Show("Le coût de main-d'œuvre doit être ≥ 0.");
+                MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_LaborCostNonNegative", "Labor cost must be ≥ 0."));
                 return;
             }
             foreach (var mu in s.Materials)
             {
                 if (mu.Qty < 0)
                 {
-                    MessageBox.Show("La quantité de matériau doit être ≥ 0.");
+                    MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_MaterialQuantityNonNegative", "Material quantity must be ≥ 0."));
                     return;
                 }
             }
@@ -599,13 +602,21 @@ public partial class StagePresetDesignerView : UserControl
             await tx.CommitAsync();
 
             SetDirty(false);
-            MessageBox.Show("Préréglage enregistré.", "Préréglage d'étape", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                ResourceHelper.GetString("StagePresetDesignerView_SavedMessage", "Stage preset saved."),
+                ResourceHelper.GetString("StagePresetDesignerView_DialogTitle", "Stage preset"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
             Saved?.Invoke(this, _currentPresetId!.Value);
         }
         catch (Exception ex)
         {
             await tx.RollbackAsync();
-            MessageBox.Show("Échec de l'enregistrement :\n" + ex.Message, "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("StagePresetDesignerView_SaveFailedFormat", "Saving failed:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 

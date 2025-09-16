@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Windows;
 
+using Kanstraction;
+
 namespace Kanstraction.Views;
 
 public partial class AddStageToBuildingDialog : Window
@@ -27,7 +29,9 @@ public partial class AddStageToBuildingDialog : Window
 
         Loaded += (_, __) =>
         {
-            LblOrderHelp.Text = $"Ordre autorisé : 1..{_maxOrder}";
+            LblOrderHelp.Text = string.Format(
+                ResourceHelper.GetString("AddStageToBuildingDialog_OrderHelpFormat", "Allowed order: 1..{0}"),
+                _maxOrder);
             TxtOrder.Text = _maxOrder.ToString(CultureInfo.InvariantCulture);
             TxtOrder.IsEnabled = false;
             ChkAddAtEnd.IsChecked = true;
@@ -48,15 +52,18 @@ public partial class AddStageToBuildingDialog : Window
     {
         TxtOrder.IsEnabled = true;
         if (!int.TryParse(TxtOrder.Text?.Trim(), out var val) || val < 1)
-            TxtOrder.Text = "1";
+            TxtOrder.Text = ResourceHelper.GetString("Common_DefaultOrderValue", "1");
     }
 
     private void Add_Click(object sender, RoutedEventArgs e)
     {
         if (CboPreset.SelectedValue == null)
         {
-            MessageBox.Show("Veuillez choisir un préréglage d'étape.", "Obligatoire",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                ResourceHelper.GetString("AddStageToBuildingDialog_SelectPresetMessage", "Please choose a stage preset."),
+                ResourceHelper.GetString("Common_RequiredTitle", "Required"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             return;
         }
 
@@ -69,8 +76,11 @@ public partial class AddStageToBuildingDialog : Window
         {
             if (!int.TryParse(TxtOrder.Text?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out order) || order < 1)
             {
-                MessageBox.Show("Indice d'ordre invalide.", "Validation",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    ResourceHelper.GetString("AddStageToBuildingDialog_InvalidOrderMessage", "Invalid order index."),
+                    ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 return;
             }
             if (order > _maxOrder) order = _maxOrder;

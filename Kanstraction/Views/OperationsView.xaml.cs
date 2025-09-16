@@ -1,4 +1,5 @@
-﻿using Kanstraction.Data;
+﻿using Kanstraction;
+using Kanstraction.Data;
 using Kanstraction.Entities;
 using Kanstraction.Services;
 using System.Windows;
@@ -19,7 +20,7 @@ public partial class OperationsView : UserControl
     }
     public static readonly DependencyProperty BreadcrumbProperty =
         DependencyProperty.Register(nameof(Breadcrumb), typeof(string), typeof(OperationsView),
-            new PropertyMetadata("Select a project"));
+            new PropertyMetadata(ResourceHelper.GetString("OperationsView_SelectProjectPrompt", "Select a project")));
 
     private int? _currentBuildingId;
     private int? _currentStageId;
@@ -129,7 +130,11 @@ public partial class OperationsView : UserControl
 
             if (ss.LaborCost < 0)
             {
-                MessageBox.Show("Le coût de main-d'œuvre ne peut pas être négatif.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    ResourceHelper.GetString("OperationsView_LaborCostNegative", "Labor cost cannot be negative."),
+                    ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 ss.LaborCost = 0;
             }
 
@@ -146,7 +151,11 @@ public partial class OperationsView : UserControl
             // Validate: non-negative
             if (mu.Qty < 0)
             {
-                MessageBox.Show("La quantité ne peut pas être négative.", "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    ResourceHelper.GetString("OperationsView_QuantityNegative", "Quantity cannot be negative."),
+                    ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 mu.Qty = 0;
             }
 
@@ -166,7 +175,11 @@ public partial class OperationsView : UserControl
     {
         if (_currentProject == null)
         {
-            MessageBox.Show("Sélectionnez d'abord un projet.", "Aucun projet", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_SelectProjectFirst", "Select a project first."),
+                ResourceHelper.GetString("OperationsView_NoProjectTitle", "No project"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             return;
         }
 
@@ -182,8 +195,11 @@ public partial class OperationsView : UserControl
         var exists = await _db.Buildings.AnyAsync(b => b.ProjectId == _currentProject.Id && b.Code == code);
         if (exists)
         {
-            MessageBox.Show("Un bâtiment avec ce code existe déjà dans ce projet.", "Code dupliqué",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_DuplicateCodeMessage", "A building with this code already exists in this project."),
+                ResourceHelper.GetString("OperationsView_DuplicateCodeTitle", "Duplicate code"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             return;
         }
 
@@ -277,7 +293,11 @@ public partial class OperationsView : UserControl
         catch (Exception ex)
         {
             await tx.RollbackAsync();
-            MessageBox.Show("Échec de création du bâtiment :\n" + ex.Message, "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_CreateBuildingFailedFormat", "Failed to create building:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 
@@ -509,8 +529,11 @@ public partial class OperationsView : UserControl
         if (row == null) return;
         int buildingId = row.Id;
 
-        var confirm = MessageBox.Show("Arrêter ce bâtiment ? Toutes les étapes et sous-étapes non terminées/payées seront marquées Arrêtées.",
-            "Confirmer l'arrêt", MessageBoxButton.YesNo, MessageBoxImage.Question);
+        var confirm = MessageBox.Show(
+            ResourceHelper.GetString("OperationsView_StopBuildingConfirmMessage", "Stop this building? All unfinished/unpaid stages and sub-stages will be marked Stopped."),
+            ResourceHelper.GetString("OperationsView_StopBuildingConfirmTitle", "Confirm stop"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
         if (confirm != MessageBoxResult.Yes) return;
 
         using var tx = await _db.Database.BeginTransactionAsync();
@@ -545,7 +568,11 @@ public partial class OperationsView : UserControl
         catch (Exception ex)
         {
             await tx.RollbackAsync();
-            MessageBox.Show("Échec de l'arrêt du bâtiment :\n" + ex.Message, "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_StopBuildingFailedFormat", "Failed to stop building:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 
@@ -568,8 +595,11 @@ public partial class OperationsView : UserControl
             .AnyAsync(x => x.Stage.BuildingId == ss.Stage.BuildingId && x.Status == WorkStatus.Ongoing && x.Id != ss.Id);
         if (hasOngoingElsewhere)
         {
-            MessageBox.Show("Une autre sous-étape est déjà en cours dans ce bâtiment. Terminez-la d'abord.",
-                "Règle", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_SubStageAlreadyInProgress", "Another sub-stage is already in progress in this building. Finish it first."),
+                ResourceHelper.GetString("OperationsView_RuleTitle", "Rule"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
             return;
         }
 
@@ -583,8 +613,11 @@ public partial class OperationsView : UserControl
 
             if (prevSub == null || (prevSub.Status != WorkStatus.Finished && prevSub.Status != WorkStatus.Paid))
             {
-                MessageBox.Show("Vous devez terminer la sous-étape précédente d'abord.", "Règle d'ordre",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    ResourceHelper.GetString("OperationsView_PreviousSubStageRequired", "You must finish the previous sub-stage first."),
+                    ResourceHelper.GetString("OperationsView_RuleOrderTitle", "Order rule"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 return;
             }
         }
@@ -598,8 +631,11 @@ public partial class OperationsView : UserControl
 
             if (!allPrevStagesDone)
             {
-                MessageBox.Show("Vous devez terminer toutes les étapes précédentes avant de commencer cette étape.", "Règle d'ordre",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(
+                    ResourceHelper.GetString("OperationsView_PreviousStagesRequired", "You must finish all previous stages before starting this stage."),
+                    ResourceHelper.GetString("OperationsView_RuleOrderTitle", "Order rule"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 return;
             }
         }
@@ -607,8 +643,11 @@ public partial class OperationsView : UserControl
         // State checks
         if (ss.Status == WorkStatus.Finished || ss.Status == WorkStatus.Paid || ss.Status == WorkStatus.Stopped)
         {
-            MessageBox.Show("Cette sous-étape ne peut pas être démarrée dans son état actuel.", "Règle",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_SubStageCannotStart", "This sub-stage cannot be started in its current state."),
+                ResourceHelper.GetString("OperationsView_RuleTitle", "Rule"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             return;
         }
 
@@ -650,8 +689,11 @@ public partial class OperationsView : UserControl
         // ✅ Only Ongoing can be finished
         if (ss.Status != WorkStatus.Ongoing)
         {
-            MessageBox.Show("Vous ne pouvez terminer qu'une sous-étape En cours.", "Règle",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_OnlyOngoingCanFinish", "You can only finish an Ongoing sub-stage."),
+                ResourceHelper.GetString("OperationsView_RuleTitle", "Rule"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             return;
         }
 
@@ -684,8 +726,11 @@ public partial class OperationsView : UserControl
 
         if (ss.Status != WorkStatus.Ongoing)
         {
-            MessageBox.Show("Seule une sous-étape En cours peut être réinitialisée à Non commencée.", "Règle",
-                MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_OnlyOngoingCanReset", "Only an Ongoing sub-stage can be reset to Not Started."),
+                ResourceHelper.GetString("OperationsView_RuleTitle", "Rule"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             return;
         }
 
@@ -840,7 +885,11 @@ public partial class OperationsView : UserControl
         var ss = SubStagesGrid.SelectedItem as SubStage;
         if (ss == null)
         {
-            MessageBox.Show("Sélectionnez d'abord une sous-étape.", "Aucune sous-étape", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_SelectSubStageFirst", "Select a sub-stage first."),
+                ResourceHelper.GetString("OperationsView_NoSubStageTitle", "No sub-stage"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
             return;
         }
 
@@ -856,7 +905,11 @@ public partial class OperationsView : UserControl
         // Defensive checks (dialog already validates)
         if (dlg.MaterialId == null)
         {
-            MessageBox.Show("Veuillez sélectionner un matériau.", "Obligatoire", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_SelectMaterialPrompt", "Please select a material."),
+                ResourceHelper.GetString("Common_RequiredTitle", "Required"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             return;
         }
 
@@ -886,7 +939,11 @@ public partial class OperationsView : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show("Échec de l'ajout du matériau :\n" + ex.Message, "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_AddMaterialFailedFormat", "Failed to add material:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 
@@ -970,7 +1027,11 @@ public partial class OperationsView : UserControl
         catch (Exception ex)
         {
             await tx.RollbackAsync();
-            MessageBox.Show("Échec de l'ajout de la sous-étape :\n" + ex.Message, "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_AddSubStageFailedFormat", "Failed to add sub-stage:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 
@@ -978,7 +1039,11 @@ public partial class OperationsView : UserControl
     {
         if (_db == null || _currentProject == null)
         {
-            MessageBox.Show("Sélectionnez d'abord un projet.", "Aucun projet", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_SelectProjectFirst", "Select a project first."),
+                ResourceHelper.GetString("OperationsView_NoProjectTitle", "No project"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
             return;
         }
 
@@ -995,8 +1060,11 @@ public partial class OperationsView : UserControl
 
         if (eligible.Count == 0)
         {
-            MessageBox.Show("Aucune sous-étape terminée à résoudre.", "Rien à faire",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_NoCompletedSubStages", "No completed sub-stages to resolve."),
+                ResourceHelper.GetString("OperationsView_NothingToDoTitle", "Nothing to do"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
             return;
         }
 
@@ -1044,7 +1112,7 @@ public partial class OperationsView : UserControl
         // 3) Ask where to save
         var sfd = new SaveFileDialog
         {
-            Title = "Save payment resolution report",
+            Title = ResourceHelper.GetString("OperationsView_SavePaymentReportTitle", "Save payment resolution report"),
             Filter = "PDF files (*.pdf)|*.pdf",
             FileName = $"Payment_{_currentProject.Name}_{DateTime.Now:yyyyMMdd_HHmm}.pdf"
         };
@@ -1059,7 +1127,11 @@ public partial class OperationsView : UserControl
         }
         catch (Exception ex)
         {
-            MessageBox.Show("Échec de génération du PDF :\n" + ex.Message, "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_GeneratePdfFailedFormat", "Failed to generate PDF:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
             return;
         }
 
@@ -1097,15 +1169,21 @@ public partial class OperationsView : UserControl
         catch (Exception ex)
         {
             await tx.RollbackAsync();
-            MessageBox.Show("Échec du marquage des éléments comme payés après la génération du PDF :\n" + ex.Message,
-                "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_MarkPaidFailedFormat", "Failed to mark items as paid after generating the PDF:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
             return;
         }
 
         // 6) Refresh UI
         await ReloadBuildingsAsync();
-        MessageBox.Show("Résolution de paiement terminée.", "Terminé",
-            MessageBoxButton.OK, MessageBoxImage.Information);
+        MessageBox.Show(
+            ResourceHelper.GetString("OperationsView_PaymentResolutionCompleted", "Payment resolution completed."),
+            ResourceHelper.GetString("OperationsView_PaymentResolutionCompletedTitle", "Done"),
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
     }
 
     // Small DTO matching the dialog's PresetVm
@@ -1144,8 +1222,11 @@ public partial class OperationsView : UserControl
 
         if (availablePresets.Count == 0)
         {
-            MessageBox.Show("Tous les préréglages d'étape actifs sont déjà dans ce bâtiment.", "Aucun préréglage",
-                MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_NoPresetToAddMessage", "All active stage presets are already in this building."),
+                ResourceHelper.GetString("OperationsView_NoPresetTitle", "No preset"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
             return;
         }
 
@@ -1239,8 +1320,11 @@ public partial class OperationsView : UserControl
         catch (Exception ex)
         {
             await tx.RollbackAsync();
-            MessageBox.Show("Échec de l'ajout de l'étape :\n" + ex.Message, "Erreur",
-                MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_AddStageFailedFormat", "Failed to add stage:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 

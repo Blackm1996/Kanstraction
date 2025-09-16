@@ -1,6 +1,8 @@
-using Kanstraction.Data;
+﻿using Kanstraction.Data;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
+
+using Kanstraction;
 
 namespace Kanstraction.Views;
 
@@ -37,12 +39,20 @@ public partial class AddBuildingDialog : Window
         var code = TxtCode.Text?.Trim();
         if (string.IsNullOrWhiteSpace(code))
         {
-            MessageBox.Show("Entrez un code de bâtiment.", "Obligatoire", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                ResourceHelper.GetString("AddBuildingDialog_CodeRequired", "Enter a building code."),
+                ResourceHelper.GetString("Common_RequiredTitle", "Required"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             return;
         }
         if (CboType.SelectedValue is not int typeId)
         {
-            MessageBox.Show("Sélectionnez un type de bâtiment.", "Obligatoire", MessageBoxButton.OK, MessageBoxImage.Warning);
+            MessageBox.Show(
+                ResourceHelper.GetString("AddBuildingDialog_TypeRequired", "Select a building type."),
+                ResourceHelper.GetString("Common_RequiredTitle", "Required"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
             return;
         }
 
@@ -58,8 +68,10 @@ public partial class AddBuildingDialog : Window
         if (!hasAnyPreset)
         {
             var res = MessageBox.Show(
-                "Ce type de bâtiment n'a aucun préréglage d'étape assigné. Créer quand même?",
-                "Aucun préréglage", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                ResourceHelper.GetString("AddBuildingDialog_NoPresetWarning", "This building type has no stage presets assigned. Create anyway?"),
+                ResourceHelper.GetString("AddBuildingDialog_NoPresetTitle", "No preset"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
             if (res != MessageBoxResult.Yes) return;
         }
 

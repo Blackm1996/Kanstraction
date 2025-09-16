@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Kanstraction;
 using MigraDoc.DocumentObjectModel;
 using MigraDoc.DocumentObjectModel.Tables;
 using MigraDoc.Rendering;
@@ -45,7 +46,7 @@ namespace Kanstraction.Services
         public void Render(ReportData data, string filePath)
         {
             var doc = new Document();
-            doc.Info.Title = "Payment Resolution Report";
+            doc.Info.Title = ResourceHelper.GetString("PaymentReportRenderer_Title", "Payment Resolution Report");
 
             // Base style
             var normal = doc.Styles["Normal"];
@@ -153,9 +154,9 @@ namespace Kanstraction.Services
 
             // Footer: page numbers
             var footer = section.Footers.Primary.AddParagraph();
-            footer.AddText("Page ");
+            footer.AddText(ResourceHelper.GetString("PaymentReportRenderer_FooterPage", "Page "));
             footer.AddPageField();
-            footer.AddText(" of ");
+            footer.AddText(ResourceHelper.GetString("PaymentReportRenderer_FooterOf", " of "));
             footer.AddNumPagesField();
             footer.Format.Alignment = ParagraphAlignment.Center;
 
