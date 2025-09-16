@@ -383,25 +383,17 @@ public partial class OperationsView : UserControl
 
     private static string ComputeCurrentSubStageName(Stage stage)
     {
+        if (stage.Status == WorkStatus.Finished || stage.Status == WorkStatus.Paid || stage.Status == WorkStatus.Stopped)
+            return string.Empty;
+
         if (stage.SubStages == null || stage.SubStages.Count == 0)
             return string.Empty;
 
-        var orderedSubs = stage.SubStages
+        var ongoing = stage.SubStages
             .OrderBy(ss => ss.OrderIndex)
-            .ToList();
+            .FirstOrDefault(ss => ss.Status == WorkStatus.Ongoing);
 
-        if (orderedSubs.Count == 0)
-            return string.Empty;
-
-        var ongoing = orderedSubs.FirstOrDefault(ss => ss.Status == WorkStatus.Ongoing);
-        if (ongoing != null)
-            return ongoing.Name;
-
-        var next = orderedSubs.FirstOrDefault(ss => ss.Status == WorkStatus.NotStarted);
-        if (next != null)
-            return next.Name;
-
-        return orderedSubs.Last().Name;
+        return ongoing?.Name ?? string.Empty;
     }
 
     private static string ComputeCurrentStageName(Building b)
