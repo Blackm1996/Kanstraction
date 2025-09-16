@@ -11,7 +11,7 @@ public partial class App : Application
 {
     public static BackupService BackupService { get; private set; } = null!;
 
-    protected override void OnStartup(StartupEventArgs e)
+    protected override async void OnStartup(StartupEventArgs e)
     {
         var culture = new CultureInfo("fr-FR");
         Thread.CurrentThread.CurrentCulture = culture;
@@ -27,15 +27,23 @@ public partial class App : Application
         }
 
         BackupService = new BackupService();
+        var dispatcher = Dispatcher;
         try
         {
-            BackupService.RunStartupMaintenanceAsync().GetAwaiter().GetResult();
+            await BackupService.RunStartupMaintenanceAsync().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
             Debug.WriteLine($"Startup backup failed: {ex}");
         }
 
-        base.OnStartup(e);
+        if (dispatcher != null)
+        {
+            dispatcher.Invoke(() => base.OnStartup(e));
+        }
+        else
+        {
+            base.OnStartup(e);
+        }
     }
 }
