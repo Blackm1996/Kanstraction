@@ -1,8 +1,10 @@
 ﻿using Kanstraction;
 using Kanstraction.Data;
 using Kanstraction.Entities;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -336,7 +338,6 @@ public partial class StagePresetDesignerView : UserControl
         {
             s.OrderIndex = i++;
         }
-        SubStagesGrid?.Items.Refresh();
     }
 
     private void EmptyStateCreateNew_Click(object sender, RoutedEventArgs e)
@@ -710,13 +711,62 @@ public partial class StagePresetDesignerView : UserControl
     }
 
     // -------------------- VMs --------------------
-    private class SubStageVm
+    private class SubStageVm : INotifyPropertyChanged
     {
-        public int? Id { get; set; }
-        public string Name { get; set; } = "";
-        public decimal LaborCost { get; set; }
-        public int OrderIndex { get; set; }
-        public ObservableCollection<MaterialUsageVm> Materials { get; set; } = new();
+        private int? _id;
+        private string _name = string.Empty;
+        private decimal _laborCost;
+        private int _orderIndex;
+        private ObservableCollection<MaterialUsageVm> _materials = new();
+
+        public int? Id
+        {
+            get => _id;
+            set => SetProperty(ref _id, value);
+        }
+
+        public string Name
+        {
+            get => _name;
+            set => SetProperty(ref _name, value ?? string.Empty);
+        }
+
+        public decimal LaborCost
+        {
+            get => _laborCost;
+            set => SetProperty(ref _laborCost, value);
+        }
+
+        public int OrderIndex
+        {
+            get => _orderIndex;
+            set => SetProperty(ref _orderIndex, value);
+        }
+
+        public ObservableCollection<MaterialUsageVm> Materials
+        {
+            get => _materials;
+            set => SetProperty(ref _materials, value ?? new ObservableCollection<MaterialUsageVm>());
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = "")
+        {
+            if (EqualityComparer<T>.Default.Equals(field, value))
+            {
+                return false;
+            }
+
+            field = value;
+            OnPropertyChanged(propertyName);
+            return true;
+        }
+
+        private void OnPropertyChanged(string propertyName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
     }
 
     private class MaterialUsageVm
