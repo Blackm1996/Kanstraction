@@ -140,8 +140,8 @@
     <sys:String x:Key="OperationsView_UsageDate">Usage Date</sys:String>
     <sys:String x:Key="OperationsView_UnitPrice">Unit Price</sys:String>
     <sys:String x:Key="OperationsView_Total">Total</sys:String>
-    <sys:String x:Key="OperationsView_ConfirmChangeTitle">Confirm change</sys:String>
-    <sys:String x:Key="OperationsView_ReturnToDefault">Return to default</sys:String>
+    <sys:String x:Key="OperationsView_ConfirmChangeTitle">Save</sys:String>
+    <sys:String x:Key="OperationsView_ReturnToDefault">Cancel</sys:String>
     <sys:String x:Key="OperationsView_ConfirmLaborChangeMessage">Are you sure you want to change the labor from {0} to {1}?</sys:String>
     <sys:String x:Key="OperationsView_ConfirmMaterialChangeMessage">Are you sure you want to change the quantity from {0} to {1}?</sys:String>
     <sys:String x:Key="OperationsView_SelectProjectPrompt">Select a project</sys:String>

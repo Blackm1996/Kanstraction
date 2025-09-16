@@ -202,10 +202,10 @@ public partial class OperationsView : UserControl
                 FormatDecimal(newValue));
 
             var dialog = new ConfirmValueChangeDialog(
-                ResourceHelper.GetString("OperationsView_ConfirmChangeTitle", "Confirm change"),
+                ResourceHelper.GetString("OperationsView_ConfirmChangeTitle", "Save"),
                 message,
                 ResourceHelper.GetString("Common_Save", "Save"),
-                ResourceHelper.GetString("OperationsView_ReturnToDefault", "Return to default"))
+                ResourceHelper.GetString("OperationsView_ReturnToDefault", "Cancel"))
             {
                 Owner = Window.GetWindow(this)
             };

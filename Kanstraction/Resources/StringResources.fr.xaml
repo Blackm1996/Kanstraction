@@ -138,8 +138,8 @@
     <sys:String x:Key="OperationsView_UsageDate">Date d'utilisation</sys:String>
     <sys:String x:Key="OperationsView_UnitPrice">Prix unitaire</sys:String>
     <sys:String x:Key="OperationsView_Total">Total</sys:String>
-    <sys:String x:Key="OperationsView_ConfirmChangeTitle">Confirmer la modification</sys:String>
-    <sys:String x:Key="OperationsView_ReturnToDefault">Revenir à la valeur par défaut</sys:String>
+    <sys:String x:Key="OperationsView_ConfirmChangeTitle">Enregistrer</sys:String>
+    <sys:String x:Key="OperationsView_ReturnToDefault">Annuler</sys:String>
     <sys:String x:Key="OperationsView_ConfirmLaborChangeMessage">Êtes-vous sûr de vouloir changer la main-d'œuvre de {0} à {1} ?</sys:String>
     <sys:String x:Key="OperationsView_ConfirmMaterialChangeMessage">Êtes-vous sûr de vouloir changer la quantité de {0} à {1} ?</sys:String>
     <sys:String x:Key="OperationsView_SelectProjectPrompt">Sélectionnez un projet</sys:String>

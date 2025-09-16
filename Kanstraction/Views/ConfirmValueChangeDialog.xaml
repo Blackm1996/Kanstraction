@@ -20,15 +20,15 @@
                    Margin="0,0,0,12"/>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="BtnSave"
+                Width="110"
+                IsDefault="True"
+                Click="Save_Click"/>
             <Button x:Name="BtnReturnToDefault"
                     Width="150"
                     Margin="0,0,8,0"
                     IsCancel="True"
                     Click="ReturnToDefault_Click"/>
-            <Button x:Name="BtnSave"
-                    Width="110"
-                    IsDefault="True"
-                    Click="Save_Click"/>
         </StackPanel>
     </Grid>
 </Window>
