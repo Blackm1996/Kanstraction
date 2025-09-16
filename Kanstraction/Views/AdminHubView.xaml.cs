@@ -23,6 +23,24 @@ namespace Kanstraction.Views
         private List<StagePreset> _allPresets = new();
         private List<BuildingType> _allBuildingTypes = new();
 
+        public bool IsMaterialDirty
+        {
+            get => (bool)GetValue(IsMaterialDirtyProperty);
+            set => SetValue(IsMaterialDirtyProperty, value);
+        }
+
+        public static readonly DependencyProperty IsMaterialDirtyProperty =
+            DependencyProperty.Register(nameof(IsMaterialDirty), typeof(bool), typeof(AdminHubView), new PropertyMetadata(false));
+
+        public bool IsBuildingDirty
+        {
+            get => (bool)GetValue(IsBuildingDirtyProperty);
+            set => SetValue(IsBuildingDirtyProperty, value);
+        }
+
+        public static readonly DependencyProperty IsBuildingDirtyProperty =
+            DependencyProperty.Register(nameof(IsBuildingDirty), typeof(bool), typeof(AdminHubView), new PropertyMetadata(false));
+
         public AdminHubView()
         {
             InitializeComponent();
@@ -106,13 +124,19 @@ namespace Kanstraction.Views
         private void MatSearchBox_TextChanged(object sender, TextChangedEventArgs e) => RefreshMaterialsList();
         private void MatFilterChanged(object sender, RoutedEventArgs e) => RefreshMaterialsList();
 
+        private void MaterialEditor_TextChanged(object sender, TextChangedEventArgs e) => UpdateMaterialDirtyState();
+        private void MaterialEditor_CheckChanged(object sender, RoutedEventArgs e) => UpdateMaterialDirtyState();
+
         private async void MaterialsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_db == null) return;
             var m = MaterialsList?.SelectedItem as Material;
             if (m == null)
             {
+                _editingMaterialId = null;
+                _currentMaterial = null;
                 ClearMaterialEditor();
+                UpdateMaterialDirtyState();
                 return;
             }
 
@@ -121,6 +145,7 @@ namespace Kanstraction.Views
             _currentMaterial = await _db.Materials.FirstAsync(x => x.Id == m.Id);
 
             WriteMaterialToEditor(_currentMaterial);
+            UpdateMaterialDirtyState();
 
             // Load price history
             var historyRows = await _db.MaterialPriceHistory
@@ -251,6 +276,7 @@ namespace Kanstraction.Views
             if (MatPrice != null) MatPrice.Text = "";
             if (MatIsActive != null) MatIsActive.IsChecked = true;
             if (MatHistoryGrid != null) MatHistoryGrid.ItemsSource = null;
+            UpdateMaterialDirtyState();
         }
 
         private void WriteMaterialToEditor(Material m)
@@ -259,6 +285,7 @@ namespace Kanstraction.Views
             if (MatUnit != null) MatUnit.Text = m.Unit ?? "";
             if (MatPrice != null) MatPrice.Text = m.PricePerUnit.ToString(CultureInfo.InvariantCulture);
             if (MatIsActive != null) MatIsActive.IsChecked = (m.IsActive);
+            UpdateMaterialDirtyState();
         }
 
         private bool TryReadMaterialFromEditor(out string? name, out string? unit, out decimal price,
@@ -291,6 +318,51 @@ namespace Kanstraction.Views
             }
 
             return true;
+        }
+
+        private void UpdateMaterialDirtyState()
+        {
+            if (MatName == null || MatUnit == null || MatPrice == null || MatIsActive == null)
+            {
+                IsMaterialDirty = false;
+                return;
+            }
+
+            var name = MatName.Text?.Trim() ?? string.Empty;
+            var unit = MatUnit.Text?.Trim() ?? string.Empty;
+            var priceText = MatPrice.Text?.Trim() ?? string.Empty;
+            var isActive = MatIsActive.IsChecked == true;
+
+            bool dirty;
+
+            if (_currentMaterial == null)
+            {
+                dirty = !(string.IsNullOrEmpty(name) &&
+                          string.IsNullOrEmpty(unit) &&
+                          string.IsNullOrEmpty(priceText) &&
+                          isActive);
+            }
+            else
+            {
+                dirty = !string.Equals(name, _currentMaterial.Name ?? string.Empty, StringComparison.Ordinal) ||
+                        !string.Equals(unit, _currentMaterial.Unit ?? string.Empty, StringComparison.Ordinal) ||
+                        isActive != _currentMaterial.IsActive;
+
+                if (!decimal.TryParse(priceText, NumberStyles.Number, CultureInfo.InvariantCulture, out var price))
+                {
+                    dirty = true;
+                }
+                else if (!dirty)
+                {
+                    dirty = price != _currentMaterial.PricePerUnit;
+                }
+                else if (price != _currentMaterial.PricePerUnit)
+                {
+                    dirty = true;
+                }
+            }
+
+            IsMaterialDirty = dirty;
         }
 
         private async Task CloseOpenHistoryAndAddNewAsync(int materialId, decimal newPrice, DateTime newStart)
@@ -458,6 +530,7 @@ namespace Kanstraction.Views
         private int? _editingBtId = null;
         private BuildingType? _currentBt = null;
         private ObservableCollection<AssignedPresetVm> _btAssigned = new();
+        private List<int> _currentBtAssignedIds = new();
         private Dictionary<int, int> _presetSubCounts = new(); // StagePresetId -> count
         // VM for the assigned presets list
         private class AssignedPresetVm
@@ -526,6 +599,9 @@ namespace Kanstraction.Views
         private void BtSearchBox_TextChanged(object sender, TextChangedEventArgs e) => RefreshBuildingTypesList();
         private void BtFilterChanged(object sender, RoutedEventArgs e) => RefreshBuildingTypesList();
 
+        private void BuildingEditor_TextChanged(object sender, TextChangedEventArgs e) => UpdateBuildingDirtyState();
+        private void BuildingEditor_CheckChanged(object sender, RoutedEventArgs e) => UpdateBuildingDirtyState();
+
         private async void BuildingTypesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             if (_db == null) return;
@@ -562,6 +638,7 @@ namespace Kanstraction.Views
                 })
             );
             BtAssignedGrid.ItemsSource = _btAssigned;
+            _currentBtAssignedIds = _btAssigned.Select(a => a.StagePresetId).ToList();
 
             // auto-select first assigned preset to show preview
             if (_btAssigned.Count > 0)
@@ -575,6 +652,7 @@ namespace Kanstraction.Views
 
             // fill picker with available (active, not already assigned)
             RefreshBtPresetPicker();
+            UpdateBuildingDirtyState();
         }
 
         // New / Duplicate / Archive
@@ -588,9 +666,11 @@ namespace Kanstraction.Views
 
             _btAssigned = new ObservableCollection<AssignedPresetVm>();
             BtAssignedGrid.ItemsSource = _btAssigned;
+            _currentBtAssignedIds = new List<int>();
 
             RefreshBtPresetPicker();
             BuildingTypesList.SelectedItem = null;
+            UpdateBuildingDirtyState();
         }
 
         // Picker shows active presets not yet assigned
@@ -606,6 +686,38 @@ namespace Kanstraction.Views
 
             BtPresetPicker.ItemsSource = available;
             if (available.Count > 0) BtPresetPicker.SelectedIndex = 0; else BtPresetPicker.SelectedIndex = -1;
+        }
+
+        private void UpdateBuildingDirtyState()
+        {
+            if (BtName == null || BtActive == null)
+            {
+                IsBuildingDirty = false;
+                return;
+            }
+
+            var name = BtName.Text?.Trim() ?? string.Empty;
+            var isActive = BtActive.IsChecked == true;
+            var assignedIds = _btAssigned?.Select(a => a.StagePresetId).ToList() ?? new List<int>();
+
+            bool dirty;
+
+            if (_currentBt == null)
+            {
+                dirty = !string.IsNullOrEmpty(name) || !isActive || assignedIds.Count > 0;
+            }
+            else
+            {
+                dirty = !string.Equals(name, _currentBt.Name ?? string.Empty, StringComparison.Ordinal) ||
+                        isActive != _currentBt.IsActive;
+
+                if (!dirty)
+                {
+                    dirty = !_currentBtAssignedIds.SequenceEqual(assignedIds);
+                }
+            }
+
+            IsBuildingDirty = dirty;
         }
 
         private void AddPresetToBuildingType_Click(object sender, RoutedEventArgs e)
@@ -702,6 +814,7 @@ namespace Kanstraction.Views
             for (int i = 0; i < _btAssigned.Count; i++)
                 _btAssigned[i].OrderIndex = i + 1;
             BtAssignedGrid.Items.Refresh();
+            UpdateBuildingDirtyState();
         }
 
         // Save / Cancel
@@ -820,6 +933,8 @@ namespace Kanstraction.Views
                 RefreshBtPresetPicker();
                 _editingBtId = null;
                 _currentBt = null;
+                _currentBtAssignedIds = new List<int>();
+                UpdateBuildingDirtyState();
             }
         }
     }

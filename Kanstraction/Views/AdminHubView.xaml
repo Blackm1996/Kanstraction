@@ -66,42 +66,59 @@
 
                     <!-- Detail -->
                     <ScrollViewer Grid.Column="2" VerticalScrollBarVisibility="Auto">
-                        <StackPanel Margin="16" MinWidth="360">
-                            <TextBlock Text="{DynamicResource AdminHubView_MaterialHeader}" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                            <DockPanel Margin="0,0,0,8">
-                                <TextBlock Text="{DynamicResource AdminHubView_Name}" Width="120" VerticalAlignment="Center"/>
-                                <TextBox x:Name="MatName" Padding="8" />
-                            </DockPanel>
-                            <DockPanel Margin="0,0,0,8">
-                                <TextBlock Text="{DynamicResource AdminHubView_Unit}" Width="120" VerticalAlignment="Center"/>
-                                <TextBox x:Name="MatUnit" Padding="8" />
-                            </DockPanel>
-                            <DockPanel Margin="0,0,0,8">
-                                <TextBlock Text="{DynamicResource AdminHubView_PricePerUnit}" Width="120" VerticalAlignment="Center"/>
-                                <TextBox x:Name="MatPrice" Padding="8" />
-                            </DockPanel>
+                        <Border x:Name="MaterialEditorBorder" Margin="16" Padding="14"
+                Background="{DynamicResource MaterialDesignCardBackground}"
+                CornerRadius="8" MinWidth="360">
+                            <Border.Style>
+                                <Style TargetType="Border">
+                                    <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesignDivider}"/>
+                                    <Setter Property="BorderThickness" Value="1"/>
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsMaterialDirty, ElementName=AdminRoot}" Value="True">
+                                            <Setter Property="BorderBrush" Value="#E67E22"/>
+                                            <Setter Property="BorderThickness" Value="2"/>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </Border.Style>
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource AdminHubView_MaterialHeader}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <DockPanel Margin="0,0,0,8">
+                                    <TextBlock Text="{DynamicResource AdminHubView_Name}" Width="120" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="MatName" Padding="8" TextChanged="MaterialEditor_TextChanged" />
+                                </DockPanel>
+                                <DockPanel Margin="0,0,0,8">
+                                    <TextBlock Text="{DynamicResource AdminHubView_Unit}" Width="120" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="MatUnit" Padding="8" TextChanged="MaterialEditor_TextChanged" />
+                                </DockPanel>
+                                <DockPanel Margin="0,0,0,8">
+                                    <TextBlock Text="{DynamicResource AdminHubView_PricePerUnit}" Width="120" VerticalAlignment="Center"/>
+                                    <TextBox x:Name="MatPrice" Padding="8" TextChanged="MaterialEditor_TextChanged" />
+                                </DockPanel>
 
-                            <CheckBox x:Name="MatIsActive" Content="{DynamicResource AdminHubView_Active}" Margin="0,0,0,8" IsChecked="True"/>
+                                <CheckBox x:Name="MatIsActive" Content="{DynamicResource AdminHubView_Active}" Margin="0,0,0,8" IsChecked="True"
+                               Checked="MaterialEditor_CheckChanged" Unchecked="MaterialEditor_CheckChanged"/>
 
-                            <Separator Margin="0,8,0,8"/>
+                                <Separator Margin="0,8,0,8"/>
 
-                            <TextBlock Text="{DynamicResource AdminHubView_PriceHistory}" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                            <DataGrid x:Name="MatHistoryGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                                <TextBlock Text="{DynamicResource AdminHubView_PriceHistory}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                                <DataGrid x:Name="MatHistoryGrid" AutoGenerateColumns="False" IsReadOnly="True"
                         HeadersVisibility="Column" GridLinesVisibility="None"
                         Height="200" Margin="0,0,0,8"
                         Style="{StaticResource MaterialDesignDataGrid}">
-                                <DataGrid.Columns>
-                                    <DataGridTextColumn Header="{DynamicResource AdminHubView_Start}" Binding="{Binding StartDate}"/>
-                                    <DataGridTextColumn Header="{DynamicResource AdminHubView_End}" Binding="{Binding EndDate}"/>
-                                    <DataGridTextColumn Header="{DynamicResource AdminHubView_PricePerUnit}" Binding="{Binding PricePerUnit}"/>
-                                </DataGrid.Columns>
-                            </DataGrid>
+                                    <DataGrid.Columns>
+                                        <DataGridTextColumn Header="{DynamicResource AdminHubView_Start}" Binding="{Binding StartDate}"/>
+                                        <DataGridTextColumn Header="{DynamicResource AdminHubView_End}" Binding="{Binding EndDate}"/>
+                                        <DataGridTextColumn Header="{DynamicResource AdminHubView_PricePerUnit}" Binding="{Binding PricePerUnit}"/>
+                                    </DataGrid.Columns>
+                                </DataGrid>
 
-                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                                <Button Content="{DynamicResource AdminHubView_Save}" Click="SaveMaterial_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
-                                <Button Content="{DynamicResource AdminHubView_Cancel}" Click="CancelMaterial_Click" Margin="6,0"/>
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Content="{DynamicResource AdminHubView_Save}" Click="SaveMaterial_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
+                                    <Button Content="{DynamicResource AdminHubView_Cancel}" Click="CancelMaterial_Click" Margin="6,0"/>
+                                </StackPanel>
                             </StackPanel>
-                        </StackPanel>
+                        </Border>
                     </ScrollViewer>
                 </Grid>
             </TabItem>
@@ -205,9 +222,20 @@
                             <!-- 1) HEADER CARD -->
                             <Border Padding="14"
                 Background="{DynamicResource MaterialDesignCardBackground}"
-                BorderBrush="{DynamicResource MaterialDesignDivider}"
-                BorderThickness="1" CornerRadius="8"
+                CornerRadius="8"
                 Margin="0,0,0,12">
+                                <Border.Style>
+                                    <Style TargetType="Border">
+                                        <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesignDivider}"/>
+                                        <Setter Property="BorderThickness" Value="1"/>
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsBuildingDirty, ElementName=AdminRoot}" Value="True">
+                                                <Setter Property="BorderBrush" Value="#E67E22"/>
+                                                <Setter Property="BorderThickness" Value="2"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Border.Style>
                                 <Grid>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="*"/>
@@ -218,16 +246,18 @@
                                         <TextBlock Text="{DynamicResource AdminHubView_BuildingTypes}" FontWeight="SemiBold"/>
                                         <TextBox x:Name="BtName"
                        Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                       materialDesign:HintAssist.Hint="{DynamicResource AdminHubView_Name}" 
+                       materialDesign:HintAssist.Hint="{DynamicResource AdminHubView_Name}"
                        Padding="10"
                        FontSize="14"
-                       Margin="0,6,0,4"/>
+                       Margin="0,6,0,4"
+                       TextChanged="BuildingEditor_TextChanged"/>
                                         <TextBlock Text="{DynamicResource AdminHubView_NewBuildingType}" 
                          Foreground="{DynamicResource MaterialDesignBodyLight}" FontSize="12"/>
                                     </StackPanel>
 
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                        <CheckBox x:Name="BtActive" Content="{DynamicResource AdminHubView_Active}" IsChecked="True"/>
+                                        <CheckBox x:Name="BtActive" Content="{DynamicResource AdminHubView_Active}" IsChecked="True"
+                                   Checked="BuildingEditor_CheckChanged" Unchecked="BuildingEditor_CheckChanged"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>

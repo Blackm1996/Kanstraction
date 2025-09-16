@@ -5,6 +5,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 
@@ -24,6 +25,8 @@ public partial class StagePresetDesignerView : UserControl
     // VM collections
     private ObservableCollection<SubStageVm> _subStages = new();
     private SubStageVm? _selectedSubStage = null;
+    private object? _subStageOriginalValue = null;
+    private string? _subStageOriginalProperty = null;
 
     public event EventHandler<int>? Saved;
 
@@ -437,14 +440,92 @@ public partial class StagePresetDesignerView : UserControl
 
     // When editing cells, mark dirty and update summary (for labor changes)
     // Hook DataGrid events minimally:
+    private void SubStagesGrid_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
+    {
+        _subStageOriginalProperty = null;
+        _subStageOriginalValue = null;
+
+        if (e.Row.Item is not SubStageVm vm)
+            return;
+
+        if (e.Column is DataGridBoundColumn boundColumn && boundColumn.Binding is Binding binding && binding.Path != null)
+        {
+            var path = binding.Path.Path;
+            if (!string.IsNullOrEmpty(path))
+            {
+                _subStageOriginalProperty = path;
+                _subStageOriginalValue = path switch
+                {
+                    nameof(SubStageVm.Name) => vm.Name,
+                    nameof(SubStageVm.LaborCost) => vm.LaborCost,
+                    _ => null
+                };
+            }
+        }
+    }
+
     private void SubStagesGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
     {
-        // After the edit commits, update summary
+        if (e.EditAction == DataGridEditAction.Cancel)
+        {
+            _subStageOriginalProperty = null;
+            _subStageOriginalValue = null;
+            return;
+        }
+
+        if (e.Row.Item is not SubStageVm vm)
+        {
+            _subStageOriginalProperty = null;
+            _subStageOriginalValue = null;
+            return;
+        }
+
+        var property = _subStageOriginalProperty;
+        var originalValue = _subStageOriginalValue;
+
+        // After the edit commits, update summary and dirty state
         Dispatcher.BeginInvoke(new Action(() =>
         {
             UpdateSummary();
-            SetDirty();
+
+            bool changed = false;
+
+            if (!string.IsNullOrEmpty(property))
+            {
+                object? currentValue = property switch
+                {
+                    nameof(SubStageVm.Name) => vm.Name,
+                    nameof(SubStageVm.LaborCost) => vm.LaborCost,
+                    _ => null
+                };
+
+                changed = !ValuesEqual(originalValue, currentValue);
+            }
+
+            if (changed)
+                SetDirty();
+
+            _subStageOriginalProperty = null;
+            _subStageOriginalValue = null;
         }));
+    }
+
+    private static bool ValuesEqual(object? original, object? current)
+    {
+        if (original == null && current == null) return true;
+        if (original == null || current == null) return false;
+
+        if (original is string || current is string)
+        {
+            var left = (original?.ToString() ?? string.Empty).Trim();
+            var right = (current?.ToString() ?? string.Empty).Trim();
+            return string.Equals(left, right, StringComparison.Ordinal);
+        }
+
+        if (original is decimal od && current is decimal cd)
+            return od == cd;
+
+        return Equals(original, current);
     }
 
     // -------------------- Save / Cancel --------------------

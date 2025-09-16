@@ -5,28 +5,16 @@
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
              x:Name="Root"
              Background="{DynamicResource MaterialDesignPaper}">
-    <UserControl.Resources>
-        <BooleanToVisibilityConverter x:Key="BoolToVis"/>
-    </UserControl.Resources>
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <!-- dirty banner -->
             <RowDefinition Height="*"/>
             <!-- content -->
             <RowDefinition Height="Auto"/>
             <!-- actions -->
         </Grid.RowDefinitions>
 
-        <!-- Dirty banner -->
-        <Border Grid.Row="0" Padding="8"
-          Background="#E67E22"
-          Visibility="{Binding IsDirty, ElementName=Root, Converter={StaticResource BoolToVis}}">
-            <TextBlock Text="{DynamicResource StagePresetDesignerView_UnsavedChanges}" Foreground="White" FontWeight="SemiBold"/>
-        </Border>
-
         <!-- ===== CONTENT AREA: either Empty State OR Editor ===== -->
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="0">
             <!-- EMPTY STATE -->
             <Border x:Name="EmptyStatePanel"
             Padding="24" Margin="12"
@@ -56,7 +44,19 @@
 
                     <!-- 1) GENERAL -->
                     <Border Grid.Row="0" Padding="12" Background="{DynamicResource MaterialDesignCardBackground}"
-                BorderBrush="{DynamicResource MaterialDesignDivider}" BorderThickness="1" CornerRadius="8">
+                CornerRadius="8">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="BorderBrush" Value="{DynamicResource MaterialDesignDivider}"/>
+                                <Setter Property="BorderThickness" Value="1"/>
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding IsDirty, ElementName=Root}" Value="True">
+                                        <Setter Property="BorderBrush" Value="#E67E22"/>
+                                        <Setter Property="BorderThickness" Value="2"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
@@ -105,6 +105,7 @@
                         HeadersVisibility="Column" GridLinesVisibility="None"
                         SelectionMode="Single"
                         SelectionChanged="SubStagesGrid_SelectionChanged"
+                        PreparingCellForEdit="SubStagesGrid_PreparingCellForEdit"
                         CellEditEnding="SubStagesGrid_CellEditEnding"
                         Style="{StaticResource MaterialDesignDataGrid}">
                                     <DataGrid.Columns>
@@ -194,7 +195,7 @@
         </Grid>
 
         <!-- ACTIONS (only visible in editor mode) -->
-        <DockPanel x:Name="ActionsPanel" Grid.Row="2" LastChildFill="False" Margin="12,6,12,12" Visibility="Collapsed">
+        <DockPanel x:Name="ActionsPanel" Grid.Row="1" LastChildFill="False" Margin="12,6,12,12" Visibility="Collapsed">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right">
                 <Button Content="{DynamicResource Common_Save}" Click="Save_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
                 <Button Content="{DynamicResource Common_Cancel}" Click="Cancel_Click" Margin="6,0"/>
