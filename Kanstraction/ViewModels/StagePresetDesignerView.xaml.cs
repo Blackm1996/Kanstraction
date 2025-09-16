@@ -333,6 +333,7 @@ public partial class StagePresetDesignerView : UserControl
         {
             s.OrderIndex = i++;
         }
+        SubStagesGrid?.Items.Refresh();
     }
 
     private void EmptyStateCreateNew_Click(object sender, RoutedEventArgs e)
