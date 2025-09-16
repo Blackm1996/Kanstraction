@@ -1,4 +1,5 @@
-﻿using Kanstraction.Entities;
+using Kanstraction.Entities;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 
@@ -35,7 +36,18 @@ public class AppDbContext : DbContext
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)
-        => options.UseSqlite($"Data Source={DbPath}");
+        => options.UseSqlite(BuildConnectionString(DbPath));
+
+    private static string BuildConnectionString(string path)
+    {
+        var builder = new SqliteConnectionStringBuilder
+        {
+            DataSource = path,
+            Pooling = false
+        };
+
+        return builder.ToString();
+    }
 
     protected override void OnModelCreating(ModelBuilder b)
     {
