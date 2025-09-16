@@ -2,8 +2,10 @@
 using Kanstraction.Data;
 using Kanstraction.Entities;
 using Kanstraction.Services;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
 
@@ -24,6 +26,12 @@ public partial class OperationsView : UserControl
 
     private int? _currentBuildingId;
     private int? _currentStageId;
+    private SubStage? _editingSubStageForLabor;
+    private decimal? _originalSubStageLabor;
+    private MaterialUsage? _editingMaterialUsage;
+    private decimal? _originalMaterialQuantity;
+
+    private static string FormatDecimal(decimal value) => value.ToString("0.##", CultureInfo.CurrentCulture);
 
     public OperationsView()
     {
@@ -117,16 +125,51 @@ public partial class OperationsView : UserControl
 
         MaterialsGrid.ItemsSource = usages;
     }
+    private void SubStagesGrid_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
+    {
+        if (e.Column is DataGridTextColumn column &&
+            column.Binding is Binding binding &&
+            binding.Path?.Path == nameof(SubStage.LaborCost) &&
+            e.Row.Item is SubStage ss)
+        {
+            _editingSubStageForLabor = ss;
+            _originalSubStageLabor = ss.LaborCost;
+        }
+        else
+        {
+            _editingSubStageForLabor = null;
+            _originalSubStageLabor = null;
+        }
+    }
+
     private async void SubStagesGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
     {
         if (_db == null) return;
-        if (e.EditAction != DataGridEditAction.Commit) return;
-
-        if (e.Column is DataGridTextColumn col &&
-            (col.Header?.ToString()?.Equals("Labor", StringComparison.OrdinalIgnoreCase) ?? false))
+        if (e.EditAction != DataGridEditAction.Commit)
         {
-            var ss = e.Row.Item as SubStage;   // now valid
-            if (ss == null) return;
+            if (e.Row.Item is SubStage subStage && ReferenceEquals(_editingSubStageForLabor, subStage))
+            {
+                _editingSubStageForLabor = null;
+                _originalSubStageLabor = null;
+            }
+
+            return;
+        }
+
+        if (e.Column is DataGridTextColumn column &&
+            column.Binding is Binding binding &&
+            binding.Path?.Path == nameof(SubStage.LaborCost) &&
+            e.Row.Item is SubStage ss)
+        {
+            decimal originalValue;
+            if (_editingSubStageForLabor == ss && _originalSubStageLabor.HasValue)
+            {
+                originalValue = _originalSubStageLabor.Value;
+            }
+            else
+            {
+                originalValue = _db.Entry(ss).Property(s => s.LaborCost).OriginalValue;
+            }
 
             if (ss.LaborCost < 0)
             {
@@ -136,19 +179,107 @@ public partial class OperationsView : UserControl
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
                 ss.LaborCost = 0;
+                if (e.EditingElement is TextBox negativeTextBox)
+                {
+                    negativeTextBox.Text = FormatDecimal(ss.LaborCost);
+                }
             }
 
-            await _db.SaveChangesAsync();
+            var newValue = ss.LaborCost;
+
+            if (originalValue == newValue)
+            {
+                _db.Entry(ss).Property(s => s.LaborCost).IsModified = false;
+                _editingSubStageForLabor = null;
+                _originalSubStageLabor = null;
+                return;
+            }
+
+            var message = string.Format(
+                CultureInfo.CurrentCulture,
+                ResourceHelper.GetString("OperationsView_ConfirmLaborChangeMessage", "Are you sure you want to change the labor from {0} to {1}?"),
+                FormatDecimal(originalValue),
+                FormatDecimal(newValue));
+
+            var dialog = new ConfirmValueChangeDialog(
+                ResourceHelper.GetString("OperationsView_ConfirmChangeTitle", "Confirm change"),
+                message,
+                ResourceHelper.GetString("Common_Save", "Save"),
+                ResourceHelper.GetString("OperationsView_ReturnToDefault", "Return to default"))
+            {
+                Owner = Window.GetWindow(this)
+            };
+
+            var result = dialog.ShowDialog();
+
+            if (result == true)
+            {
+                await _db.SaveChangesAsync();
+            }
+            else
+            {
+                ss.LaborCost = originalValue;
+                if (e.EditingElement is TextBox textBox)
+                {
+                    textBox.Text = FormatDecimal(originalValue);
+                }
+
+                var entry = _db.Entry(ss);
+                entry.Property(s => s.LaborCost).CurrentValue = originalValue;
+                entry.Property(s => s.LaborCost).IsModified = false;
+            }
+
+            _editingSubStageForLabor = null;
+            _originalSubStageLabor = null;
         }
     }
+
+    private void MaterialsGrid_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
+    {
+        if (e.Column is DataGridTextColumn column &&
+            column.Binding is Binding binding &&
+            binding.Path?.Path == nameof(MaterialUsage.Qty) &&
+            e.Row.Item is MaterialUsage mu)
+        {
+            _editingMaterialUsage = mu;
+            _originalMaterialQuantity = mu.Qty;
+        }
+        else
+        {
+            _editingMaterialUsage = null;
+            _originalMaterialQuantity = null;
+        }
+    }
+
     private async void MaterialsGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
     {
         if (_db == null) return;
-        if (e.EditAction != DataGridEditAction.Commit) return;
-
-        if (e.Row.Item is MaterialUsage mu)
+        if (e.EditAction != DataGridEditAction.Commit)
         {
-            // Validate: non-negative
+            if (e.Row.Item is MaterialUsage materialUsage && ReferenceEquals(_editingMaterialUsage, materialUsage))
+            {
+                _editingMaterialUsage = null;
+                _originalMaterialQuantity = null;
+            }
+
+            return;
+        }
+
+        if (e.Column is DataGridTextColumn column &&
+            column.Binding is Binding binding &&
+            binding.Path?.Path == nameof(MaterialUsage.Qty) &&
+            e.Row.Item is MaterialUsage mu)
+        {
+            decimal originalValue;
+            if (_editingMaterialUsage == mu && _originalMaterialQuantity.HasValue)
+            {
+                originalValue = _originalMaterialQuantity.Value;
+            }
+            else
+            {
+                originalValue = _db.Entry(mu).Property(m => m.Qty).OriginalValue;
+            }
+
             if (mu.Qty < 0)
             {
                 MessageBox.Show(
@@ -157,10 +288,58 @@ public partial class OperationsView : UserControl
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
                 mu.Qty = 0;
+                if (e.EditingElement is TextBox negativeTextBox)
+                {
+                    negativeTextBox.Text = FormatDecimal(mu.Qty);
+                }
             }
 
-            await _db.SaveChangesAsync();
-            // If you show any totals elsewhere, refresh them here
+            var newValue = mu.Qty;
+
+            if (originalValue == newValue)
+            {
+                _db.Entry(mu).Property(m => m.Qty).IsModified = false;
+                _editingMaterialUsage = null;
+                _originalMaterialQuantity = null;
+                return;
+            }
+
+            var message = string.Format(
+                CultureInfo.CurrentCulture,
+                ResourceHelper.GetString("OperationsView_ConfirmMaterialChangeMessage", "Are you sure you want to change the quantity from {0} to {1}?"),
+                FormatDecimal(originalValue),
+                FormatDecimal(newValue));
+
+            var dialog = new ConfirmValueChangeDialog(
+                ResourceHelper.GetString("OperationsView_ConfirmChangeTitle", "Confirm change"),
+                message,
+                ResourceHelper.GetString("Common_Save", "Save"),
+                ResourceHelper.GetString("OperationsView_ReturnToDefault", "Return to default"))
+            {
+                Owner = Window.GetWindow(this)
+            };
+
+            var result = dialog.ShowDialog();
+
+            if (result == true)
+            {
+                await _db.SaveChangesAsync();
+            }
+            else
+            {
+                mu.Qty = originalValue;
+                if (e.EditingElement is TextBox textBox)
+                {
+                    textBox.Text = FormatDecimal(originalValue);
+                }
+
+                var entry = _db.Entry(mu);
+                entry.Property(m => m.Qty).CurrentValue = originalValue;
+                entry.Property(m => m.Qty).IsModified = false;
+            }
+
+            _editingMaterialUsage = null;
+            _originalMaterialQuantity = null;
         }
     }
     private string UpdateBreadcrumbWithBuilding(string code)

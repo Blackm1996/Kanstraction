@@ -256,8 +256,9 @@
                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                 ScrollViewer.CanContentScroll="True"
                 EnableRowVirtualization="True"
-                SelectionChanged="SubStagesGrid_SelectionChanged" 
-                CellEditEnding="SubStagesGrid_CellEditEnding" 
+                SelectionChanged="SubStagesGrid_SelectionChanged"
+                CellEditEnding="SubStagesGrid_CellEditEnding"
+                PreparingCellForEdit="SubStagesGrid_PreparingCellForEdit"
                 Style="{StaticResource MaterialDesignDataGrid}">
                     <DataGrid.Columns>
                     <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_Name}" Binding="{Binding Name}"/>
@@ -382,7 +383,8 @@
                 ScrollViewer.CanContentScroll="True"
                 EnableRowVirtualization="True"
                 Style="{StaticResource MaterialDesignDataGrid}"
-                CellEditEnding="MaterialsGrid_CellEditEnding">
+                CellEditEnding="MaterialsGrid_CellEditEnding"
+                PreparingCellForEdit="MaterialsGrid_PreparingCellForEdit">
                 <DataGrid.Columns>
                     <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_MaterialHeader}" Binding="{Binding Material.Name}"/>
                     <DataGridTextColumn Header="{DynamicResource OperationsView_Qty}" Width="100" IsReadOnly="False"
