@@ -60,7 +60,7 @@
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="180"/>
+                                <ColumnDefinition Width="280"/>
                             </Grid.ColumnDefinitions>
 
                             <StackPanel Grid.Column="0">
