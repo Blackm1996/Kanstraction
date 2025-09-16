@@ -65,6 +65,13 @@
                   Style="{StaticResource MaterialDesignOutlinedButton}">
                         <TextBlock Text="⚙️" FontSize="18" HorizontalAlignment="Center"/>
                     </Button>
+
+                    <!-- Backups -->
+                    <Button Margin="0,6" Padding="1" ToolTip="{DynamicResource MainWindow_Backups}" Height="30"
+                  Click="BackupsRail_Click"
+                  Style="{StaticResource MaterialDesignOutlinedButton}">
+                        <TextBlock Text="💾" FontSize="18" HorizontalAlignment="Center"/>
+                    </Button>
                 </StackPanel>
             </Border>
 

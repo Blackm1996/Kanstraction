@@ -22,6 +22,7 @@
     <!-- MainWindow -->
     <sys:String x:Key="MainWindow_Projects">Projects</sys:String>
     <sys:String x:Key="MainWindow_Admin">Admin</sys:String>
+    <sys:String x:Key="MainWindow_Backups">Backups</sys:String>
     <sys:String x:Key="MainWindow_SearchProjectsHint">Search projects</sys:String>
     <sys:String x:Key="MainWindow_AddProject">Add Project</sys:String>
 
@@ -109,6 +110,34 @@
     <sys:String x:Key="AdminHubView_BuildingTypeNameRequired">Name is required.</sys:String>
     <sys:String x:Key="AdminHubView_BuildingTypeSavedMessage">Building type saved.</sys:String>
     <sys:String x:Key="AdminHubView_SaveBuildingTypeFailedFormat">Saving failed:&#x0a;{0}</sys:String>
+
+    <!-- BackupHubView -->
+    <sys:String x:Key="BackupHubView_Title">Backups &amp; Restore</sys:String>
+    <sys:String x:Key="BackupHubView_Intro">Manage manual backups and review where automatic backups are stored.</sys:String>
+    <sys:String x:Key="BackupHubView_AutomaticHeader">Automatic backups</sys:String>
+    <sys:String x:Key="BackupHubView_AutomaticDescription">The application creates backups on startup and every hour while it is open.</sys:String>
+    <sys:String x:Key="BackupHubView_StartupFolderLabel">Startup backups folder</sys:String>
+    <sys:String x:Key="BackupHubView_HourlyFolderLabel">Hourly backups folder</sys:String>
+    <sys:String x:Key="BackupHubView_LatestAutomaticFormat">Latest backup: {0}</sys:String>
+    <sys:String x:Key="BackupHubView_NoBackupYet">No backups yet.</sys:String>
+    <sys:String x:Key="BackupHubView_ManualHeader">Manual backup</sys:String>
+    <sys:String x:Key="BackupHubView_ManualDescription">Create a backup now and choose the destination file.</sys:String>
+    <sys:String x:Key="BackupHubView_CreateManualBackup">Create backup</sys:String>
+    <sys:String x:Key="BackupHubView_SaveDialogTitle">Save backup</sys:String>
+    <sys:String x:Key="BackupHubView_SaveDialogFilter">Kanstraction Backup (*.db)|*.db|All files (*.*)|*.*</sys:String>
+    <sys:String x:Key="BackupHubView_SaveSuccessFormat">Backup saved to:&#x0a;{0}</sys:String>
+    <sys:String x:Key="BackupHubView_SaveFailureFormat">Backup failed:&#x0a;{0}</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreHeader">Restore</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreDescription">Replace the current data with a backup file.</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreButton">Restore from backup</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreDialogTitle">Open backup</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreDialogFilter">Kanstraction Backup (*.db)|*.db|All files (*.*)|*.*</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreConfirmMessage">Restore from this backup? Current data will be replaced.</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreConfirmTitle">Restore</sys:String>
+    <sys:String x:Key="BackupHubView_RestorePrepareFailedFormat">Failed to prepare for restore:&#x0a;{0}</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreFailureFormat">Restore failed:&#x0a;{0}</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreReloadFailedFormat">Failed to reload after restore:&#x0a;{0}</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreSuccess">Backup restored successfully.</sys:String>
 
     <!-- OperationsView -->
     <sys:String x:Key="OperationsView_ResolvePayment">Resolve Payment</sys:String>
