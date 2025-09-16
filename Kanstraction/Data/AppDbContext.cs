@@ -21,12 +21,17 @@ public class AppDbContext : DbContext
 
     public string DbPath { get; }
 
-    public AppDbContext()
+    public static string GetDefaultDbPath()
     {
         var appData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
         var dir = Path.Combine(appData, "Kanstraction");
         if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-        DbPath = Path.Combine(dir, "app.db");
+        return Path.Combine(dir, "app.db");
+    }
+
+    public AppDbContext()
+    {
+        DbPath = GetDefaultDbPath();
     }
 
     protected override void OnConfiguring(DbContextOptionsBuilder options)

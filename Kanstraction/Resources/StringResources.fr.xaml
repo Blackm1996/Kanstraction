@@ -22,6 +22,7 @@
     <!-- MainWindow -->
     <sys:String x:Key="MainWindow_Projects">Projets</sys:String>
     <sys:String x:Key="MainWindow_Admin">Admin</sys:String>
+    <sys:String x:Key="MainWindow_Backups">Sauvegardes</sys:String>
     <sys:String x:Key="MainWindow_SearchProjectsHint">Rechercher des projets</sys:String>
     <sys:String x:Key="MainWindow_AddProject">Ajouter un projet</sys:String>
 
@@ -107,6 +108,34 @@
     <sys:String x:Key="AdminHubView_BuildingTypeNameRequired">Le nom est requis.</sys:String>
     <sys:String x:Key="AdminHubView_BuildingTypeSavedMessage">Type de bâtiment enregistré.</sys:String>
     <sys:String x:Key="AdminHubView_SaveBuildingTypeFailedFormat">Échec de l'enregistrement :&#x0a;{0}</sys:String>
+
+    <!-- BackupHubView -->
+    <sys:String x:Key="BackupHubView_Title">Sauvegardes et restauration</sys:String>
+    <sys:String x:Key="BackupHubView_Intro">Gérez les sauvegardes manuelles et consultez l'emplacement des sauvegardes automatiques.</sys:String>
+    <sys:String x:Key="BackupHubView_AutomaticHeader">Sauvegardes automatiques</sys:String>
+    <sys:String x:Key="BackupHubView_AutomaticDescription">L'application crée une sauvegarde au démarrage puis toutes les heures lorsqu'elle reste ouverte.</sys:String>
+    <sys:String x:Key="BackupHubView_StartupFolderLabel">Dossier des sauvegardes au démarrage</sys:String>
+    <sys:String x:Key="BackupHubView_HourlyFolderLabel">Dossier des sauvegardes horaires</sys:String>
+    <sys:String x:Key="BackupHubView_LatestAutomaticFormat">Dernière sauvegarde : {0}</sys:String>
+    <sys:String x:Key="BackupHubView_NoBackupYet">Aucune sauvegarde pour le moment.</sys:String>
+    <sys:String x:Key="BackupHubView_ManualHeader">Sauvegarde manuelle</sys:String>
+    <sys:String x:Key="BackupHubView_ManualDescription">Créer une sauvegarde maintenant et choisir le fichier de destination.</sys:String>
+    <sys:String x:Key="BackupHubView_CreateManualBackup">Créer une sauvegarde</sys:String>
+    <sys:String x:Key="BackupHubView_SaveDialogTitle">Enregistrer une sauvegarde</sys:String>
+    <sys:String x:Key="BackupHubView_SaveDialogFilter">Sauvegarde Kanstraction (*.db)|*.db|Tous les fichiers (*.*)|*.*</sys:String>
+    <sys:String x:Key="BackupHubView_SaveSuccessFormat">Sauvegarde enregistrée dans :&#x0a;{0}</sys:String>
+    <sys:String x:Key="BackupHubView_SaveFailureFormat">Échec de la sauvegarde :&#x0a;{0}</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreHeader">Restauration</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreDescription">Remplacer les données actuelles par un fichier de sauvegarde.</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreButton">Restaurer à partir d'une sauvegarde</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreDialogTitle">Ouvrir une sauvegarde</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreDialogFilter">Sauvegarde Kanstraction (*.db)|*.db|Tous les fichiers (*.*)|*.*</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreConfirmMessage">Restaurer depuis cette sauvegarde ? Les données actuelles seront remplacées.</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreConfirmTitle">Restaurer</sys:String>
+    <sys:String x:Key="BackupHubView_RestorePrepareFailedFormat">Impossible de préparer la restauration :&#x0a;{0}</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreFailureFormat">Échec de la restauration :&#x0a;{0}</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreReloadFailedFormat">Impossible de recharger après la restauration :&#x0a;{0}</sys:String>
+    <sys:String x:Key="BackupHubView_RestoreSuccess">Sauvegarde restaurée avec succès.</sys:String>
 
     <!-- OperationsView -->
     <sys:String x:Key="OperationsView_ResolvePayment">Résoudre le paiement</sys:String>

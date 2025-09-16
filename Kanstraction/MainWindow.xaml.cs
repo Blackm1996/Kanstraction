@@ -1,5 +1,6 @@
-﻿using Kanstraction.Data;
+using Kanstraction.Data;
 using Kanstraction.Entities;
+using Kanstraction.Services;
 using Kanstraction.Views;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
@@ -7,57 +8,129 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace Kanstraction;
 
 public partial class MainWindow : Window
 {
-    private readonly AppDbContext _db = new AppDbContext();
+    private AppDbContext? _db;
 
     // Explorer sizing/toggle
     private double _explorerLastWidth = 220;
-    private bool _explorerCollapsed = false;
+    private bool _explorerCollapsed;
 
     // Views
-    private OperationsView _opsView = new OperationsView();
-    private AdminHubView _adminView = new AdminHubView();
+    private OperationsView _opsView = null!;
+    private AdminHubView _adminView = null!;
+    private BackupHubView _backupView = null!;
 
     // Projects cache
     private List<Project> _allProjects = new();
+
+    private DispatcherTimer? _hourlyBackupTimer;
+    private bool _isRestoring;
+
+    private ActiveView _activeView = ActiveView.Operations;
+
+    private enum ActiveView
+    {
+        Operations,
+        Admin,
+        Backup
+    }
 
     public MainWindow()
     {
         InitializeComponent();
 
-        // Prepare views
-        _opsView.SetDb(_db);
-        _adminView.SetDb(_db);
+        InitializeDataLayer();
+        BuildViews();
+        ActivateOperationsView();
 
-        // Default to Operations view
-        MainContentHost.Content = _opsView;
+        _hourlyBackupTimer = new DispatcherTimer
+        {
+            Interval = TimeSpan.FromHours(1)
+        };
+        _hourlyBackupTimer.Tick += HourlyBackupTimer_Tick;
+        _hourlyBackupTimer.Start();
 
         Loaded += OnLoaded;
     }
 
+    private void InitializeDataLayer()
+    {
+        _db?.Dispose();
+        _db = new AppDbContext();
+    }
+
+    private void BuildViews()
+    {
+        _opsView = new OperationsView();
+        if (_db != null)
+            _opsView.SetDb(_db);
+
+        _adminView = new AdminHubView();
+        if (_db != null)
+            _adminView.SetDb(_db);
+
+        _backupView = new BackupHubView();
+        if (App.BackupService != null)
+            _backupView.Initialize(App.BackupService, PrepareForRestoreAsync, FinalizeRestoreAsync);
+    }
+
     private async void OnLoaded(object? sender, RoutedEventArgs e)
     {
-        // Load projects
+        if (_db == null || _isRestoring)
+            return;
+
         _allProjects = await _db.Projects.AsNoTracking().OrderBy(p => p.Name).ToListAsync();
         ProjectsList.ItemsSource = _allProjects;
 
-        // Auto-select first project (if any)
         if (ProjectsList.Items.Count > 0)
             ProjectsList.SelectedIndex = 0;
+    }
+
+    private async void HourlyBackupTimer_Tick(object? sender, EventArgs e)
+    {
+        if (_isRestoring || App.BackupService == null)
+            return;
+
+        try
+        {
+            await App.BackupService.CreateHourlyBackupAsync();
+            _backupView.RefreshBackupInfo();
+        }
+        catch
+        {
+            // Ignore automatic backup failures to avoid disrupting the user
+        }
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        base.OnClosed(e);
+
+        if (_hourlyBackupTimer != null)
+        {
+            _hourlyBackupTimer.Stop();
+            _hourlyBackupTimer.Tick -= HourlyBackupTimer_Tick;
+            _hourlyBackupTimer = null;
+        }
+
+        _db?.Dispose();
+        _db = null;
     }
 
     // ============ Explorer toggle ============
     private void ToggleExplorer()
     {
-        // Only meaningful in Operations mode
-        if (MainContentHost.Content == _adminView) return;
+        if (_activeView != ActiveView.Operations)
+            return;
 
         if (_explorerCollapsed)
         {
@@ -72,11 +145,27 @@ public partial class MainWindow : Window
         }
     }
 
-    // ============ Left rail buttons ============
-    private void ProjectsRail_Click(object sender, RoutedEventArgs e)
+    private void CollapseExplorer()
     {
-        // Switch to operations view, restore explorer
+        if (!_explorerCollapsed)
+        {
+            _explorerLastWidth = ExplorerCol.ActualWidth > 0 ? ExplorerCol.ActualWidth : 220;
+            ExplorerCol.Width = new GridLength(0);
+            _explorerCollapsed = true;
+        }
+
+        SplitterCol.Width = new GridLength(0);
+        ExplorerSplitter.Visibility = Visibility.Collapsed;
+        ExplorerSplitter.IsEnabled = false;
+        ExplorerSplitter.IsHitTestVisible = false;
+        ExplorerSplitter.Cursor = Cursors.Arrow;
+    }
+
+    private void ActivateOperationsView()
+    {
+        _activeView = ActiveView.Operations;
         MainContentHost.Content = _opsView;
+
         if (_explorerCollapsed)
         {
             ExplorerCol.Width = new GridLength(_explorerLastWidth > 0 ? _explorerLastWidth : 220);
@@ -89,31 +178,63 @@ public partial class MainWindow : Window
         ExplorerSplitter.IsHitTestVisible = true;
         ExplorerSplitter.Cursor = Cursors.SizeWE;
 
-        // If nothing is selected, select first
         if (ProjectsList.Items.Count > 0 && ProjectsList.SelectedIndex < 0)
             ProjectsList.SelectedIndex = 0;
     }
 
+    private void ActivateAdminView()
+    {
+        _activeView = ActiveView.Admin;
+        MainContentHost.Content = _adminView;
+        CollapseExplorer();
+    }
+
+    private void ActivateBackupView()
+    {
+        _activeView = ActiveView.Backup;
+        MainContentHost.Content = _backupView;
+        CollapseExplorer();
+        _backupView.RefreshBackupInfo();
+    }
+
+    private void ShowActiveView()
+    {
+        switch (_activeView)
+        {
+            case ActiveView.Operations:
+                ActivateOperationsView();
+                break;
+            case ActiveView.Admin:
+                ActivateAdminView();
+                break;
+            case ActiveView.Backup:
+                ActivateBackupView();
+                break;
+        }
+    }
+
+    // ============ Left rail buttons ============
+    private void ProjectsRail_Click(object sender, RoutedEventArgs e)
+    {
+        ActivateOperationsView();
+    }
+
     private void AdminRail_Click(object sender, RoutedEventArgs e)
     {
-        // Switch to admin view, hide explorer
-        MainContentHost.Content = _adminView;
-        if (!_explorerCollapsed)
-        {
-            _explorerLastWidth = ExplorerCol.ActualWidth > 0 ? ExplorerCol.ActualWidth : 220;
-            ExplorerCol.Width = new GridLength(0);
-            _explorerCollapsed = true;
-        }
-        SplitterCol.Width = new GridLength(0);
-        ExplorerSplitter.Visibility = Visibility.Collapsed;
-        ExplorerSplitter.IsEnabled = false;
-        ExplorerSplitter.IsHitTestVisible = false;
-        ExplorerSplitter.Cursor = Cursors.Arrow;
+        ActivateAdminView();
+    }
+
+    private void BackupsRail_Click(object sender, RoutedEventArgs e)
+    {
+        ActivateBackupView();
     }
 
     // ============ Projects search & selection ============
     private void ProjectSearchBox_TextChanged(object sender, TextChangedEventArgs e)
     {
+        if (_isRestoring)
+            return;
+
         var q = ProjectSearchBox.Text?.Trim();
         if (string.IsNullOrWhiteSpace(q))
         {
@@ -126,17 +247,18 @@ public partial class MainWindow : Window
                 .ToList();
         }
 
-        // Auto-select first result (if any)
         if (ProjectsList.Items.Count > 0)
             ProjectsList.SelectedIndex = 0;
     }
 
     private async void ProjectsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (MainContentHost.Content != _opsView) return; // ignore when in Admin
+        if (_db == null || _isRestoring || _activeView != ActiveView.Operations)
+            return;
 
         var p = ProjectsList.SelectedItem as Project;
-        if (p == null) return;
+        if (p == null)
+            return;
 
         await _opsView.ShowProject(p);
     }
@@ -144,7 +266,8 @@ public partial class MainWindow : Window
     // ============ Top bar action stubs ============
     private async void NewProject_Click(object sender, RoutedEventArgs e)
     {
-        if (_db == null) return;
+        if (_db == null || _isRestoring)
+            return;
 
         var dlg = new PromptTextDialog(ResourceHelper.GetString("MainWindow_NewProjectDialogTitle", "New Project"))
         {
@@ -155,28 +278,25 @@ public partial class MainWindow : Window
         var p = new Project
         {
             Name = dlg.Value!,
-            StartDate = System.DateTime.Today
+            StartDate = DateTime.Today
         };
         _db.Projects.Add(p);
         await _db.SaveChangesAsync();
 
-        // reload list and select the new project
         _allProjects = await _db.Projects.AsNoTracking().OrderBy(x => x.Name).ToListAsync();
         await RefreshProjectsList();
         var row = _allProjects.FirstOrDefault(x => x.Id == p.Id);
         if (row != null)
         {
             ProjectsList.SelectedItem = row;
-            // Show in operations view (if not already)
-            ProjectsRail_Click(null, null);
-            // Optionally call into OperationsView to show project
-            _opsView?.ShowProject(row);
+            ActivateOperationsView();
+            await _opsView.ShowProject(row);
         }
     }
 
     private void Reporting_Click(object sender, RoutedEventArgs e)
     {
-        if (MainContentHost.Content != _opsView)
+        if (_activeView != ActiveView.Operations)
             MessageBox.Show("Passez à Projets pour exécuter des rapports liés à une sélection de projet.", "Rapports");
         else
             MessageBox.Show("TODO : ouvrir l'assistant de rapports / résumé mensuel.", "Rapports");
@@ -216,7 +336,7 @@ public partial class MainWindow : Window
 
     private async Task RefreshProjectsList()
     {
-        if (_db == null || ProjectsList == null) return;
+        if (_db == null || ProjectsList == null || _isRestoring) return;
 
         _allProjects = await _db.Projects
             .AsNoTracking()
@@ -225,11 +345,40 @@ public partial class MainWindow : Window
 
         ProjectsList.ItemsSource = _allProjects;
 
-        // keep selection or select first
         if (_allProjects.Count > 0)
         {
             if (ProjectsList.SelectedItem == null)
                 ProjectsList.SelectedIndex = 0;
+        }
+    }
+
+    private Task PrepareForRestoreAsync()
+    {
+        _isRestoring = true;
+        _hourlyBackupTimer?.Stop();
+
+        _db?.Dispose();
+        _db = null;
+
+        _allProjects.Clear();
+        ProjectsList.ItemsSource = null;
+
+        return Task.CompletedTask;
+    }
+
+    private async Task FinalizeRestoreAsync()
+    {
+        try
+        {
+            InitializeDataLayer();
+            BuildViews();
+            ShowActiveView();
+            await RefreshProjectsList();
+        }
+        finally
+        {
+            _hourlyBackupTimer?.Start();
+            _isRestoring = false;
         }
     }
 }

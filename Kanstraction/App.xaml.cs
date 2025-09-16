@@ -1,12 +1,16 @@
-using System.Windows;
-using Kanstraction.Data;
+using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
+using System.Windows;
+using Kanstraction.Data;
+using Kanstraction.Services;
 
 namespace Kanstraction;
 
 public partial class App : Application
 {
+    public static BackupService BackupService { get; private set; } = null!;
+
     protected override void OnStartup(StartupEventArgs e)
     {
         var culture = new CultureInfo("fr-FR");
@@ -20,6 +24,16 @@ public partial class App : Application
         {
             db.Database.EnsureCreated(); // safe because we use migrations already; fine for dev
             DbSeeder.Seed(db);
+        }
+
+        BackupService = new BackupService();
+        try
+        {
+            BackupService.RunStartupMaintenanceAsync().GetAwaiter().GetResult();
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"Startup backup failed: {ex}");
         }
 
         base.OnStartup(e);
