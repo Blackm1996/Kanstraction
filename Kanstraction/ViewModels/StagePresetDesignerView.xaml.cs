@@ -1,6 +1,7 @@
 ﻿using Kanstraction.Data;
 using Kanstraction.Entities;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
 using Microsoft.EntityFrameworkCore;
@@ -31,6 +32,18 @@ public partial class StagePresetDesignerView : UserControl
         SubStagesGrid.ItemsSource = _subStages;
         SubStagesGrid.SelectionChanged += (_, __) => UpdateSelectedSubStageFromGrid();
         MaterialsGrid.ItemsSource = new ObservableCollection<MaterialUsageVm>();
+        Loaded += StagePresetDesignerView_Loaded;
+    }
+
+    private void StagePresetDesignerView_Loaded(object sender, RoutedEventArgs e)
+    {
+        Loaded -= StagePresetDesignerView_Loaded;
+
+        if (DesignerProperties.GetIsInDesignMode(this))
+        {
+            return;
+        }
+
         UpdateSummary();
     }
     private void ShowEmptyState()
@@ -409,9 +422,13 @@ public partial class StagePresetDesignerView : UserControl
     // -------------------- Summary --------------------
     private void UpdateSummary()
     {
-        TxtTotalSubs.Text = string.Format((string)FindResource("StagePresetDesignerView_TotalSubStages"), _subStages.Count);
+        var totalSubStagesFormat = TryFindResource("StagePresetDesignerView_TotalSubStages") as string
+            ?? "Total sub-stages: {0}";
+        TxtTotalSubs.Text = string.Format(totalSubStagesFormat, _subStages.Count);
         var totalLabor = _subStages.Sum(s => s.LaborCost);
-        TxtTotalLabor.Text = string.Format((string)FindResource("StagePresetDesignerView_TotalLabor"), totalLabor);
+        var totalLaborFormat = TryFindResource("StagePresetDesignerView_TotalLabor") as string
+            ?? "Total labor: {0:C}";
+        TxtTotalLabor.Text = string.Format(totalLaborFormat, totalLabor);
     }
 
     // When editing cells, mark dirty and update summary (for labor changes)
