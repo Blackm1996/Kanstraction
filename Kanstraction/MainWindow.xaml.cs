@@ -338,6 +338,8 @@ public partial class MainWindow : Window
     {
         if (_db == null || ProjectsList == null || _isRestoring) return;
 
+        var previouslySelectedId = (ProjectsList.SelectedItem as Project)?.Id;
+
         _allProjects = await _db.Projects
             .AsNoTracking()
             .OrderBy(p => p.Name)
@@ -345,11 +347,32 @@ public partial class MainWindow : Window
 
         ProjectsList.ItemsSource = _allProjects;
 
-        if (_allProjects.Count > 0)
+        if (_activeView != ActiveView.Operations)
         {
-            if (ProjectsList.SelectedItem == null)
-                ProjectsList.SelectedIndex = 0;
+            ProjectsList.SelectedItem = null;
+            ProjectsList.SelectedIndex = -1;
+            return;
         }
+
+        if (_allProjects.Count == 0)
+        {
+            ProjectsList.SelectedItem = null;
+            ProjectsList.SelectedIndex = -1;
+            return;
+        }
+
+        if (previouslySelectedId.HasValue)
+        {
+            var match = _allProjects.FirstOrDefault(p => p.Id == previouslySelectedId.Value);
+            if (match != null)
+            {
+                ProjectsList.SelectedItem = match;
+                return;
+            }
+        }
+
+        if (ProjectsList.SelectedItem == null)
+            ProjectsList.SelectedIndex = 0;
     }
 
     private Task PrepareForRestoreAsync()
@@ -362,6 +385,8 @@ public partial class MainWindow : Window
 
         _allProjects.Clear();
         ProjectsList.ItemsSource = null;
+        ProjectsList.SelectedItem = null;
+        ProjectsList.SelectedIndex = -1;
 
         return Task.CompletedTask;
     }
