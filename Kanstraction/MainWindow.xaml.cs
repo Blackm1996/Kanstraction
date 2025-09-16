@@ -334,9 +334,9 @@ public partial class MainWindow : Window
         }
     }
 
-    private async Task RefreshProjectsList()
+    private async Task RefreshProjectsList(bool ignoreRestoringGuard = false)
     {
-        if (_db == null || ProjectsList == null || _isRestoring) return;
+        if (_db == null || ProjectsList == null || (_isRestoring && !ignoreRestoringGuard)) return;
 
         var previouslySelectedId = (ProjectsList.SelectedItem as Project)?.Id;
 
@@ -398,7 +398,7 @@ public partial class MainWindow : Window
             InitializeDataLayer();
             BuildViews();
             ShowActiveView();
-            await RefreshProjectsList();
+            await RefreshProjectsList(ignoreRestoringGuard: true);
         }
         finally
         {
