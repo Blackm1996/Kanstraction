@@ -34,12 +34,12 @@ public class BackupService
 
     public async Task RunStartupMaintenanceAsync()
     {
-        await _semaphore.WaitAsync();
+        await _semaphore.WaitAsync().ConfigureAwait(false);
         try
         {
             CleanupStartupBackupsInternal();
             CleanupHourlyBackupsInternal();
-            await CreateAutomaticBackupInternalAsync(_startupBackupDir, StartupPrefix);
+            await CreateAutomaticBackupInternalAsync(_startupBackupDir, StartupPrefix).ConfigureAwait(false);
         }
         finally
         {
@@ -49,10 +49,10 @@ public class BackupService
 
     public async Task<string?> CreateStartupBackupAsync()
     {
-        await _semaphore.WaitAsync();
+        await _semaphore.WaitAsync().ConfigureAwait(false);
         try
         {
-            return await CreateAutomaticBackupInternalAsync(_startupBackupDir, StartupPrefix);
+            return await CreateAutomaticBackupInternalAsync(_startupBackupDir, StartupPrefix).ConfigureAwait(false);
         }
         finally
         {
@@ -62,10 +62,10 @@ public class BackupService
 
     public async Task<string?> CreateHourlyBackupAsync()
     {
-        await _semaphore.WaitAsync();
+        await _semaphore.WaitAsync().ConfigureAwait(false);
         try
         {
-            return await CreateAutomaticBackupInternalAsync(_hourlyBackupDir, HourlyPrefix);
+            return await CreateAutomaticBackupInternalAsync(_hourlyBackupDir, HourlyPrefix).ConfigureAwait(false);
         }
         finally
         {
@@ -78,7 +78,7 @@ public class BackupService
         if (string.IsNullOrWhiteSpace(destinationPath))
             throw new ArgumentException("Destination path is required.", nameof(destinationPath));
 
-        await _semaphore.WaitAsync();
+        await _semaphore.WaitAsync().ConfigureAwait(false);
         try
         {
             if (!File.Exists(_dbPath))
@@ -88,7 +88,7 @@ public class BackupService
             if (!string.IsNullOrEmpty(destinationDirectory))
                 Directory.CreateDirectory(destinationDirectory);
 
-            await PerformSqliteBackupAsync(_dbPath, destinationPath);
+            await PerformSqliteBackupAsync(_dbPath, destinationPath).ConfigureAwait(false);
             return destinationPath;
         }
         finally
@@ -105,14 +105,14 @@ public class BackupService
         if (!File.Exists(backupPath))
             throw new FileNotFoundException("Backup file not found.", backupPath);
 
-        await _semaphore.WaitAsync();
+        await _semaphore.WaitAsync().ConfigureAwait(false);
         try
         {
             var destinationDirectory = Path.GetDirectoryName(_dbPath);
             if (!string.IsNullOrEmpty(destinationDirectory))
                 Directory.CreateDirectory(destinationDirectory);
 
-            await PerformSqliteBackupAsync(backupPath, _dbPath);
+            await PerformSqliteBackupAsync(backupPath, _dbPath).ConfigureAwait(false);
         }
         finally
         {
@@ -131,7 +131,7 @@ public class BackupService
         Directory.CreateDirectory(directory);
         var fileName = $"{prefix}_{DateTime.Now:yyyyMMdd_HHmmss}.db";
         var destination = Path.Combine(directory, fileName);
-        await PerformSqliteBackupAsync(_dbPath, destination);
+        await PerformSqliteBackupAsync(_dbPath, destination).ConfigureAwait(false);
         return destination;
     }
 
@@ -184,7 +184,7 @@ public class BackupService
             destination.Open();
 
             source.BackupDatabase(destination);
-        });
+        }).ConfigureAwait(false);
     }
 
     private void CleanupStartupBackupsInternal()
