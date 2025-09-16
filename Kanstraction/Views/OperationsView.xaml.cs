@@ -330,35 +330,67 @@ public partial class OperationsView : UserControl
         }
     }
 
+    private static decimal CompletionValue(WorkStatus status) =>
+        status == WorkStatus.Finished || status == WorkStatus.Paid || status == WorkStatus.Stopped ? 1m : 0m;
+
     private static int ComputeBuildingProgress(Building b)
     {
-        // Your rule: NotStarted/Ongoing = 0; Finished/Paid/Stopped = 1
-        static decimal StatusVal(WorkStatus s) =>
-            (s == WorkStatus.Finished || s == WorkStatus.Paid || s == WorkStatus.Stopped) ? 1m : 0m;
-
         if (b.Stages == null || b.Stages.Count == 0)
-            return (int)(StatusVal(b.Status) * 100m);
+            return (int)Math.Round(CompletionValue(b.Status) * 100m, MidpointRounding.AwayFromZero);
 
         decimal perStageWeight = 1m / b.Stages.Count;
         decimal sum = 0m;
 
         foreach (var s in b.Stages.OrderBy(s => s.OrderIndex))
         {
+            decimal stageFraction;
+
             if (s.SubStages == null || s.SubStages.Count == 0)
             {
-                sum += perStageWeight * StatusVal(s.Status);
-                continue;
+                stageFraction = CompletionValue(s.Status);
+            }
+            else
+            {
+                stageFraction = ComputeStageProgress(s) / 100m;
             }
 
-            decimal perSub = 1m / s.SubStages.Count;
-            decimal stageSum = 0m;
-
-            foreach (var ss in s.SubStages.OrderBy(ss => ss.OrderIndex))
-                stageSum += perSub * StatusVal(ss.Status);
-
-            sum += perStageWeight * stageSum;
+            sum += perStageWeight * stageFraction;
         }
+
         return (int)Math.Round(sum * 100m, MidpointRounding.AwayFromZero);
+    }
+
+    private static int ComputeStageProgress(Stage stage)
+    {
+        if (stage.SubStages == null || stage.SubStages.Count == 0)
+            return (int)Math.Round(CompletionValue(stage.Status) * 100m, MidpointRounding.AwayFromZero);
+
+        var orderedSubs = stage.SubStages
+            .OrderBy(ss => ss.OrderIndex)
+            .ToList();
+
+        if (orderedSubs.Count == 0)
+            return (int)Math.Round(CompletionValue(stage.Status) * 100m, MidpointRounding.AwayFromZero);
+
+        decimal perSub = 1m / orderedSubs.Count;
+        decimal sum = 0m;
+
+        foreach (var ss in orderedSubs)
+            sum += perSub * CompletionValue(ss.Status);
+
+        return (int)Math.Round(sum * 100m, MidpointRounding.AwayFromZero);
+    }
+
+    private static string ComputeCurrentSubStageName(Stage stage)
+    {
+        if (stage.SubStages == null || stage.SubStages.Count == 0)
+            return string.Empty;
+
+        var ongoing = stage.SubStages
+            .OrderBy(ss => ss.OrderIndex)
+            .FirstOrDefault(ss => ss.Status == WorkStatus.Ongoing);
+
+        return ongoing?.Name ?? string.Empty;
     }
 
     private static string ComputeCurrentStageName(Building b)
@@ -670,25 +702,39 @@ public partial class OperationsView : UserControl
     private async Task ReloadStagesAndSubStagesAsync(int buildingId, int? preferredStageId = null)
     {
         // Reload stages for buildingId
-        var stages = await _db.Stages
+        var stageEntities = await _db.Stages
             .Where(s => s.BuildingId == buildingId)
             .OrderBy(s => s.OrderIndex)
+            .Include(s => s.SubStages)
             .AsNoTracking()
             .ToListAsync();
-        StagesGrid.ItemsSource = stages;
+
+        var stageRows = stageEntities
+            .Select(s => new
+            {
+                s.Id,
+                s.Name,
+                s.Status,
+                ProgressPercent = ComputeStageProgress(s),
+                OngoingSubStageName = ComputeCurrentSubStageName(s)
+            })
+            .ToList();
+
+        StagesGrid.ItemsSource = stageRows;
 
         // Select preferred stage (or first)
-        int stageId = preferredStageId ?? stages.FirstOrDefault()?.Id ?? 0;
+        int stageId = preferredStageId ?? stageRows.FirstOrDefault()?.Id ?? 0;
 
         if (stageId == 0)
         {
+            StagesGrid.SelectedItem = null;
             SubStagesGrid.ItemsSource = null;
             MaterialsGrid.ItemsSource = null;
             _currentStageId = null;
             return;
         }
 
-        var stageToSelect = stages.FirstOrDefault(s => s.Id == stageId);
+        var stageToSelect = stageRows.FirstOrDefault(s => s.Id == stageId);
         if (stageToSelect != null)
         {
             StagesGrid.SelectedItem = stageToSelect;
