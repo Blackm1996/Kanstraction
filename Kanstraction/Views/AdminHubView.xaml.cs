@@ -1,4 +1,5 @@
-﻿using Kanstraction.Data;
+﻿using Kanstraction;
+using Kanstraction.Data;
 using Kanstraction.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -122,16 +123,20 @@ namespace Kanstraction.Views
             WriteMaterialToEditor(_currentMaterial);
 
             // Load price history
-            var hist = await _db.MaterialPriceHistory
+            var historyRows = await _db.MaterialPriceHistory
                 .Where(h => h.MaterialId == m.Id)
                 .OrderByDescending(h => h.StartDate)
-                .Select(h => new
-                {
-                    StartDate = h.StartDate.ToString("dd/MM/yyyy"),
-                    EndDate = h.EndDate.HasValue ? h.EndDate.Value.ToString("dd/MM/yyyy") : "",
-                    h.PricePerUnit
-                })
+                .Select(h => new { h.StartDate, h.EndDate, h.PricePerUnit })
                 .ToListAsync();
+
+            var dateFormat = ResourceHelper.GetString("Common_DateFormat", "dd/MM/yyyy");
+            var hist = historyRows.Select(h => new
+            {
+                StartDate = h.StartDate.ToString(dateFormat),
+                EndDate = h.EndDate.HasValue ? h.EndDate.Value.ToString(dateFormat) : string.Empty,
+                h.PricePerUnit
+            }).ToList();
+
             if (MatHistoryGrid != null)
                 MatHistoryGrid.ItemsSource = hist;
         }
@@ -154,7 +159,9 @@ namespace Kanstraction.Views
 
             if (!TryReadMaterialFromEditor(out var name, out var unit, out var price, out var effSince, out var isActive, out var validationError))
             {
-                MessageBox.Show(validationError, "Validation", MessageBoxButton.OK, MessageBoxImage.Warning);
+                MessageBox.Show(validationError,
+                    ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -219,7 +226,11 @@ namespace Kanstraction.Views
                 if (row != null) MaterialsList.SelectedItem = row;
             }
 
-            MessageBox.Show("Enregistré.", "Matériau", MessageBoxButton.OK, MessageBoxImage.Information);
+            MessageBox.Show(
+                ResourceHelper.GetString("AdminHubView_MaterialSavedMessage", "Saved."),
+                ResourceHelper.GetString("AdminHubView_MaterialDialogTitle", "Material"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
         }
 
         private void CancelMaterial_Click(object sender, RoutedEventArgs e)
@@ -261,21 +272,21 @@ namespace Kanstraction.Views
             if (string.IsNullOrWhiteSpace(name))
             {
                 price = 0; effSince = null;
-                error = "Name is required.";
+                error = ResourceHelper.GetString("AdminHubView_MaterialNameRequired", "Name is required.");
                 return false;
             }
 
             if (!decimal.TryParse(MatPrice?.Text?.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out price) || price < 0)
             {
                 effSince = null;
-                error = "Price per unit must be a non-negative number (use dot as decimal separator).";
+                error = ResourceHelper.GetString("AdminHubView_MaterialPriceInvalid", "Price per unit must be a non-negative number (use dot as decimal separator).");
                 return false;
             }
 
             effSince = DateTime.Today;
             if (effSince == null)
             {
-                error = "Effective Since date is required.";
+                error = ResourceHelper.GetString("AdminHubView_EffectiveSinceRequired", "Effective Since date is required.");
                 return false;
             }
 
@@ -425,13 +436,20 @@ namespace Kanstraction.Views
         // Utility: name copy helper consistent with Materials tab
         private static string SuggestCopyName(string baseName)
         {
-            if (string.IsNullOrWhiteSpace(baseName)) return "Copy";
-            const string copy = " (Copy)";
-            if (!baseName.EndsWith(copy)) return baseName + copy;
-            var i = baseName.LastIndexOf(copy, StringComparison.Ordinal);
-            var suffix = baseName[(i + copy.Length)..].Trim();
-            if (int.TryParse(suffix, out int n)) return baseName[..i] + copy + " " + (n + 1);
-            return baseName + " 2";
+            var copyLabel = ResourceHelper.GetString("AdminHubView_CopyBaseName", "Copy");
+            var copySuffix = ResourceHelper.GetString("AdminHubView_CopySuffix", " (Copy)");
+
+            if (string.IsNullOrWhiteSpace(baseName)) return copyLabel;
+            if (!baseName.EndsWith(copySuffix, StringComparison.Ordinal)) return baseName + copySuffix;
+
+            var i = baseName.LastIndexOf(copySuffix, StringComparison.Ordinal);
+            var suffix = baseName[(i + copySuffix.Length)..].Trim();
+            if (int.TryParse(suffix, out int n))
+                return string.Format(CultureInfo.InvariantCulture, "{0}{1} {2}", baseName[..i], copySuffix, n + 1);
+
+            return string.Format(
+                ResourceHelper.GetString("AdminHubView_CopyDefaultFormat", "{0} 2"),
+                baseName);
         }
 
 
@@ -594,7 +612,7 @@ namespace Kanstraction.Views
         {
             if (BtPresetPicker?.SelectedValue is not int presetId)
             {
-                MessageBox.Show("Sélectionnez un préréglage d'étape à ajouter.");
+                MessageBox.Show(ResourceHelper.GetString("AdminHubView_SelectPresetToAddMessage", "Select a stage preset to add."));
                 return;
             }
             var preset = (_allPresets ?? new List<StagePreset>()).FirstOrDefault(p => p.Id == presetId);
@@ -630,7 +648,9 @@ namespace Kanstraction.Views
             if (vm == null)
             {
                 if (BtSelectedPresetTitle != null)
-                    BtSelectedPresetTitle.Text = "Select a preset to preview its sub-stages";
+                    BtSelectedPresetTitle.Text = ResourceHelper.GetString(
+                        "AdminHubView_SelectedPresetTitle",
+                        "Select a preset to preview its sub-stages");
                 BtSubStagesPreviewGrid.ItemsSource = null;
                 return;
             }
@@ -692,7 +712,7 @@ namespace Kanstraction.Views
             var name = BtName?.Text?.Trim();
             if (string.IsNullOrWhiteSpace(name))
             {
-                MessageBox.Show("Le nom est requis.");
+                MessageBox.Show(ResourceHelper.GetString("AdminHubView_BuildingTypeNameRequired", "Name is required."));
                 return;
             }
             var isActive = BtActive?.IsChecked == true;
@@ -766,12 +786,20 @@ namespace Kanstraction.Views
                     if (row != null) BuildingTypesList.SelectedItem = row;
                 }
 
-                MessageBox.Show("Type de bâtiment enregistré.", "Succès", MessageBoxButton.OK, MessageBoxImage.Information);
+                MessageBox.Show(
+                    ResourceHelper.GetString("AdminHubView_BuildingTypeSavedMessage", "Building type saved."),
+                    ResourceHelper.GetString("Common_SuccessTitle", "Success"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
                 await tx.RollbackAsync();
-                MessageBox.Show("Échec de l'enregistrement :\n" + ex.Message, "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show(
+                    string.Format(ResourceHelper.GetString("AdminHubView_SaveBuildingTypeFailedFormat", "Saving failed:\n{0}"), ex.Message),
+                    ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Error);
             }
         }
 

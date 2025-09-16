@@ -9,6 +9,15 @@
     <sys:String x:Key="Common_New">New</sys:String>
     <sys:String x:Key="Common_OK">OK</sys:String>
     <sys:String x:Key="Common_Required">Required</sys:String>
+    <sys:String x:Key="Common_DateFormat">dd/MM/yyyy</sys:String>
+    <sys:String x:Key="Common_ValidationTitle">Validation</sys:String>
+    <sys:String x:Key="Common_SuccessTitle">Success</sys:String>
+    <sys:String x:Key="Common_ErrorTitle">Error</sys:String>
+    <sys:String x:Key="Common_RequiredTitle">Required</sys:String>
+    <sys:String x:Key="Common_ConfirmTitle">Confirm</sys:String>
+    <sys:String x:Key="Common_InvalidTitle">Invalid</sys:String>
+    <sys:String x:Key="Common_DoneTitle">Done</sys:String>
+    <sys:String x:Key="Common_DefaultOrderValue">1</sys:String>
 
     <!-- MainWindow -->
     <sys:String x:Key="MainWindow_Projects">Projects</sys:String>
@@ -88,6 +97,18 @@
 
     <sys:String x:Key="AdminHubView_SaveBuildingType">Save</sys:String>
     <sys:String x:Key="AdminHubView_CancelBuildingType">Cancel</sys:String>
+    <sys:String x:Key="AdminHubView_MaterialSavedMessage">Saved.</sys:String>
+    <sys:String x:Key="AdminHubView_MaterialDialogTitle">Material</sys:String>
+    <sys:String x:Key="AdminHubView_MaterialNameRequired">Name is required.</sys:String>
+    <sys:String x:Key="AdminHubView_MaterialPriceInvalid">Price per unit must be a non-negative number (use dot as decimal separator).</sys:String>
+    <sys:String x:Key="AdminHubView_EffectiveSinceRequired">Effective Since date is required.</sys:String>
+    <sys:String x:Key="AdminHubView_CopyBaseName">Copy</sys:String>
+    <sys:String x:Key="AdminHubView_CopySuffix"> (Copy)</sys:String>
+    <sys:String x:Key="AdminHubView_CopyDefaultFormat">{0} 2</sys:String>
+    <sys:String x:Key="AdminHubView_SelectPresetToAddMessage">Select a stage preset to add.</sys:String>
+    <sys:String x:Key="AdminHubView_BuildingTypeNameRequired">Name is required.</sys:String>
+    <sys:String x:Key="AdminHubView_BuildingTypeSavedMessage">Building type saved.</sys:String>
+    <sys:String x:Key="AdminHubView_SaveBuildingTypeFailedFormat">Saving failed:&#x0a;{0}</sys:String>
 
     <!-- OperationsView -->
     <sys:String x:Key="OperationsView_ResolvePayment">Resolve Payment</sys:String>
@@ -119,6 +140,40 @@
     <sys:String x:Key="OperationsView_UsageDate">Usage Date</sys:String>
     <sys:String x:Key="OperationsView_UnitPrice">Unit Price</sys:String>
     <sys:String x:Key="OperationsView_Total">Total</sys:String>
+    <sys:String x:Key="OperationsView_SelectProjectPrompt">Select a project</sys:String>
+    <sys:String x:Key="OperationsView_LaborCostNegative">Labor cost cannot be negative.</sys:String>
+    <sys:String x:Key="OperationsView_QuantityNegative">Quantity cannot be negative.</sys:String>
+    <sys:String x:Key="OperationsView_SelectProjectFirst">Select a project first.</sys:String>
+    <sys:String x:Key="OperationsView_NoProjectTitle">No project</sys:String>
+    <sys:String x:Key="OperationsView_DuplicateCodeMessage">A building with this code already exists in this project.</sys:String>
+    <sys:String x:Key="OperationsView_DuplicateCodeTitle">Duplicate code</sys:String>
+    <sys:String x:Key="OperationsView_CreateBuildingFailedFormat">Failed to create building:&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_StopBuildingConfirmMessage">Stop this building? All unfinished/unpaid stages and sub-stages will be marked Stopped.</sys:String>
+    <sys:String x:Key="OperationsView_StopBuildingConfirmTitle">Confirm stop</sys:String>
+    <sys:String x:Key="OperationsView_StopBuildingFailedFormat">Failed to stop building:&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_SubStageAlreadyInProgress">Another sub-stage is already in progress in this building. Finish it first.</sys:String>
+    <sys:String x:Key="OperationsView_RuleTitle">Rule</sys:String>
+    <sys:String x:Key="OperationsView_PreviousSubStageRequired">You must finish the previous sub-stage first.</sys:String>
+    <sys:String x:Key="OperationsView_RuleOrderTitle">Order rule</sys:String>
+    <sys:String x:Key="OperationsView_PreviousStagesRequired">You must finish all previous stages before starting this stage.</sys:String>
+    <sys:String x:Key="OperationsView_SubStageCannotStart">This sub-stage cannot be started in its current state.</sys:String>
+    <sys:String x:Key="OperationsView_OnlyOngoingCanFinish">You can only finish an Ongoing sub-stage.</sys:String>
+    <sys:String x:Key="OperationsView_OnlyOngoingCanReset">Only an Ongoing sub-stage can be reset to Not Started.</sys:String>
+    <sys:String x:Key="OperationsView_SelectSubStageFirst">Select a sub-stage first.</sys:String>
+    <sys:String x:Key="OperationsView_NoSubStageTitle">No sub-stage</sys:String>
+    <sys:String x:Key="OperationsView_SelectMaterialPrompt">Please select a material.</sys:String>
+    <sys:String x:Key="OperationsView_AddMaterialFailedFormat">Failed to add material:&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_AddSubStageFailedFormat">Failed to add sub-stage:&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_NoCompletedSubStages">No completed sub-stages to resolve.</sys:String>
+    <sys:String x:Key="OperationsView_NothingToDoTitle">Nothing to do</sys:String>
+    <sys:String x:Key="OperationsView_SavePaymentReportTitle">Save payment resolution report</sys:String>
+    <sys:String x:Key="OperationsView_GeneratePdfFailedFormat">Failed to generate PDF:&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_MarkPaidFailedFormat">Failed to mark items as paid after generating the PDF:&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_PaymentResolutionCompleted">Payment resolution completed.</sys:String>
+    <sys:String x:Key="OperationsView_PaymentResolutionCompletedTitle">Done</sys:String>
+    <sys:String x:Key="OperationsView_NoPresetToAddMessage">All active stage presets are already in this building.</sys:String>
+    <sys:String x:Key="OperationsView_NoPresetTitle">No preset</sys:String>
+    <sys:String x:Key="OperationsView_AddStageFailedFormat">Failed to add stage:&#x0a;{0}</sys:String>
 
     <!-- StagePresetDesignerView -->
     <sys:String x:Key="StagePresetDesignerView_UnsavedChanges">Unsaved changes</sys:String>
@@ -133,5 +188,61 @@
     <sys:String x:Key="StagePresetDesignerView_AddSubStage">Add Sub-stage</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialsForSelected">Materials for selected sub-stage</sys:String>
     <sys:String x:Key="StagePresetDesignerView_NewSubStage">New sub-stage</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_PresetNotFound">Preset not found.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_DeleteSubStageConfirmFormat">Delete sub-stage '{0}'?</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_SelectSubStageFirst">Select a sub-stage first.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_SelectMaterial">Choose a material.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_QtyMustBeNonNegative">Quantity must be a non-negative number.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_MaterialAlreadyAdded">This material is already added to the sub-stage.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_PresetNameRequired">Preset name is required.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_SubStageNameRequired">Each sub-stage must have a name.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_LaborCostNonNegative">Labor cost must be ≥ 0.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_MaterialQuantityNonNegative">Material quantity must be ≥ 0.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_SavedMessage">Stage preset saved.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_DialogTitle">Stage preset</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_SaveFailedFormat">Saving failed:&#x0a;{0}</sys:String>
+
+    <!-- PaymentReportRenderer -->
+    <sys:String x:Key="PaymentReportRenderer_Title">Payment Resolution Report</sys:String>
+    <sys:String x:Key="PaymentReportRenderer_FooterPage">Page </sys:String>
+    <sys:String x:Key="PaymentReportRenderer_FooterOf"> of </sys:String>
+
+    <!-- StatusService -->
+    <sys:String x:Key="StatusService_SetLaborFirst">Set labor cost before marking as Finished/Paid.</sys:String>
+    <sys:String x:Key="StatusService_SubStageMustBeFinished">Sub-stage must be Finished before Paid.</sys:String>
+    <sys:String x:Key="StatusService_NoSubStages">Stage has no sub-stages; cannot mark as Finished.</sys:String>
+    <sys:String x:Key="StatusService_AllSubStagesMustBeDone">All sub-stages must be Finished/Paid.</sys:String>
+    <sys:String x:Key="StatusService_StageMustBeFinished">Stage must be Finished before Paid.</sys:String>
+
+    <!-- MainWindow (code-behind) -->
+    <sys:String x:Key="MainWindow_NewProjectDialogTitle">New Project</sys:String>
+    <sys:String x:Key="MainWindow_ExportPlaceholderContent">This is a placeholder export.&#x0a;</sys:String>
+    <sys:String x:Key="MainWindow_ExportedToFormat">Exported to:&#x0a;{0}</sys:String>
+    <sys:String x:Key="MainWindow_ExportTitle">Export</sys:String>
+    <sys:String x:Key="MainWindow_ExportFailedFormat">Export failed:&#x0a;{0}</sys:String>
+
+    <!-- AddStageToBuildingDialog (code-behind) -->
+    <sys:String x:Key="AddStageToBuildingDialog_OrderHelpFormat">Allowed order: 1..{0}</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_SelectPresetMessage">Please choose a stage preset.</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_InvalidOrderMessage">Invalid order index.</sys:String>
+
+    <!-- AddMaterialToSubStageDialog (code-behind) -->
+    <sys:String x:Key="AddMaterialToSubStageDialog_SelectMaterial">Select a material.</sys:String>
+    <sys:String x:Key="AddMaterialToSubStageDialog_InvalidQuantity">Enter a valid quantity (&gt;= 0).</sys:String>
+
+    <!-- PromptTextDialog (code-behind) -->
+    <sys:String x:Key="PromptTextDialog_ValueRequired">Please enter a value.</sys:String>
+
+    <!-- AddBuildingDialog (code-behind) -->
+    <sys:String x:Key="AddBuildingDialog_CodeRequired">Enter a building code.</sys:String>
+    <sys:String x:Key="AddBuildingDialog_TypeRequired">Select a building type.</sys:String>
+    <sys:String x:Key="AddBuildingDialog_NoPresetWarning">This building type has no stage presets assigned. Create anyway?</sys:String>
+    <sys:String x:Key="AddBuildingDialog_NoPresetTitle">No preset</sys:String>
+
+    <!-- AddSubStageDialog (code-behind) -->
+    <sys:String x:Key="AddSubStageDialog_OrderHelpFormat">Allowed order: 1..{0}</sys:String>
+    <sys:String x:Key="AddSubStageDialog_NameRequired">Please enter a sub-stage name.</sys:String>
+    <sys:String x:Key="AddSubStageDialog_InvalidLabor">Invalid labor cost.</sys:String>
+    <sys:String x:Key="AddSubStageDialog_InvalidOrder">Invalid order index.</sys:String>
 
 </ResourceDictionary>

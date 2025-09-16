@@ -2,6 +2,8 @@
 using System.Globalization;
 using System.Windows;
 
+using Kanstraction;
+
 namespace Kanstraction.Views
 {
     public partial class AddSubStageDialog : Window
@@ -19,7 +21,9 @@ namespace Kanstraction.Views
 
             Loaded += (_, __) =>
             {
-                LblOrderHelp.Text = $"Ordre autorisé : 1..{_maxOrder}";
+                LblOrderHelp.Text = string.Format(
+                    ResourceHelper.GetString("AddSubStageDialog_OrderHelpFormat", "Allowed order: 1..{0}"),
+                    _maxOrder);
                 // Default: add at end
                 TxtOrder.Text = _maxOrder.ToString(CultureInfo.InvariantCulture);
                 TxtOrder.IsEnabled = false;
@@ -38,27 +42,33 @@ namespace Kanstraction.Views
         private void ChkAddAtEnd_Unchecked(object sender, RoutedEventArgs e)
         {
             // Let user type; keep current value but clamp later
-            TxtOrder.IsEnabled = true;
-            if (!int.TryParse(TxtOrder.Text?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var val) || val < 1)
-                TxtOrder.Text = "1";
+        TxtOrder.IsEnabled = true;
+        if (!int.TryParse(TxtOrder.Text?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var val) || val < 1)
+                TxtOrder.Text = ResourceHelper.GetString("Common_DefaultOrderValue", "1");
         }
 
         private void Create_Click(object sender, RoutedEventArgs e)
         {
             var name = TxtName.Text?.Trim();
-            if (string.IsNullOrWhiteSpace(name))
-            {
-                MessageBox.Show("Veuillez entrer un nom de sous-étape.", "Obligatoire",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+        if (string.IsNullOrWhiteSpace(name))
+        {
+                MessageBox.Show(
+                    ResourceHelper.GetString("AddSubStageDialog_NameRequired", "Please enter a sub-stage name."),
+                    ResourceHelper.GetString("Common_RequiredTitle", "Required"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 return;
-            }
+        }
 
-            if (!decimal.TryParse(TxtLabor.Text?.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var labor) || labor < 0m)
-            {
-                MessageBox.Show("Coût de main-d'œuvre invalide.", "Validation",
-                    MessageBoxButton.OK, MessageBoxImage.Warning);
+        if (!decimal.TryParse(TxtLabor.Text?.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out var labor) || labor < 0m)
+        {
+                MessageBox.Show(
+                    ResourceHelper.GetString("AddSubStageDialog_InvalidLabor", "Invalid labor cost."),
+                    ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
                 return;
-            }
+        }
 
             int order;
             if (ChkAddAtEnd.IsChecked == true)
@@ -69,8 +79,11 @@ namespace Kanstraction.Views
             {
                 if (!int.TryParse(TxtOrder.Text?.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out order) || order < 1)
                 {
-                    MessageBox.Show("Indice d'ordre invalide.", "Validation",
-                        MessageBoxButton.OK, MessageBoxImage.Warning);
+                    MessageBox.Show(
+                        ResourceHelper.GetString("AddSubStageDialog_InvalidOrder", "Invalid order index."),
+                        ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
                     return;
                 }
                 // Clamp to 1.._maxOrder

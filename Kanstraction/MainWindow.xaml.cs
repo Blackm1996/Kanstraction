@@ -146,7 +146,10 @@ public partial class MainWindow : Window
     {
         if (_db == null) return;
 
-        var dlg = new PromptTextDialog("New Project") { Owner = this };
+        var dlg = new PromptTextDialog(ResourceHelper.GetString("MainWindow_NewProjectDialogTitle", "New Project"))
+        {
+            Owner = this
+        };
         if (dlg.ShowDialog() != true) return;
 
         var p = new Project
@@ -191,15 +194,23 @@ public partial class MainWindow : Window
             };
             if (dlg.ShowDialog() == true)
             {
-                File.WriteAllText(dlg.FileName, "This is a placeholder export.\n");
-                MessageBox.Show($"Exporté vers :\n{dlg.FileName}", "Export",
-                                MessageBoxButton.OK, MessageBoxImage.Information);
+                File.WriteAllText(
+                    dlg.FileName,
+                    ResourceHelper.GetString("MainWindow_ExportPlaceholderContent", "This is a placeholder export.\n"));
+                MessageBox.Show(
+                    string.Format(ResourceHelper.GetString("MainWindow_ExportedToFormat", "Exported to:\n{0}"), dlg.FileName),
+                    ResourceHelper.GetString("MainWindow_ExportTitle", "Export"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
             }
         }
         catch (Exception ex)
         {
-            MessageBox.Show("Échec de l'export :\n" + ex.Message, "Export",
-                            MessageBoxButton.OK, MessageBoxImage.Error);
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("MainWindow_ExportFailedFormat", "Export failed:\n{0}"), ex.Message),
+                ResourceHelper.GetString("MainWindow_ExportTitle", "Export"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
         }
     }
 
