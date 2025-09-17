@@ -1,7 +1,6 @@
 using Kanstraction.Services;
 using Microsoft.Win32;
 using System.Globalization;
-using System.IO;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -24,31 +23,6 @@ public partial class BackupHubView : UserControl
         _backupService = backupService;
         _onBeforeRestoreAsync = onBeforeRestoreAsync;
         _onAfterRestoreAsync = onAfterRestoreAsync;
-        RefreshBackupInfo();
-    }
-
-    public void RefreshBackupInfo()
-    {
-        if (_backupService == null)
-            return;
-
-        StartupFolderText.Text = _backupService.StartupBackupsDirectory;
-        HourlyFolderText.Text = _backupService.HourlyBackupsDirectory;
-
-        LatestStartupBackupText.Text = FormatLatestInfo(_backupService.GetLatestStartupBackup());
-        LatestHourlyBackupText.Text = FormatLatestInfo(_backupService.GetLatestHourlyBackup());
-    }
-
-    private static string FormatLatestInfo(FileInfo? info)
-    {
-        if (info == null)
-        {
-            return ResourceHelper.GetString("BackupHubView_NoBackupYet", "No backups yet.");
-        }
-
-        var pattern = ResourceHelper.GetString("BackupHubView_LatestAutomaticFormat", "Latest backup: {0}");
-        var timestamp = info.LastWriteTime.ToString("G", CultureInfo.CurrentCulture);
-        return string.Format(CultureInfo.CurrentCulture, pattern, timestamp);
     }
 
     private async void ManualBackup_Click(object sender, RoutedEventArgs e)
@@ -76,8 +50,6 @@ public partial class BackupHubView : UserControl
                     ResourceHelper.GetString("Common_SuccessTitle", "Success"),
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
-
-                RefreshBackupInfo();
             }
             catch (Exception ex)
             {
@@ -174,7 +146,6 @@ public partial class BackupHubView : UserControl
                     ResourceHelper.GetString("Common_SuccessTitle", "Success"),
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
-                RefreshBackupInfo();
             }
         }
     }

@@ -111,7 +111,7 @@
 
     <!-- BackupHubView -->
     <sys:String x:Key="BackupHubView_Title">Sauvegardes et restauration</sys:String>
-    <sys:String x:Key="BackupHubView_Intro">Gérez les sauvegardes manuelles et consultez l'emplacement des sauvegardes automatiques.</sys:String>
+    <sys:String x:Key="BackupHubView_Intro">Créez une sauvegarde manuelle ou restaurez à partir d'un fichier de sauvegarde.</sys:String>
     <sys:String x:Key="BackupHubView_AutomaticHeader">Sauvegardes automatiques</sys:String>
     <sys:String x:Key="BackupHubView_AutomaticDescription">L'application crée une sauvegarde au démarrage puis toutes les heures lorsqu'elle reste ouverte.</sys:String>
     <sys:String x:Key="BackupHubView_StartupFolderLabel">Dossier des sauvegardes au démarrage</sys:String>

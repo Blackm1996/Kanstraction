@@ -103,7 +103,6 @@ public partial class MainWindow : Window
         try
         {
             await App.BackupService.CreateHourlyBackupAsync();
-            _backupView.RefreshBackupInfo();
         }
         catch
         {
@@ -194,7 +193,6 @@ public partial class MainWindow : Window
         _activeView = ActiveView.Backup;
         MainContentHost.Content = _backupView;
         CollapseExplorer();
-        _backupView.RefreshBackupInfo();
     }
 
     private void ShowActiveView()
