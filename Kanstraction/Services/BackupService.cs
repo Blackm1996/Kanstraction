@@ -177,18 +177,24 @@ public class BackupService
                 Pooling = false
             }.ToString();
 
-            using var source = new SqliteConnection(sourceConnectionString);
-            source.Open();
-
-            using var destination = new SqliteConnection(destinationConnectionString);
-            destination.Open();
+            SqliteConnection? source = null;
+            SqliteConnection? destination = null;
 
             try
             {
+                source = new SqliteConnection(sourceConnectionString);
+                source.Open();
+
+                destination = new SqliteConnection(destinationConnectionString);
+                destination.Open();
+
                 source.BackupDatabase(destination);
             }
             finally
             {
+                destination?.Dispose();
+                source?.Dispose();
+
                 TryDeleteFile($"{destinationFullPath}-wal");
                 TryDeleteFile($"{destinationFullPath}-shm");
 
