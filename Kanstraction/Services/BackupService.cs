@@ -183,7 +183,21 @@ public class BackupService
             using var destination = new SqliteConnection(destinationConnectionString);
             destination.Open();
 
-            source.BackupDatabase(destination);
+            try
+            {
+                source.BackupDatabase(destination);
+            }
+            finally
+            {
+                TryDeleteFile($"{destinationFullPath}-wal");
+                TryDeleteFile($"{destinationFullPath}-shm");
+
+                if (!string.Equals(sourceFullPath, _dbPath, StringComparison.OrdinalIgnoreCase))
+                {
+                    TryDeleteFile($"{sourceFullPath}-wal");
+                    TryDeleteFile($"{sourceFullPath}-shm");
+                }
+            }
         }).ConfigureAwait(false);
     }
 
