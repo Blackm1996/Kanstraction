@@ -113,7 +113,7 @@
 
     <!-- BackupHubView -->
     <sys:String x:Key="BackupHubView_Title">Backups &amp; Restore</sys:String>
-    <sys:String x:Key="BackupHubView_Intro">Manage manual backups and review where automatic backups are stored.</sys:String>
+    <sys:String x:Key="BackupHubView_Intro">Create manual backups or restore from a saved backup file.</sys:String>
     <sys:String x:Key="BackupHubView_AutomaticHeader">Automatic backups</sys:String>
     <sys:String x:Key="BackupHubView_AutomaticDescription">The application creates backups on startup and every hour while it is open.</sys:String>
     <sys:String x:Key="BackupHubView_StartupFolderLabel">Startup backups folder</sys:String>
