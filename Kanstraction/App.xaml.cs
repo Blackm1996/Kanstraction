@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Threading;
 using System.Windows;
+using Kanstraction.Behaviors;
 using Kanstraction.Data;
 using Kanstraction.Services;
 using Microsoft.EntityFrameworkCore;
@@ -14,6 +15,8 @@ public partial class App : Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        TextBoxEditHighlighter.Register();
+
         var culture = new CultureInfo("fr-FR");
         Thread.CurrentThread.CurrentCulture = culture;
         Thread.CurrentThread.CurrentUICulture = culture;
