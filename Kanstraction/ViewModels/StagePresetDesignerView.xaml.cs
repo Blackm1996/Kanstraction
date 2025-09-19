@@ -10,6 +10,7 @@ using System.Windows.Controls;
 using System.Windows.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 namespace Kanstraction.ViewModels;
 
@@ -240,7 +241,6 @@ public partial class StagePresetDesignerView : UserControl
         var vm = new SubStageVm
         {
             Id = null,
-            Name = (string)FindResource("StagePresetDesignerView_NewSubStage"),
             LaborCost = 0,
             OrderIndex = nextIndex,
             Materials = new ObservableCollection<MaterialUsageVm>()
@@ -253,6 +253,47 @@ public partial class StagePresetDesignerView : UserControl
         UpdateMaterialsPanelVisibility();
         UpdateSummary();
         SetDirty();
+
+        BeginEditingSubStageName(vm);
+    }
+
+    private void BeginEditingSubStageName(SubStageVm vm)
+    {
+        if (vm == null)
+        {
+            return;
+        }
+
+        Dispatcher.BeginInvoke(new Action(() =>
+        {
+            var nameColumn = GetSubStageNameColumn();
+            if (nameColumn == null)
+            {
+                return;
+            }
+
+            SubStagesGrid.UpdateLayout();
+            SubStagesGrid.ScrollIntoView(vm, nameColumn);
+            SubStagesGrid.SelectedItem = vm;
+            SubStagesGrid.CurrentCell = new DataGridCellInfo(vm, nameColumn);
+            SubStagesGrid.Focus();
+            SubStagesGrid.BeginEdit();
+        }), DispatcherPriority.Background);
+    }
+
+    private DataGridColumn? GetSubStageNameColumn()
+    {
+        foreach (var column in SubStagesGrid.Columns)
+        {
+            if (column is DataGridBoundColumn boundColumn &&
+                boundColumn.Binding is Binding binding &&
+                binding.Path?.Path == nameof(SubStageVm.Name))
+            {
+                return column;
+            }
+        }
+
+        return SubStagesGrid.Columns.Count > 1 ? SubStagesGrid.Columns[1] : null;
     }
 
     private void DeleteSubStage_Click(object sender, RoutedEventArgs e)
@@ -468,6 +509,12 @@ public partial class StagePresetDesignerView : UserControl
                     nameof(SubStageVm.LaborCost) => vm.LaborCost,
                     _ => null
                 };
+
+                if (path == nameof(SubStageVm.Name) && e.EditingElement is TextBox textBox)
+                {
+                    textBox.Focus();
+                    textBox.SelectAll();
+                }
             }
         }
     }
