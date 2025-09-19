@@ -32,7 +32,7 @@
     <sys:String x:Key="AddBuildingDialog_Code">Code</sys:String>
     <sys:String x:Key="AddBuildingDialog_CodeHint">Unique par projet</sys:String>
     <sys:String x:Key="AddBuildingDialog_BuildingType">Type de bâtiment</sys:String>
-    <sys:String x:Key="AddBuildingDialog_StageInfo">Les étapes seront créées à partir des préréglages de type.</sys:String>
+    <sys:String x:Key="AddBuildingDialog_StageInfo">Les étapes seront créées à partir des modèles de type.</sys:String>
 
     <!-- AddStageToBuildingDialog -->
     <sys:String x:Key="AddStageToBuildingDialog_Title">Ajouter une étape</sys:String>
@@ -80,8 +80,8 @@
     <sys:String x:Key="AdminHubView_End">Fin</sys:String>
     <sys:String x:Key="AdminHubView_Save">Enregistrer</sys:String>
     <sys:String x:Key="AdminHubView_Cancel">Annuler</sys:String>
-    <sys:String x:Key="AdminHubView_StagePresetsTab">Préréglages d'étape</sys:String>
-    <sys:String x:Key="AdminHubView_SearchPresetsHint">Rechercher des préréglages</sys:String>
+    <sys:String x:Key="AdminHubView_StagePresetsTab">Étapes</sys:String>
+    <sys:String x:Key="AdminHubView_SearchPresetsHint">Rechercher des étapes</sys:String>
     <sys:String x:Key="AdminHubView_BuildingTypes">Types de bâtiment</sys:String>
     <sys:String x:Key="AdminHubView_FilterBuildingTypes">Filtrer les types de bâtiment</sys:String>
     <sys:String x:Key="AdminHubView_NewBuildingType">Nouveau type de bâtiment</sys:String>
@@ -92,7 +92,7 @@
     <sys:String x:Key="AdminHubView_Remove">Supprimer</sys:String>
     <sys:String x:Key="AdminHubView_SelectedPresetTitle">Sélectionnez un préréglage pour prévisualiser ses sous-étapes</sys:String>
     <sys:String x:Key="AdminHubView_Tip">Astuce : l'ordre reflète la séquence d'exécution lors de la création d'un bâtiment de ce type.</sys:String>
-    <sys:String x:Key="AdminHubView_AssignStagePresets">Attribuer des préréglages d'étape</sys:String>
+    <sys:String x:Key="AdminHubView_AssignStagePresets">Attribuer des modèles d'étape</sys:String>
     <sys:String x:Key="AdminHubView_ChoosePresetHint">Choisissez un préréglage à ajouter</sys:String>
     <sys:String x:Key="AdminHubView_SaveBuildingType">Enregistrer</sys:String>
     <sys:String x:Key="AdminHubView_CancelBuildingType">Annuler</sys:String>
@@ -202,7 +202,7 @@
     <sys:String x:Key="OperationsView_MarkPaidFailedFormat">Échec du marquage des éléments comme payés après la génération du PDF :&#x0a;{0}</sys:String>
     <sys:String x:Key="OperationsView_PaymentResolutionCompleted">Résolution de paiement terminée.</sys:String>
     <sys:String x:Key="OperationsView_PaymentResolutionCompletedTitle">Terminé</sys:String>
-    <sys:String x:Key="OperationsView_NoPresetToAddMessage">Tous les préréglages d'étape actifs sont déjà dans ce bâtiment.</sys:String>
+    <sys:String x:Key="OperationsView_NoPresetToAddMessage">Tous les modèle d'étape actifs sont déjà dans ce bâtiment.</sys:String>
     <sys:String x:Key="OperationsView_NoPresetTitle">Aucun préréglage</sys:String>
     <sys:String x:Key="OperationsView_AddStageFailedFormat">Échec de l'ajout de l'étape :&#x0a;{0}</sys:String>
 

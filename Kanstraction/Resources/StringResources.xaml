@@ -80,7 +80,7 @@
     <sys:String x:Key="AdminHubView_End">End</sys:String>
     <sys:String x:Key="AdminHubView_Save">Save</sys:String>
     <sys:String x:Key="AdminHubView_Cancel">Cancel</sys:String>
-    <sys:String x:Key="AdminHubView_StagePresetsTab">Stage Presets</sys:String>
+    <sys:String x:Key="AdminHubView_StagePresetsTab">Stages</sys:String>
     <sys:String x:Key="AdminHubView_SearchPresetsHint">Search presets</sys:String>
 
     <sys:String x:Key="AdminHubView_BuildingTypes">Building Types</sys:String>
