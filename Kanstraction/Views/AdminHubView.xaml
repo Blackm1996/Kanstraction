@@ -103,6 +103,7 @@
 
                                 <TextBlock Text="{DynamicResource AdminHubView_PriceHistory}" FontWeight="SemiBold" Margin="0,0,0,8"/>
                                 <DataGrid x:Name="MatHistoryGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                        CanUserSortColumns="False"
                         HeadersVisibility="Column" GridLinesVisibility="None"
                         Height="200" Margin="0,0,0,8"
                         Style="{StaticResource MaterialDesignDataGrid}">
@@ -306,7 +307,7 @@
                                         <DataGrid x:Name="BtAssignedGrid"
             Grid.Column="0"
             Height="300"
-            AutoGenerateColumns="False" CanUserAddRows="False"
+            AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
             HeadersVisibility="Column" GridLinesVisibility="None"
             SelectionChanged="BtAssignedGrid_SelectionChanged"
             Style="{StaticResource MaterialDesignDataGrid}">
@@ -369,7 +370,7 @@
 
                                                 <DataGrid x:Name="BtSubStagesPreviewGrid"
                 Grid.Row="1"
-                AutoGenerateColumns="False" CanUserAddRows="False"
+                AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
                 HeadersVisibility="Column" GridLinesVisibility="None"
                 IsReadOnly="True"
                 Style="{StaticResource MaterialDesignDataGrid}">
