@@ -10,6 +10,7 @@
 
     <UserControl.Resources>
         <conv:StatusToBrushConverter x:Key="StatusToBrush" />
+        <conv:WorkStatusToStringConverter x:Key="StatusToString" />
         <conv:TotalCostConverter x:Key="TotalCostConverter"/>
         <conv:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
     </UserControl.Resources>
@@ -112,7 +113,7 @@
                             <DataTemplate>
                                 <Border CornerRadius="10" Padding="6,2"
                         Background="{Binding Status, Converter={StaticResource StatusToBrush}}">
-                                    <TextBlock Text="{Binding Status}" Foreground="White" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding Status, Converter={StaticResource StatusToString}}" Foreground="White" FontWeight="SemiBold"/>
                                 </Border>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -202,7 +203,7 @@
                             <DataTemplate>
                                 <Border CornerRadius="10" Padding="6,2"
                         Background="{Binding Status, Converter={StaticResource StatusToBrush}}">
-                                    <TextBlock Text="{Binding Status}" Foreground="White" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding Status, Converter={StaticResource StatusToString}}" Foreground="White" FontWeight="SemiBold"/>
                                 </Border>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -267,7 +268,7 @@
                             <DataTemplate>
                                 <Border CornerRadius="10" Padding="6,2"
                         Background="{Binding Status, Converter={StaticResource StatusToBrush}}">
-                                    <TextBlock Text="{Binding Status}" Foreground="White" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{Binding Status, Converter={StaticResource StatusToString}}" Foreground="White" FontWeight="SemiBold"/>
                                 </Border>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
