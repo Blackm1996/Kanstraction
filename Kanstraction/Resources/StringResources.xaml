@@ -140,6 +140,11 @@
     <sys:String x:Key="BackupHubView_RestoreSuccess">Backup restored successfully.</sys:String>
 
     <!-- OperationsView -->
+    <sys:String x:Key="WorkStatus_NotStarted">Not Started</sys:String>
+    <sys:String x:Key="WorkStatus_Ongoing">Ongoing</sys:String>
+    <sys:String x:Key="WorkStatus_Finished">Finished</sys:String>
+    <sys:String x:Key="WorkStatus_Paid">Paid</sys:String>
+    <sys:String x:Key="WorkStatus_Stopped">Stopped</sys:String>
     <sys:String x:Key="OperationsView_ResolvePayment">Resolve Payment</sys:String>
     <sys:String x:Key="OperationsView_ResolvePaymentTooltip">Generate a payment resolution PDF for this project and mark finished items as Paid</sys:String>
     <sys:String x:Key="OperationsView_Buildings">Buildings</sys:String>
