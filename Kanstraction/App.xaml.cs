@@ -4,6 +4,7 @@ using System.Threading;
 using System.Windows;
 using Kanstraction.Data;
 using Kanstraction.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kanstraction;
 
@@ -23,6 +24,7 @@ public partial class App : Application
         using (var db = new AppDbContext())
         {
             db.Database.EnsureCreated(); // safe because we use migrations already; fine for dev
+            await db.Database.MigrateAsync().ConfigureAwait(false);
             //DbSeeder.Seed(db);
         }
 
