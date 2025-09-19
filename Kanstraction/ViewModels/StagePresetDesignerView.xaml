@@ -101,7 +101,7 @@
                                 <TextBlock Grid.Row="0" Text="{DynamicResource AdminHubView_SubStages}" FontWeight="SemiBold" Margin="0,0,0,8"/>
 
                                 <DataGrid Grid.Row="1" x:Name="SubStagesGrid" Margin="0,0,0,8"
-                        AutoGenerateColumns="False" CanUserAddRows="False"
+                        AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
                         HeadersVisibility="Column" GridLinesVisibility="None"
                         SelectionMode="Single"
                         SelectionChanged="SubStagesGrid_SelectionChanged"
@@ -170,6 +170,7 @@
                                 </StackPanel>
 
                                 <DataGrid Grid.Row="2" x:Name="MaterialsGrid" AutoGenerateColumns="False" CanUserAddRows="False"
+                        CanUserSortColumns="False"
                         HeadersVisibility="Column" GridLinesVisibility="None"
                         Style="{StaticResource MaterialDesignDataGrid}">
                                     <DataGrid.Columns>
