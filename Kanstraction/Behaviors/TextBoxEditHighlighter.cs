@@ -1,3 +1,4 @@
+using System;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -141,19 +142,151 @@ public static class TextBoxEditHighlighter
     {
         if (BindingOperations.GetBinding(textBox, Control.BackgroundProperty) is Binding binding)
         {
-            return binding.Clone();
+            return CloneBinding(binding);
         }
 
         if (BindingOperations.GetMultiBinding(textBox, Control.BackgroundProperty) is MultiBinding multiBinding)
         {
-            return multiBinding.Clone();
+            return CloneMultiBinding(multiBinding);
         }
 
         if (BindingOperations.GetPriorityBinding(textBox, Control.BackgroundProperty) is PriorityBinding priorityBinding)
         {
-            return priorityBinding.Clone();
+            return ClonePriorityBinding(priorityBinding);
         }
 
         return null;
+    }
+
+    private static BindingBase CloneBindingBase(BindingBase bindingBase)
+    {
+        return bindingBase switch
+        {
+            Binding binding => CloneBinding(binding),
+            MultiBinding multiBinding => CloneMultiBinding(multiBinding),
+            PriorityBinding priorityBinding => ClonePriorityBinding(priorityBinding),
+            _ => throw new NotSupportedException($"Unsupported binding type '{bindingBase.GetType()}' for background property cloning.")
+        };
+    }
+
+    private static Binding CloneBinding(Binding binding)
+    {
+        var clone = new Binding
+        {
+            BindsDirectlyToSource = binding.BindsDirectlyToSource,
+            Mode = binding.Mode,
+            UpdateSourceTrigger = binding.UpdateSourceTrigger,
+            IsAsync = binding.IsAsync,
+            AsyncState = binding.AsyncState,
+            NotifyOnSourceUpdated = binding.NotifyOnSourceUpdated,
+            NotifyOnTargetUpdated = binding.NotifyOnTargetUpdated,
+            NotifyOnValidationError = binding.NotifyOnValidationError,
+            ValidatesOnDataErrors = binding.ValidatesOnDataErrors,
+            ValidatesOnExceptions = binding.ValidatesOnExceptions,
+            ValidatesOnNotifyDataErrors = binding.ValidatesOnNotifyDataErrors,
+            StringFormat = binding.StringFormat,
+            TargetNullValue = binding.TargetNullValue,
+            FallbackValue = binding.FallbackValue,
+            BindingGroupName = binding.BindingGroupName,
+            UpdateSourceExceptionFilter = binding.UpdateSourceExceptionFilter,
+            Delay = binding.Delay
+        };
+
+        if (binding.Path is not null)
+        {
+            clone.Path = binding.Path;
+        }
+
+        if (!string.IsNullOrEmpty(binding.XPath))
+        {
+            clone.XPath = binding.XPath;
+        }
+
+        if (binding.Converter is not null)
+        {
+            clone.Converter = binding.Converter;
+        }
+
+        if (binding.ConverterParameter is not null)
+        {
+            clone.ConverterParameter = binding.ConverterParameter;
+        }
+
+        if (binding.ConverterCulture is not null)
+        {
+            clone.ConverterCulture = binding.ConverterCulture;
+        }
+
+        if (binding.Source is not null)
+        {
+            clone.Source = binding.Source;
+        }
+        else if (binding.RelativeSource is not null)
+        {
+            clone.RelativeSource = binding.RelativeSource;
+        }
+        else if (!string.IsNullOrEmpty(binding.ElementName))
+        {
+            clone.ElementName = binding.ElementName;
+        }
+
+        foreach (var rule in binding.ValidationRules)
+        {
+            clone.ValidationRules.Add(rule);
+        }
+
+        return clone;
+    }
+
+    private static MultiBinding CloneMultiBinding(MultiBinding multiBinding)
+    {
+        var clone = new MultiBinding
+        {
+            Mode = multiBinding.Mode,
+            UpdateSourceTrigger = multiBinding.UpdateSourceTrigger,
+            Converter = multiBinding.Converter,
+            ConverterParameter = multiBinding.ConverterParameter,
+            ConverterCulture = multiBinding.ConverterCulture,
+            StringFormat = multiBinding.StringFormat,
+            TargetNullValue = multiBinding.TargetNullValue,
+            FallbackValue = multiBinding.FallbackValue,
+            BindingGroupName = multiBinding.BindingGroupName,
+            NotifyOnSourceUpdated = multiBinding.NotifyOnSourceUpdated,
+            NotifyOnTargetUpdated = multiBinding.NotifyOnTargetUpdated,
+            NotifyOnValidationError = multiBinding.NotifyOnValidationError,
+            ValidatesOnDataErrors = multiBinding.ValidatesOnDataErrors,
+            ValidatesOnExceptions = multiBinding.ValidatesOnExceptions,
+            ValidatesOnNotifyDataErrors = multiBinding.ValidatesOnNotifyDataErrors
+        };
+
+        foreach (var childBinding in multiBinding.Bindings)
+        {
+            clone.Bindings.Add(CloneBindingBase(childBinding));
+        }
+
+        foreach (var rule in multiBinding.ValidationRules)
+        {
+            clone.ValidationRules.Add(rule);
+        }
+
+        return clone;
+    }
+
+    private static PriorityBinding ClonePriorityBinding(PriorityBinding priorityBinding)
+    {
+        var clone = new PriorityBinding
+        {
+            StringFormat = priorityBinding.StringFormat,
+            TargetNullValue = priorityBinding.TargetNullValue,
+            FallbackValue = priorityBinding.FallbackValue,
+            BindingGroupName = priorityBinding.BindingGroupName
+        };
+
+        foreach (var childBinding in priorityBinding.Bindings)
+        {
+            clone.Bindings.Add(CloneBindingBase(childBinding));
+        }
+
+        return clone;
     }
 }
