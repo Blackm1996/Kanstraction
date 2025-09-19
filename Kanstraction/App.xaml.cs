@@ -23,7 +23,7 @@ public partial class App : Application
         using (var db = new AppDbContext())
         {
             db.Database.EnsureCreated(); // safe because we use migrations already; fine for dev
-            DbSeeder.Seed(db);
+            //DbSeeder.Seed(db);
         }
 
         BackupService = new BackupService();
