@@ -77,14 +77,12 @@ public static class TextBoxEditHighlighter
             return;
         }
 
-        var binding = (BindingBase?)BindingOperations.GetBinding(textBox, Control.BackgroundProperty)
-                      ?? BindingOperations.GetMultiBinding(textBox, Control.BackgroundProperty)
-                      ?? BindingOperations.GetPriorityBinding(textBox, Control.BackgroundProperty);
+        var binding = CloneBackgroundBinding(textBox);
 
         if (binding != null)
         {
             textBox.SetValue(StoredBackgroundKindProperty, StoredBackgroundKind.Binding);
-            textBox.SetValue(StoredBackgroundValueProperty, binding.Clone());
+            textBox.SetValue(StoredBackgroundValueProperty, binding);
         }
         else
         {
@@ -137,5 +135,25 @@ public static class TextBoxEditHighlighter
                 textBox.ClearValue(Control.BackgroundProperty);
                 break;
         }
+    }
+
+    private static BindingBase? CloneBackgroundBinding(TextBox textBox)
+    {
+        if (BindingOperations.GetBinding(textBox, Control.BackgroundProperty) is Binding binding)
+        {
+            return binding.Clone();
+        }
+
+        if (BindingOperations.GetMultiBinding(textBox, Control.BackgroundProperty) is MultiBinding multiBinding)
+        {
+            return multiBinding.Clone();
+        }
+
+        if (BindingOperations.GetPriorityBinding(textBox, Control.BackgroundProperty) is PriorityBinding priorityBinding)
+        {
+            return priorityBinding.Clone();
+        }
+
+        return null;
     }
 }
