@@ -273,16 +273,23 @@ public partial class StagePresetDesignerView : UserControl
         // adjust selection
         if (_subStages.Count > 0)
         {
-            SubStagesGrid.SelectedIndex = Math.Min(SubStagesGrid.SelectedIndex, _subStages.Count - 1);
-            _selectedSubStage = (SubStageVm)SubStagesGrid.SelectedItem;
-            MaterialsGrid.ItemsSource = _selectedSubStage.Materials;
+            var newIndex = SubStagesGrid.SelectedIndex;
+            if (newIndex < 0)
+            {
+                newIndex = 0;
+            }
+            if (newIndex >= _subStages.Count)
+            {
+                newIndex = _subStages.Count - 1;
+            }
+
+            SubStagesGrid.SelectedIndex = newIndex;
         }
         else
         {
-            _selectedSubStage = null;
-            MaterialsGrid.ItemsSource = new ObservableCollection<MaterialUsageVm>();
+            SubStagesGrid.SelectedIndex = -1;
         }
-        RefreshMaterialPickerItems();
+        UpdateSelectedSubStageFromGrid();
         UpdateMaterialsPanelVisibility();
         UpdateSummary();
         SetDirty();
