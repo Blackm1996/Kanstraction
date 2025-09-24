@@ -1,4 +1,6 @@
-﻿namespace Kanstraction.Entities;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Kanstraction.Entities;
 
 public class MaterialUsage
 {
@@ -8,6 +10,9 @@ public class MaterialUsage
     public decimal Qty { get; set; }
     public DateTime UsageDate { get; set; }
     public string? Notes { get; set; }
+
+    [NotMapped]
+    public decimal DisplayUnitPrice { get; set; }
 
     public SubStage SubStage { get; set; } = null!;
     public Material Material { get; set; } = null!;

@@ -3,6 +3,7 @@ using Kanstraction.Data;
 using Kanstraction.Entities;
 using Kanstraction.Services;
 using System.Globalization;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -92,13 +93,7 @@ public partial class OperationsView : UserControl
             SubStagesGrid.SelectedItem = firstSub;
             SubStagesGrid.ScrollIntoView(firstSub);
 
-            var usages = await _db.MaterialUsages
-                .Include(mu => mu.Material)
-                .Where(mu => mu.SubStageId == firstSub.Id)
-                .OrderBy(mu => mu.Material.Name)
-                .ToListAsync();
-
-            MaterialsGrid.ItemsSource = usages;
+            await LoadMaterialsForSubStageAsync(firstSub);
         }
         else
         {
@@ -116,14 +111,82 @@ public partial class OperationsView : UserControl
             return;
         }
 
-        // Load tracked usages + material (no AsNoTracking so edits persist)
+        await LoadMaterialsForSubStageAsync(ss);
+    }
+
+    private async Task LoadMaterialsForSubStageAsync(SubStage subStage)
+    {
+        if (_db == null)
+        {
+            MaterialsGrid.ItemsSource = null;
+            return;
+        }
+
         var usages = await _db.MaterialUsages
             .Include(mu => mu.Material)
-            .Where(mu => mu.SubStageId == ss.Id)
+                .ThenInclude(m => m.PriceHistory)
+            .Where(mu => mu.SubStageId == subStage.Id)
             .OrderBy(mu => mu.Material.Name)
             .ToListAsync();
 
+        bool freezePrices = subStage.Status == WorkStatus.Finished || subStage.Status == WorkStatus.Paid;
+
+        foreach (var usage in usages)
+        {
+            usage.DisplayUnitPrice = ComputeUnitPriceForUsage(usage, freezePrices);
+        }
+
         MaterialsGrid.ItemsSource = usages;
+    }
+
+    private static decimal ComputeUnitPriceForUsage(MaterialUsage usage, bool freeze)
+    {
+        if (usage.Material == null)
+        {
+            return 0m;
+        }
+
+        if (!freeze || usage.UsageDate == default)
+        {
+            return usage.Material.PricePerUnit;
+        }
+
+        var usageDate = usage.UsageDate.Date;
+        var history = usage.Material.PriceHistory;
+
+        if (history != null && history.Count > 0)
+        {
+            var applicable = history
+                .Where(h => h.StartDate.Date <= usageDate && (!h.EndDate.HasValue || h.EndDate.Value.Date >= usageDate))
+                .OrderByDescending(h => h.StartDate)
+                .FirstOrDefault();
+
+            if (applicable != null)
+            {
+                return applicable.PricePerUnit;
+            }
+
+            var previous = history
+                .Where(h => h.StartDate.Date <= usageDate)
+                .OrderByDescending(h => h.StartDate)
+                .FirstOrDefault();
+
+            if (previous != null)
+            {
+                return previous.PricePerUnit;
+            }
+
+            var earliest = history
+                .OrderBy(h => h.StartDate)
+                .FirstOrDefault();
+
+            if (earliest != null)
+            {
+                return earliest.PricePerUnit;
+            }
+        }
+
+        return usage.Material.PricePerUnit;
     }
     private void SubStagesGrid_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
     {
@@ -859,6 +922,7 @@ public partial class OperationsView : UserControl
         if (sel == null) return;
 
         var ss = await _db.SubStages
+            .Include(x => x.MaterialUsages)
             .Include(x => x.Stage)
                 .ThenInclude(s => s.SubStages)
             .Include(x => x.Stage.Building)
@@ -878,6 +942,12 @@ public partial class OperationsView : UserControl
 
         ss.Status = WorkStatus.Finished;
         if (ss.EndDate == null) ss.EndDate = DateTime.Today;
+
+        var freezeDate = ss.EndDate.Value.Date;
+        foreach (var usage in ss.MaterialUsages)
+        {
+            usage.UsageDate = freezeDate;
+        }
 
         // Recompute parents (also sets dates)
         UpdateStageStatusFromSubStages(ss.Stage);
@@ -984,13 +1054,7 @@ public partial class OperationsView : UserControl
             SubStagesGrid.SelectedItem = firstSub;
             SubStagesGrid.ScrollIntoView(firstSub);
 
-            var usages = await _db.MaterialUsages
-                .Include(mu => mu.Material)
-                .Where(mu => mu.SubStageId == firstSub.Id)
-                .OrderBy(mu => mu.Material.Name)
-                .ToListAsync();
-
-            MaterialsGrid.ItemsSource = usages;
+            await LoadMaterialsForSubStageAsync(firstSub);
         }
         else
         {
@@ -1108,13 +1172,7 @@ public partial class OperationsView : UserControl
             await _db.SaveChangesAsync();
 
             // Refresh the materials list for this sub-stage
-            var usages = await _db.MaterialUsages
-                .Include(x => x.Material)
-                .Where(x => x.SubStageId == ss.Id)
-                .OrderBy(x => x.Material.Name)
-                .ToListAsync();
-
-            MaterialsGrid.ItemsSource = usages;
+            await LoadMaterialsForSubStageAsync(ss);
         }
         catch (Exception ex)
         {
