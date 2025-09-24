@@ -75,7 +75,6 @@
                             <StackPanel Grid.Column="1" Margin="16,0,0,0">
                                 <TextBlock Text="{DynamicResource StagePresetDesignerView_Summary}" FontWeight="SemiBold" Margin="0,0,0,6"/>
                                 <TextBlock x:Name="TxtTotalSubs"/>
-                                <TextBlock x:Name="TxtTotalLabor"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -111,7 +110,6 @@
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="40" IsReadOnly="True"/>
                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_Name}" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
-                                        <DataGridTextColumn Header="{DynamicResource StagePresetDesignerView_Labor}" Binding="{Binding LaborCost, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}" Width="150"/>
                                         <DataGridTemplateColumn Header="{DynamicResource AdminHubView_Order}" Width="120">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>

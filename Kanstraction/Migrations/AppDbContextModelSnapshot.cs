@@ -81,6 +81,24 @@ namespace Kanstraction.Migrations
                     b.ToTable("BuildingTypeStagePresets");
                 });
 
+            modelBuilder.Entity("Kanstraction.Entities.BuildingTypeSubStageLabor", b =>
+                {
+                    b.Property<int>("BuildingTypeId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("SubStagePresetId")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<decimal>("LaborCost")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("BuildingTypeId", "SubStagePresetId");
+
+                    b.HasIndex("SubStagePresetId");
+
+                    b.ToTable("BuildingTypeSubStageLabors");
+                });
+
             modelBuilder.Entity("Kanstraction.Entities.Material", b =>
                 {
                     b.Property<int>("Id")
@@ -303,9 +321,6 @@ namespace Kanstraction.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<decimal>("LaborCost")
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -357,6 +372,25 @@ namespace Kanstraction.Migrations
                     b.Navigation("BuildingType");
 
                     b.Navigation("StagePreset");
+                });
+
+            modelBuilder.Entity("Kanstraction.Entities.BuildingTypeSubStageLabor", b =>
+                {
+                    b.HasOne("Kanstraction.Entities.BuildingType", "BuildingType")
+                        .WithMany()
+                        .HasForeignKey("BuildingTypeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("Kanstraction.Entities.SubStagePreset", "SubStagePreset")
+                        .WithMany()
+                        .HasForeignKey("SubStagePresetId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("BuildingType");
+
+                    b.Navigation("SubStagePreset");
                 });
 
             modelBuilder.Entity("Kanstraction.Entities.MaterialPriceHistory", b =>

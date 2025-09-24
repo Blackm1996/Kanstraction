@@ -11,6 +11,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace Kanstraction.Views
 {
@@ -532,6 +533,7 @@ namespace Kanstraction.Views
         private ObservableCollection<AssignedPresetVm> _btAssigned = new();
         private List<int> _currentBtAssignedIds = new();
         private Dictionary<int, int> _presetSubCounts = new(); // StagePresetId -> count
+        private Dictionary<int, decimal?> _originalLaborCosts = new(); // SubStagePresetId -> labor
         // VM for the assigned presets list
         private class AssignedPresetVm
         {
@@ -539,6 +541,44 @@ namespace Kanstraction.Views
             public string Name { get; set; } = "";
             public int OrderIndex { get; set; }
             public int SubStageCount { get; set; }
+            public ObservableCollection<SubStageLaborVm> SubStages { get; set; } = new();
+        }
+
+        private class SubStageLaborVm : INotifyPropertyChanged
+        {
+            private decimal? _laborCost;
+
+            public int SubStagePresetId { get; set; }
+            public string Name { get; set; } = "";
+            public int OrderIndex { get; set; }
+            public decimal? OriginalLaborCost { get; set; }
+
+            public decimal? LaborCost
+            {
+                get => _laborCost;
+                set => SetProperty(ref _laborCost, value);
+            }
+
+            public event PropertyChangedEventHandler? PropertyChanged;
+            public event EventHandler? Changed;
+
+            private bool SetProperty<T>(ref T field, T value, [CallerMemberName] string propertyName = "")
+            {
+                if (EqualityComparer<T>.Default.Equals(field, value))
+                {
+                    return false;
+                }
+
+                field = value;
+                OnPropertyChanged(propertyName);
+                Changed?.Invoke(this, EventArgs.Empty);
+                return true;
+            }
+
+            private void OnPropertyChanged(string propertyName)
+            {
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+            }
         }
 
         private async Task RefreshPresetSubCountsAsync()
@@ -548,6 +588,20 @@ namespace Kanstraction.Views
                 .GroupBy(s => s.StagePresetId)
                 .Select(g => new { g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.Key, x => x.Count);
+        }
+
+        private SubStageLaborVm CreateLaborVm(int subStagePresetId, string name, int orderIndex, decimal? laborCost)
+        {
+            var vm = new SubStageLaborVm
+            {
+                SubStagePresetId = subStagePresetId,
+                Name = name,
+                OrderIndex = orderIndex,
+                LaborCost = laborCost,
+                OriginalLaborCost = laborCost
+            };
+            vm.Changed += (_, __) => UpdateBuildingDirtyState();
+            return vm;
         }
         private async Task ReloadForBuildingTypesTabAsync()
         {
@@ -606,7 +660,23 @@ namespace Kanstraction.Views
         {
             if (_db == null) return;
             var bt = BuildingTypesList?.SelectedItem as BuildingType;
-            if (bt == null) return;
+
+            if (bt == null)
+            {
+                _editingBtId = null;
+                _currentBt = null;
+                _btAssigned = new ObservableCollection<AssignedPresetVm>();
+                BtAssignedGrid.ItemsSource = _btAssigned;
+                _currentBtAssignedIds = new List<int>();
+                _originalLaborCosts = new Dictionary<int, decimal?>();
+                if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
+                if (BtSelectedPresetTitle != null)
+                    BtSelectedPresetTitle.Text = ResourceHelper.GetString(
+                        "AdminHubView_SelectedPresetTitle",
+                        "Select a preset to preview its sub-stages");
+                UpdateBuildingDirtyState();
+                return;
+            }
 
             _editingBtId = bt.Id;
             _currentBt = await _db.BuildingTypes.FirstAsync(x => x.Id == bt.Id);
@@ -614,7 +684,6 @@ namespace Kanstraction.Views
             if (BtName != null) BtName.Text = bt.Name ?? string.Empty;
             if (BtActive != null) BtActive.IsChecked = bt.IsActive;
 
-            // Load assigned presets with sub-stage count
             var assigned = await _db.BuildingTypeStagePresets
                 .Where(x => x.BuildingTypeId == bt.Id)
                 .Include(x => x.StagePreset)
@@ -622,35 +691,62 @@ namespace Kanstraction.Views
                 .Select(x => new { x.StagePresetId, Name = x.StagePreset!.Name, x.OrderIndex })
                 .ToListAsync();
 
-            var subCounts = await _db.SubStagePresets
-                .GroupBy(s => s.StagePresetId)
-                .Select(g => new { StagePresetId = g.Key, Count = g.Count() })
-                .ToListAsync();
-            var countMap = subCounts.ToDictionary(x => x.StagePresetId, x => x.Count);
+            var presetIds = assigned.Select(a => a.StagePresetId).ToList();
 
-            _btAssigned = new ObservableCollection<AssignedPresetVm>(
-            assigned.Select(a => new AssignedPresetVm
+            var subStageRows = await _db.SubStagePresets
+                .Where(s => presetIds.Contains(s.StagePresetId))
+                .OrderBy(s => s.OrderIndex)
+                .Select(s => new { s.Id, s.StagePresetId, s.Name, s.OrderIndex })
+                .ToListAsync();
+
+            var laborLookup = await _db.BuildingTypeSubStageLabors
+                .Where(x => x.BuildingTypeId == bt.Id)
+                .ToDictionaryAsync(x => x.SubStagePresetId, x => (decimal?)x.LaborCost);
+
+            _originalLaborCosts = new Dictionary<int, decimal?>(laborLookup);
+
+            _btAssigned = new ObservableCollection<AssignedPresetVm>();
+
+            foreach (var a in assigned)
+            {
+                var subRows = subStageRows
+                    .Where(s => s.StagePresetId == a.StagePresetId)
+                    .OrderBy(s => s.OrderIndex)
+                    .ToList();
+
+                var vm = new AssignedPresetVm
                 {
                     StagePresetId = a.StagePresetId,
                     Name = a.Name,
                     OrderIndex = a.OrderIndex,
-                    SubStageCount = _presetSubCounts.TryGetValue(a.StagePresetId, out var c) ? c : 0
-                })
-            );
+                    SubStageCount = subRows.Count,
+                    SubStages = new ObservableCollection<SubStageLaborVm>(
+                        subRows.Select(s =>
+                        {
+                            laborLookup.TryGetValue(s.Id, out var cost);
+                            return CreateLaborVm(s.Id, s.Name, s.OrderIndex, cost);
+                        }))
+                };
+
+                _btAssigned.Add(vm);
+            }
+
             BtAssignedGrid.ItemsSource = _btAssigned;
             _currentBtAssignedIds = _btAssigned.Select(a => a.StagePresetId).ToList();
 
-            // auto-select first assigned preset to show preview
             if (_btAssigned.Count > 0)
             {
                 BtAssignedGrid.SelectedIndex = 0;
             }
             else
             {
-                BtSubStagesPreviewGrid.ItemsSource = null;
+                if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
+                if (BtSelectedPresetTitle != null)
+                    BtSelectedPresetTitle.Text = ResourceHelper.GetString(
+                        "AdminHubView_SelectedPresetTitle",
+                        "Select a preset to preview its sub-stages");
             }
 
-            // fill picker with available (active, not already assigned)
             RefreshBtPresetPicker();
             UpdateBuildingDirtyState();
         }
@@ -667,6 +763,13 @@ namespace Kanstraction.Views
             _btAssigned = new ObservableCollection<AssignedPresetVm>();
             BtAssignedGrid.ItemsSource = _btAssigned;
             _currentBtAssignedIds = new List<int>();
+            _originalLaborCosts = new Dictionary<int, decimal?>();
+
+            if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
+            if (BtSelectedPresetTitle != null)
+                BtSelectedPresetTitle.Text = ResourceHelper.GetString(
+                    "AdminHubView_SelectedPresetTitle",
+                    "Select a preset to preview its sub-stages");
 
             RefreshBtPresetPicker();
             BuildingTypesList.SelectedItem = null;
@@ -704,7 +807,7 @@ namespace Kanstraction.Views
 
             if (_currentBt == null)
             {
-                dirty = !string.IsNullOrEmpty(name) || !isActive || assignedIds.Count > 0;
+                dirty = !string.IsNullOrEmpty(name) || !isActive || assignedIds.Count > 0 || AnyLaborFilled();
             }
             else
             {
@@ -715,13 +818,53 @@ namespace Kanstraction.Views
                 {
                     dirty = !_currentBtAssignedIds.SequenceEqual(assignedIds);
                 }
+
+                if (!dirty)
+                {
+                    var currentLabor = CollectCurrentLabor();
+                    if (_originalLaborCosts.Count != currentLabor.Count)
+                    {
+                        dirty = true;
+                    }
+                    else
+                    {
+                        foreach (var kvp in currentLabor)
+                        {
+                            if (!_originalLaborCosts.TryGetValue(kvp.Key, out var orig) || orig != kvp.Value)
+                            {
+                                dirty = true;
+                                break;
+                            }
+                        }
+                    }
+                }
             }
 
             IsBuildingDirty = dirty;
         }
 
-        private void AddPresetToBuildingType_Click(object sender, RoutedEventArgs e)
+        private bool AnyLaborFilled()
         {
+            return _btAssigned.Any(p => p.SubStages.Any(s => s.LaborCost.HasValue));
+        }
+
+        private Dictionary<int, decimal?> CollectCurrentLabor()
+        {
+            var map = new Dictionary<int, decimal?>();
+            foreach (var preset in _btAssigned)
+            {
+                foreach (var sub in preset.SubStages)
+                {
+                    map[sub.SubStagePresetId] = sub.LaborCost;
+                }
+            }
+            return map;
+        }
+
+        private async void AddPresetToBuildingType_Click(object sender, RoutedEventArgs e)
+        {
+            if (_db == null) return;
+
             if (BtPresetPicker?.SelectedValue is not int presetId)
             {
                 MessageBox.Show(ResourceHelper.GetString("AdminHubView_SelectPresetToAddMessage", "Select a stage preset to add."));
@@ -732,14 +875,20 @@ namespace Kanstraction.Views
 
             if (_btAssigned.Any(a => a.StagePresetId == presetId)) return;
 
-            var count = _presetSubCounts.TryGetValue(preset.Id, out var c) ? c : 0;
+            var subRows = await _db.SubStagePresets
+                .Where(s => s.StagePresetId == preset.Id)
+                .OrderBy(s => s.OrderIndex)
+                .Select(s => new { s.Id, s.Name, s.OrderIndex })
+                .ToListAsync();
 
             var vm = new AssignedPresetVm
             {
                 StagePresetId = preset.Id,
                 Name = preset.Name,
-                SubStageCount = count,
-                OrderIndex = _btAssigned.Count + 1
+                SubStageCount = subRows.Count,
+                OrderIndex = _btAssigned.Count + 1,
+                SubStages = new ObservableCollection<SubStageLaborVm>(
+                    subRows.Select(s => CreateLaborVm(s.Id, s.Name, s.OrderIndex, null)))
             };
 
             _btAssigned.Add(vm);
@@ -747,14 +896,13 @@ namespace Kanstraction.Views
             RenumberAssigned();
             RefreshBtPresetPicker();
 
-            // ✅ select the newly added preset and show its preview
             BtAssignedGrid.SelectedItem = vm;
             BtAssignedGrid.ScrollIntoView(vm);
+            UpdateBuildingDirtyState();
         }
 
-        private async void BtAssignedGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void BtAssignedGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_db == null) return;
             var vm = BtAssignedGrid?.SelectedItem as AssignedPresetVm;
 
             if (vm == null)
@@ -763,20 +911,20 @@ namespace Kanstraction.Views
                     BtSelectedPresetTitle.Text = ResourceHelper.GetString(
                         "AdminHubView_SelectedPresetTitle",
                         "Select a preset to preview its sub-stages");
-                BtSubStagesPreviewGrid.ItemsSource = null;
+                if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
                 return;
             }
 
             if (BtSelectedPresetTitle != null)
-                BtSelectedPresetTitle.Text = vm.Name; // show preset name as the header
+                BtSelectedPresetTitle.Text = vm.Name;
 
-            var subs = await _db.SubStagePresets
-                .Where(s => s.StagePresetId == vm.StagePresetId)
-                .OrderBy(s => s.OrderIndex)
-                .Select(s => new { s.OrderIndex, s.Name, s.LaborCost })
-                .ToListAsync();
+            if (BtSubStagesPreviewGrid != null)
+                BtSubStagesPreviewGrid.ItemsSource = vm.SubStages;
+        }
 
-            BtSubStagesPreviewGrid.ItemsSource = subs;
+        private void BtSubStagesPreviewGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            Dispatcher.BeginInvoke(new Action(UpdateBuildingDirtyState), DispatcherPriority.Background);
         }
 
         // Reordering & Remove
@@ -829,6 +977,30 @@ namespace Kanstraction.Views
                 return;
             }
             var isActive = BtActive?.IsChecked == true;
+
+            foreach (var preset in _btAssigned)
+            {
+                foreach (var sub in preset.SubStages)
+                {
+                    if (!sub.LaborCost.HasValue)
+                    {
+                        MessageBox.Show(string.Format(
+                            ResourceHelper.GetString("AdminHubView_LaborRequiredFormat", "Enter labor cost for '{0}' in preset '{1}'."),
+                            sub.Name,
+                            preset.Name));
+                        return;
+                    }
+
+                    if (sub.LaborCost.Value < 0)
+                    {
+                        MessageBox.Show(string.Format(
+                            ResourceHelper.GetString("AdminHubView_LaborNonNegativeFormat", "Labor cost for '{0}' in preset '{1}' cannot be negative."),
+                            sub.Name,
+                            preset.Name));
+                        return;
+                    }
+                }
+            }
 
             using var tx = await _db.Database.BeginTransactionAsync();
 
@@ -887,6 +1059,45 @@ namespace Kanstraction.Views
                 }
                 await _db.SaveChangesAsync();
 
+                // Sync labor costs
+                var existingLabor = await _db.BuildingTypeSubStageLabors
+                    .Where(x => x.BuildingTypeId == _editingBtId!.Value)
+                    .ToListAsync();
+
+                var desiredLabor = _btAssigned
+                    .SelectMany(p => p.SubStages)
+                    .Select(s => new { s.SubStagePresetId, Value = s.LaborCost!.Value })
+                    .ToList();
+
+                var desiredIds = desiredLabor.Select(x => x.SubStagePresetId).ToHashSet();
+
+                var laborToDelete = existingLabor.Where(x => !desiredIds.Contains(x.SubStagePresetId)).ToList();
+                if (laborToDelete.Count > 0)
+                {
+                    _db.BuildingTypeSubStageLabors.RemoveRange(laborToDelete);
+                    await _db.SaveChangesAsync();
+                }
+
+                foreach (var desired in desiredLabor)
+                {
+                    var row = existingLabor.FirstOrDefault(x => x.SubStagePresetId == desired.SubStagePresetId);
+                    if (row == null)
+                    {
+                        row = new BuildingTypeSubStageLabor
+                        {
+                            BuildingTypeId = _editingBtId!.Value,
+                            SubStagePresetId = desired.SubStagePresetId,
+                            LaborCost = desired.Value
+                        };
+                        _db.BuildingTypeSubStageLabors.Add(row);
+                    }
+                    else
+                    {
+                        row.LaborCost = desired.Value;
+                    }
+                }
+                await _db.SaveChangesAsync();
+
                 await tx.CommitAsync();
 
                 // refresh caches & UI
@@ -898,6 +1109,17 @@ namespace Kanstraction.Views
                     var row = _allBuildingTypes.FirstOrDefault(x => x.Id == _editingBtId.Value);
                     if (row != null) BuildingTypesList.SelectedItem = row;
                 }
+
+                _originalLaborCosts = desiredLabor.ToDictionary(x => x.SubStagePresetId, x => (decimal?)x.Value);
+                foreach (var presetVm in _btAssigned)
+                {
+                    foreach (var subVm in presetVm.SubStages)
+                    {
+                        subVm.OriginalLaborCost = subVm.LaborCost;
+                    }
+                }
+                _currentBtAssignedIds = _btAssigned.Select(a => a.StagePresetId).ToList();
+                UpdateBuildingDirtyState();
 
                 MessageBox.Show(
                     ResourceHelper.GetString("AdminHubView_BuildingTypeSavedMessage", "Building type saved."),
@@ -934,6 +1156,12 @@ namespace Kanstraction.Views
                 _editingBtId = null;
                 _currentBt = null;
                 _currentBtAssignedIds = new List<int>();
+                _originalLaborCosts = new Dictionary<int, decimal?>();
+                if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
+                if (BtSelectedPresetTitle != null)
+                    BtSelectedPresetTitle.Text = ResourceHelper.GetString(
+                        "AdminHubView_SelectedPresetTitle",
+                        "Select a preset to preview its sub-stages");
                 UpdateBuildingDirtyState();
             }
         }

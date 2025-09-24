@@ -108,6 +108,8 @@
     <sys:String x:Key="AdminHubView_BuildingTypeNameRequired">Le nom est requis.</sys:String>
     <sys:String x:Key="AdminHubView_BuildingTypeSavedMessage">Type de bâtiment enregistré.</sys:String>
     <sys:String x:Key="AdminHubView_SaveBuildingTypeFailedFormat">Échec de l'enregistrement :&#x0a;{0}</sys:String>
+    <sys:String x:Key="AdminHubView_LaborRequiredFormat">Saisissez le coût de main-d'œuvre pour « {0} » dans le gabarit « {1} ».</sys:String>
+    <sys:String x:Key="AdminHubView_LaborNonNegativeFormat">Le coût de main-d'œuvre pour « {0} » dans le gabarit « {1} » ne peut pas être négatif.</sys:String>
 
     <!-- BackupHubView -->
     <sys:String x:Key="BackupHubView_Title">Sauvegardes et restauration</sys:String>
@@ -184,6 +186,10 @@
     <sys:String x:Key="OperationsView_DuplicateCodeMessage">Un bâtiment avec ce code existe déjà dans ce projet.</sys:String>
     <sys:String x:Key="OperationsView_DuplicateCodeTitle">Code dupliqué</sys:String>
     <sys:String x:Key="OperationsView_CreateBuildingFailedFormat">Échec de création du bâtiment :&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_BuildingTypeMissing">Le type de bâtiment sélectionné n'existe plus.</sys:String>
+    <sys:String x:Key="OperationsView_MissingLaborForSubStageFormat">Le coût de main-d'œuvre pour « {0} » (étape « {1} ») n'est pas défini pour le type de bâtiment « {2} ». Mettez d'abord à jour le type de bâtiment afin de renseigner tous les coûts de main-d'œuvre.</sys:String>
+    <sys:String x:Key="OperationsView_BuildingNotFound">Ce bâtiment n'existe plus.</sys:String>
+    <sys:String x:Key="OperationsView_BuildingTypeRequiredForStageMessage">Assignez un type de bâtiment avant d'ajouter une étape.</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingConfirmMessage">Arrêter ce bâtiment ? Toutes les étapes et sous-étapes non terminées/payées seront marquées Arrêtées.</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingConfirmTitle">Confirmer l'arrêt</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingFailedFormat">Échec de l'arrêt du bâtiment :&#x0a;{0}</sys:String>
@@ -219,8 +225,6 @@
     <sys:String x:Key="StagePresetDesignerView_PresetName">Nom du préréglage</sys:String>
     <sys:String x:Key="StagePresetDesignerView_Summary">Résumé</sys:String>
     <sys:String x:Key="StagePresetDesignerView_TotalSubStages">Total des sous-étapes : {0}</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_TotalLabor">Total de la main-d'œuvre par défaut : {0:0.##}</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_Labor">Main-d'œuvre</sys:String>
     <sys:String x:Key="StagePresetDesignerView_AddSubStage">Ajouter une sous-étape</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialsForSelected">Matériaux pour la sous-étape sélectionnée</sys:String>
     <sys:String x:Key="StagePresetDesignerView_NewSubStage">Nouvelle sous-étape</sys:String>
@@ -232,7 +236,6 @@
     <sys:String x:Key="StagePresetDesignerView_MaterialAlreadyAdded">Ce matériau est déjà ajouté à la sous-étape.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_PresetNameRequired">Le nom du préréglage est requis.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SubStageNameRequired">Chaque sous-étape doit avoir un nom.</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_LaborCostNonNegative">Le coût de main-d'œuvre doit être ≥ 0.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialQuantityNonNegative">La quantité de matériau doit être ≥ 0.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SavedMessage">Préréglage enregistré.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DialogTitle">Préréglage d'étape</sys:String>

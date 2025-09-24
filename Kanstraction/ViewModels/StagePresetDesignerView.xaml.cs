@@ -178,7 +178,6 @@ public partial class StagePresetDesignerView : UserControl
             {
                 Id = ss.Id,
                 Name = ss.Name,
-                LaborCost = ss.LaborCost,
                 OrderIndex = ss.OrderIndex,
                 Materials = new ObservableCollection<MaterialUsageVm>()
             };
@@ -241,7 +240,6 @@ public partial class StagePresetDesignerView : UserControl
         var vm = new SubStageVm
         {
             Id = null,
-            LaborCost = 0,
             OrderIndex = nextIndex,
             Materials = new ObservableCollection<MaterialUsageVm>()
         };
@@ -482,9 +480,6 @@ public partial class StagePresetDesignerView : UserControl
     {
         var totalSubStagesFormat = ResourceHelper.GetString("StagePresetDesignerView_TotalSubStages", "Total sub-stages: {0}");
         TxtTotalSubs.Text = string.Format(totalSubStagesFormat, _subStages.Count);
-        var totalLabor = _subStages.Sum(s => s.LaborCost);
-        var totalLaborFormat = ResourceHelper.GetString("StagePresetDesignerView_TotalLabor", "Total default labor: {0:0.##}");
-        TxtTotalLabor.Text = string.Format(totalLaborFormat, totalLabor);
     }
 
     // When editing cells, mark dirty and update summary (for labor changes)
@@ -506,7 +501,6 @@ public partial class StagePresetDesignerView : UserControl
                 _subStageOriginalValue = path switch
                 {
                     nameof(SubStageVm.Name) => vm.Name,
-                    nameof(SubStageVm.LaborCost) => vm.LaborCost,
                     _ => null
                 };
 
@@ -550,7 +544,6 @@ public partial class StagePresetDesignerView : UserControl
                 object? currentValue = property switch
                 {
                     nameof(SubStageVm.Name) => vm.Name,
-                    nameof(SubStageVm.LaborCost) => vm.LaborCost,
                     _ => null
                 };
 
@@ -601,11 +594,6 @@ public partial class StagePresetDesignerView : UserControl
             if (string.IsNullOrWhiteSpace(s.Name))
             {
                 MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_SubStageNameRequired", "Each sub-stage must have a name."));
-                return;
-            }
-            if (s.LaborCost < 0)
-            {
-                MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_LaborCostNonNegative", "Labor cost must be ≥ 0."));
                 return;
             }
             foreach (var mu in s.Materials)
@@ -672,7 +660,6 @@ public partial class StagePresetDesignerView : UserControl
                     {
                         StagePresetId = _currentPresetId!.Value,
                         Name = vm.Name,
-                        LaborCost = vm.LaborCost,
                         OrderIndex = index + 1
                     };
                     _db.SubStagePresets.Add(s);
@@ -683,7 +670,6 @@ public partial class StagePresetDesignerView : UserControl
                 {
                     var s = existingById[vm.Id.Value];
                     s.Name = vm.Name;
-                    s.LaborCost = vm.LaborCost;
                     s.OrderIndex = index + 1;
                     await _db.SaveChangesAsync();
                 }
@@ -769,7 +755,6 @@ public partial class StagePresetDesignerView : UserControl
     {
         private int? _id;
         private string _name = string.Empty;
-        private decimal _laborCost;
         private int _orderIndex;
         private ObservableCollection<MaterialUsageVm> _materials = new();
 
@@ -783,12 +768,6 @@ public partial class StagePresetDesignerView : UserControl
         {
             get => _name;
             set => SetProperty(ref _name, value ?? string.Empty);
-        }
-
-        public decimal LaborCost
-        {
-            get => _laborCost;
-            set => SetProperty(ref _laborCost, value);
         }
 
         public int OrderIndex

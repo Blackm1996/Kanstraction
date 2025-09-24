@@ -110,6 +110,8 @@
     <sys:String x:Key="AdminHubView_BuildingTypeNameRequired">Name is required.</sys:String>
     <sys:String x:Key="AdminHubView_BuildingTypeSavedMessage">Building type saved.</sys:String>
     <sys:String x:Key="AdminHubView_SaveBuildingTypeFailedFormat">Saving failed:&#x0a;{0}</sys:String>
+    <sys:String x:Key="AdminHubView_LaborRequiredFormat">Enter labor cost for '{0}' in preset '{1}'.</sys:String>
+    <sys:String x:Key="AdminHubView_LaborNonNegativeFormat">Labor cost for '{0}' in preset '{1}' cannot be negative.</sys:String>
 
     <!-- BackupHubView -->
     <sys:String x:Key="BackupHubView_Title">Backups &amp; Restore</sys:String>
@@ -186,6 +188,10 @@
     <sys:String x:Key="OperationsView_DuplicateCodeMessage">A building with this code already exists in this project.</sys:String>
     <sys:String x:Key="OperationsView_DuplicateCodeTitle">Duplicate code</sys:String>
     <sys:String x:Key="OperationsView_CreateBuildingFailedFormat">Failed to create building:&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_BuildingTypeMissing">Selected building type no longer exists.</sys:String>
+    <sys:String x:Key="OperationsView_MissingLaborForSubStageFormat">Labor cost for '{0}' (stage '{1}') is not defined for building type '{2}'. Update the building type to set all labor costs first.</sys:String>
+    <sys:String x:Key="OperationsView_BuildingNotFound">This building no longer exists.</sys:String>
+    <sys:String x:Key="OperationsView_BuildingTypeRequiredForStageMessage">Assign a building type before adding a stage.</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingConfirmMessage">Stop this building? All unfinished/unpaid stages and sub-stages will be marked Stopped.</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingConfirmTitle">Confirm stop</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingFailedFormat">Failed to stop building:&#x0a;{0}</sys:String>
@@ -221,8 +227,6 @@
     <sys:String x:Key="StagePresetDesignerView_PresetName">Preset Name</sys:String>
     <sys:String x:Key="StagePresetDesignerView_Summary">Summary</sys:String>
     <sys:String x:Key="StagePresetDesignerView_TotalSubStages">Total sub-stages: {0}</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_TotalLabor">Total default labor: {0:0.##}</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_Labor">Labor</sys:String>
     <sys:String x:Key="StagePresetDesignerView_AddSubStage">Add Sub-stage</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialsForSelected">Materials for selected sub-stage</sys:String>
     <sys:String x:Key="StagePresetDesignerView_NewSubStage">New sub-stage</sys:String>
@@ -234,7 +238,6 @@
     <sys:String x:Key="StagePresetDesignerView_MaterialAlreadyAdded">This material is already added to the sub-stage.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_PresetNameRequired">Preset name is required.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SubStageNameRequired">Each sub-stage must have a name.</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_LaborCostNonNegative">Labor cost must be ≥ 0.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialQuantityNonNegative">Material quantity must be ≥ 0.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SavedMessage">Stage preset saved.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DialogTitle">Stage preset</sys:String>

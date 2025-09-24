@@ -15,6 +15,37 @@ namespace Kanstraction.Data
     /// </summary>
     public static class DbSeeder
     {
+        private static readonly Dictionary<string, (int order, string name, decimal labor, (string mat, decimal qty)[] uses)[]> StagePresetSeeds = new()
+        {
+            ["Fondation"] = new[]
+            {
+                (1, "Excavation", 800m,  new[] { ("Sable", 5m), ("Gravier", 3m) }),
+                (2, "Armature",   1200m, new[] { ("Armature", 500m) }),
+                (3, "Coulage",    1500m, new[] { ("Ciment", 60m), ("Sable", 10m), ("Gravier", 10m) })
+            },
+            ["Structure"] = new[]
+            {
+                (1, "Colonnes", 1400m, new[] { ("Armature", 600m), ("Ciment", 40m) }),
+                (2, "Poutres",  1200m, new[] { ("Armature", 400m), ("Ciment", 30m) }),
+                (3, "Dalle",    1300m, new[] { ("Armature", 300m), ("Ciment", 35m) })
+            },
+            ["Murs"] = new[]
+            {
+                (1, "Maçonnerie de blocs", 900m, new[] { ("Blocs", 1000m), ("Ciment", 20m), ("Sable", 8m) }),
+                (2, "Plâtrage",            700m, new[] { ("Plâtre", 30m) })
+            },
+            ["MEP"] = new[]
+            {
+                (1, "Préinstallation plomberie",  800m, new[] { ("Tuyaux", 120m) }),
+                (2, "Préinstallation électrique", 900m, new[] { ("Câblage", 300m) })
+            },
+            ["Finitions"] = new[]
+            {
+                (1, "Apprêt",          500m, new[] { ("Peinture", 5m) }),
+                (2, "Peinture finale", 700m, new[] { ("Peinture", 10m) })
+            }
+        };
+
         public static void Seed(AppDbContext db)
         {
             // No early return: let each Ensure* handle its own idempotency
@@ -107,20 +138,21 @@ namespace Kanstraction.Data
         // ---------------- STAGE PRESETS (+ SUBS + MATERIAL USAGES) ----------------
         private static void EnsureStagePresets(AppDbContext db, Dictionary<string, Material> materialsByName)
         {
-            // Local helper to add/update a StagePreset with its SubStagePresets and material usages
-            void UpsertStagePreset(
-                string presetName,
-                (int order, string name, decimal labor, (string mat, decimal qty)[] uses)[] subs)
+            foreach (var (presetName, subs) in StagePresetSeeds)
             {
                 var preset = db.StagePresets.FirstOrDefault(p => p.Name == presetName);
                 if (preset == null)
                 {
                     preset = new StagePreset { Name = presetName, IsActive = true };
                     db.StagePresets.Add(preset);
-                    db.SaveChanges(); // we need preset.Id for children
+                    db.SaveChanges();
+                }
+                else if (!preset.IsActive)
+                {
+                    preset.IsActive = true;
+                    db.SaveChanges();
                 }
 
-                // Ensure sub-stages in order
                 foreach (var s in subs.OrderBy(x => x.order))
                 {
                     var sub = db.SubStagePresets
@@ -132,25 +164,22 @@ namespace Kanstraction.Data
                         {
                             StagePresetId = preset.Id,
                             Name = s.name,
-                            OrderIndex = s.order,
-                            LaborCost = s.labor
+                            OrderIndex = s.order
                         };
                         db.SubStagePresets.Add(sub);
-                        db.SaveChanges(); // need sub.Id for material usages
+                        db.SaveChanges();
                     }
                     else
                     {
-                        // keep metadata updated (order/labor)
-                        if (sub.OrderIndex != s.order || sub.LaborCost != s.labor)
+                        if (sub.OrderIndex != s.order || !string.Equals(sub.Name, s.name, StringComparison.Ordinal))
                         {
                             sub.OrderIndex = s.order;
-                            sub.LaborCost = s.labor;
+                            sub.Name = s.name;
                             db.SubStagePresets.Update(sub);
                             db.SaveChanges();
                         }
                     }
 
-                    // Ensure material usages for this sub-stage preset
                     foreach (var (matName, qty) in s.uses)
                     {
                         if (!materialsByName.TryGetValue(matName, out var mat)) continue;
@@ -167,48 +196,14 @@ namespace Kanstraction.Data
                                 Qty = qty
                             });
                         }
-                        else
+                        else if (exists.Qty != qty)
                         {
-                            if (exists.Qty != qty)
-                                exists.Qty = qty;
+                            exists.Qty = qty;
                         }
                     }
                     db.SaveChanges();
                 }
             }
-
-            // Presets (same as your current intent, names kept consistent)
-            UpsertStagePreset("Fondation", new[]
-            {
-                (1, "Excavation", 800m,  new[] { ("Sable", 5m), ("Gravier", 3m) }),
-                (2, "Armature",   1200m, new[] { ("Armature", 500m) }),
-                (3, "Coulage",    1500m, new[] { ("Ciment", 60m), ("Sable", 10m), ("Gravier", 10m) })
-            });
-
-            UpsertStagePreset("Structure", new[]
-            {
-                (1, "Colonnes", 1400m, new[] { ("Armature", 600m), ("Ciment", 40m) }),
-                (2, "Poutres",  1200m, new[] { ("Armature", 400m), ("Ciment", 30m) }),
-                (3, "Dalle",    1300m, new[] { ("Armature", 300m), ("Ciment", 35m) })
-            });
-
-            UpsertStagePreset("Murs", new[]
-            {
-                (1, "Maçonnerie de blocs", 900m, new[] { ("Blocs", 1000m), ("Ciment", 20m), ("Sable", 8m) }),
-                (2, "Plâtrage",            700m, new[] { ("Plâtre", 30m) })
-            });
-
-            UpsertStagePreset("MEP", new[]
-            {
-                (1, "Préinstallation plomberie",  800m, new[] { ("Tuyaux", 120m) }),
-                (2, "Préinstallation électrique", 900m, new[] { ("Câblage", 300m) })
-            });
-
-            UpsertStagePreset("Finitions", new[]
-            {
-                (1, "Apprêt",          500m, new[] { ("Peinture", 5m) }),
-                (2, "Peinture finale", 700m, new[] { ("Peinture", 10m) })
-            });
         }
 
         // ---------------- BUILDING TYPES ----------------
@@ -237,6 +232,36 @@ namespace Kanstraction.Data
                 return p;
             }
 
+            void EnsureLabor(BuildingType t, StagePreset preset)
+            {
+                if (!StagePresetSeeds.TryGetValue(preset.Name, out var subs)) return;
+
+                foreach (var s in subs)
+                {
+                    var subPreset = db.SubStagePresets.FirstOrDefault(x => x.StagePresetId == preset.Id && x.Name == s.name);
+                    if (subPreset == null) continue;
+
+                    var row = db.BuildingTypeSubStageLabors
+                        .FirstOrDefault(x => x.BuildingTypeId == t.Id && x.SubStagePresetId == subPreset.Id);
+
+                    if (row == null)
+                    {
+                        db.BuildingTypeSubStageLabors.Add(new BuildingTypeSubStageLabor
+                        {
+                            BuildingTypeId = t.Id,
+                            SubStagePresetId = subPreset.Id,
+                            LaborCost = s.labor
+                        });
+                    }
+                    else if (row.LaborCost != s.labor)
+                    {
+                        row.LaborCost = s.labor;
+                    }
+                }
+
+                db.SaveChanges();
+            }
+
             void Assign(BuildingType t, StagePreset p, int order)
             {
                 var exists = db.BuildingTypeStagePresets
@@ -257,25 +282,33 @@ namespace Kanstraction.Data
                     exists.OrderIndex = order;
                     db.SaveChanges();
                 }
+
+                EnsureLabor(t, p);
             }
 
             // Villa: Fondation → Structure → Murs → MEP → Finitions
-            Assign(villa, P("Fondation"), 1);
-            Assign(villa, P("Structure"), 2);
-            Assign(villa, P("Murs"), 3);
-            Assign(villa, P("MEP"), 4);
-            Assign(villa, P("Finitions"), 5);
+            var fondation = P("Fondation");
+            var structure = P("Structure");
+            var murs = P("Murs");
+            var mep = P("MEP");
+            var finitions = P("Finitions");
+
+            Assign(villa, fondation, 1);
+            Assign(villa, structure, 2);
+            Assign(villa, murs, 3);
+            Assign(villa, mep, 4);
+            Assign(villa, finitions, 5);
 
             // Duplex: Fondation → Structure → Murs → Finitions
-            Assign(duplex, P("Fondation"), 1);
-            Assign(duplex, P("Structure"), 2);
-            Assign(duplex, P("Murs"), 3);
-            Assign(duplex, P("Finitions"), 4);
+            Assign(duplex, fondation, 1);
+            Assign(duplex, structure, 2);
+            Assign(duplex, murs, 3);
+            Assign(duplex, finitions, 4);
 
             // Appartement: Fondation → Structure → MEP
-            Assign(apartment, P("Fondation"), 1);
-            Assign(apartment, P("Structure"), 2);
-            Assign(apartment, P("MEP"), 3);
+            Assign(apartment, fondation, 1);
+            Assign(apartment, structure, 2);
+            Assign(apartment, mep, 3);
         }
     }
 }

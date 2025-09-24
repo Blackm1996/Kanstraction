@@ -2,6 +2,7 @@
 using Kanstraction.Data;
 using Kanstraction.Entities;
 using Kanstraction.Services;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
@@ -445,6 +446,21 @@ public partial class OperationsView : UserControl
             return;
         }
 
+        var buildingTypeName = await _db.BuildingTypes
+            .Where(bt => bt.Id == typeId.Value)
+            .Select(bt => bt.Name)
+            .FirstOrDefaultAsync();
+
+        if (buildingTypeName == null)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_BuildingTypeMissing", "Selected building type no longer exists."),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            return;
+        }
+
         using var tx = await _db.Database.BeginTransactionAsync();
         try
         {
@@ -464,6 +480,10 @@ public partial class OperationsView : UserControl
                 .OrderBy(x => x.OrderIndex)
                 .Select(x => x.StagePresetId)
                 .ToListAsync();
+
+            var laborLookup = await _db.BuildingTypeSubStageLabors
+                .Where(x => x.BuildingTypeId == typeId.Value)
+                .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
 
             int stageOrder = 1;
 
@@ -493,6 +513,23 @@ public partial class OperationsView : UserControl
 
                 foreach (var sp in subPresets)
                 {
+                    if (!laborLookup.TryGetValue(sp.Id, out var laborCost))
+                    {
+                        await tx.RollbackAsync();
+                        MessageBox.Show(
+                            string.Format(
+                                ResourceHelper.GetString(
+                                    "OperationsView_MissingLaborForSubStageFormat",
+                                    "Labor cost for '{0}' (stage '{1}') is not defined for building type '{2}'. Update the building type before creating this building."),
+                                sp.Name,
+                                stageName,
+                                buildingTypeName),
+                            ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Error);
+                        return;
+                    }
+
                     // Create SubStage
                     var sub = new SubStage
                     {
@@ -500,7 +537,7 @@ public partial class OperationsView : UserControl
                         Name = sp.Name,
                         OrderIndex = sp.OrderIndex,
                         Status = WorkStatus.NotStarted,
-                        LaborCost = sp.LaborCost
+                        LaborCost = laborCost
                     };
                     _db.SubStages.Add(sub);
 
@@ -696,6 +733,15 @@ public partial class OperationsView : UserControl
             .GroupBy(s => s.StagePresetId)
             .ToDictionaryAsync(g => g.Key, g => g.ToList());
 
+        var laborLookup = await _db.BuildingTypeSubStageLabors
+            .Where(x => x.BuildingTypeId == buildingTypeId)
+            .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
+
+        var buildingTypeName = await _db.BuildingTypes
+            .Where(bt => bt.Id == buildingTypeId)
+            .Select(bt => bt.Name)
+            .FirstOrDefaultAsync();
+
         int stageOrder = 1;
 
         foreach (var link in links)
@@ -720,6 +766,20 @@ public partial class OperationsView : UserControl
                 int subOrder = 1;
                 foreach (var ssp in subs)
                 {
+                    if (!laborLookup.TryGetValue(ssp.Id, out var laborCost))
+                    {
+                        var stageName = preset.Name;
+                        var btName = buildingTypeName ?? string.Empty;
+                        var message = string.Format(
+                            ResourceHelper.GetString(
+                                "OperationsView_MissingLaborForSubStageFormat",
+                                "Labor cost for '{0}' (stage '{1}') is not defined for building type '{2}'. Update the building type before creating this building."),
+                            ssp.Name,
+                            stageName,
+                            btName);
+                        throw new InvalidOperationException(message);
+                    }
+
                     var newSub = new SubStage
                     {
                         StageId = newStage.Id,
@@ -728,7 +788,7 @@ public partial class OperationsView : UserControl
                         Status = WorkStatus.NotStarted,
                         StartDate = null,
                         EndDate = null,
-                        LaborCost = ssp.LaborCost
+                        LaborCost = laborCost
                     };
                     _db.SubStages.Add(newSub);
                 }
@@ -1440,6 +1500,36 @@ public partial class OperationsView : UserControl
 
         int buildingId = (int)bRow.Id;
 
+        var buildingInfo = await _db.Buildings
+            .Where(b => b.Id == buildingId)
+            .Select(b => new
+            {
+                b.Id,
+                b.BuildingTypeId,
+                BuildingTypeName = b.BuildingType != null ? b.BuildingType.Name : null
+            })
+            .FirstOrDefaultAsync();
+
+        if (buildingInfo == null)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_BuildingNotFound", "This building no longer exists."),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            return;
+        }
+
+        if (buildingInfo.BuildingTypeId == null)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_BuildingTypeRequiredForStageMessage", "Assign a building type before adding a stage."),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            return;
+        }
+
         // Load current building stages (names + count)
         var currentStages = await _db.Stages
             .Where(s => s.BuildingId == buildingId)
@@ -1515,15 +1605,39 @@ public partial class OperationsView : UserControl
                 .OrderBy(sp => sp.OrderIndex)
                 .ToListAsync();
 
+            var subPresetIds = subPresets.Select(sp => sp.Id).ToList();
+            var laborLookup = subPresetIds.Count == 0
+                ? new Dictionary<int, decimal>()
+                : await _db.BuildingTypeSubStageLabors
+                    .Where(x => x.BuildingTypeId == buildingInfo.BuildingTypeId.Value && subPresetIds.Contains(x.SubStagePresetId))
+                    .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
+
             foreach (var sp in subPresets)
             {
+                if (!laborLookup.TryGetValue(sp.Id, out var laborCost))
+                {
+                    await tx.RollbackAsync();
+                    MessageBox.Show(
+                        string.Format(
+                            ResourceHelper.GetString(
+                                "OperationsView_MissingLaborForSubStageFormat",
+                                "Labor cost for '{0}' (stage '{1}') is not defined for building type '{2}'. Update the building type to set all labor costs first."),
+                            sp.Name,
+                            presetName,
+                            buildingInfo.BuildingTypeName ?? string.Empty),
+                        ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                    return;
+                }
+
                 var sub = new SubStage
                 {
                     StageId = newStage.Id,
                     Name = sp.Name,
                     OrderIndex = sp.OrderIndex,
                     Status = WorkStatus.NotStarted,
-                    LaborCost = sp.LaborCost
+                    LaborCost = laborCost
                 };
                 _db.SubStages.Add(sub);
                 await _db.SaveChangesAsync(); // need sub.Id to attach usages
