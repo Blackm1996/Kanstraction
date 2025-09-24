@@ -15,6 +15,7 @@ public class AppDbContext : DbContext
     public DbSet<StagePreset> StagePresets => Set<StagePreset>();
     public DbSet<SubStagePreset> SubStagePresets => Set<SubStagePreset>();
     public DbSet<BuildingTypeStagePreset> BuildingTypeStagePresets => Set<BuildingTypeStagePreset>();
+    public DbSet<BuildingTypeSubStageLabor> BuildingTypeSubStageLabors => Set<BuildingTypeSubStageLabor>();
     public DbSet<Material> Materials => Set<Material>();
     public DbSet<MaterialPriceHistory> MaterialPriceHistory => Set<MaterialPriceHistory>();
     public DbSet<MaterialUsagePreset> MaterialUsagesPreset => Set<MaterialUsagePreset>();
@@ -52,6 +53,21 @@ public class AppDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder b)
     {
         b.Entity<BuildingTypeStagePreset>().HasKey(x => new { x.BuildingTypeId, x.StagePresetId });
+
+        b.Entity<BuildingTypeSubStageLabor>().HasKey(x => new { x.BuildingTypeId, x.SubStagePresetId });
+        b.Entity<BuildingTypeSubStageLabor>().HasIndex(x => x.SubStagePresetId);
+
+        b.Entity<BuildingTypeSubStageLabor>()
+            .HasOne(x => x.BuildingType)
+            .WithMany()
+            .HasForeignKey(x => x.BuildingTypeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        b.Entity<BuildingTypeSubStageLabor>()
+            .HasOne(x => x.SubStagePreset)
+            .WithMany()
+            .HasForeignKey(x => x.SubStagePresetId)
+            .OnDelete(DeleteBehavior.Cascade);
 
         b.Entity<Building>()
             .HasOne(x => x.Project).WithMany(p => p.Buildings)
