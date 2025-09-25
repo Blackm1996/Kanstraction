@@ -119,16 +119,17 @@ public partial class App : Application
             hasHistoryTable = await historyCheck.ExecuteScalarAsync() != null;
         }
 
+        bool baselineExists;
         if (hasHistoryTable)
         {
             await using var baselineCheck = connection.CreateCommand();
             baselineCheck.CommandText = "SELECT 1 FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" = $id LIMIT 1;";
             baselineCheck.Parameters.AddWithValue("$id", BaselineMigrationId);
-            var baselineExists = await baselineCheck.ExecuteScalarAsync() != null;
-            if (baselineExists)
-            {
-                return;
-            }
+            baselineExists = await baselineCheck.ExecuteScalarAsync() != null;
+        }
+        else
+        {
+            baselineExists = false;
         }
 
         var hasExistingTables = false;
@@ -157,14 +158,38 @@ public partial class App : Application
             await createHistory.ExecuteNonQueryAsync();
         }
 
-        await using (var insertBaseline = connection.CreateCommand())
-        {
-            insertBaseline.Transaction = sqliteTransaction;
+            if (!baselineExists)
+            {
+                await using (var insertBaseline = connection.CreateCommand())
+                {
+                    insertBaseline.Transaction = sqliteTransaction;
 
-            insertBaseline.CommandText = "INSERT OR IGNORE INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ($id, $version);";
-            insertBaseline.Parameters.AddWithValue("$id", BaselineMigrationId);
-            insertBaseline.Parameters.AddWithValue("$version", BaselineProductVersion);
-            await insertBaseline.ExecuteNonQueryAsync();
+                    insertBaseline.CommandText = "INSERT OR IGNORE INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ($id, $version);";
+                    insertBaseline.Parameters.AddWithValue("$id", BaselineMigrationId);
+                    insertBaseline.Parameters.AddWithValue("$version", BaselineProductVersion);
+                    await insertBaseline.ExecuteNonQueryAsync();
+                }
+            }
+
+        await using (var createLock = connection.CreateCommand())
+        {
+            createLock.Transaction = sqliteTransaction;
+            createLock.CommandText = "CREATE TABLE IF NOT EXISTS \"__EFMigrationsLock\" (\"Id\" INTEGER NOT NULL CONSTRAINT \"PK___EFMigrationsLock\" PRIMARY KEY, \"Timestamp\" TEXT NULL);";
+            await createLock.ExecuteNonQueryAsync();
+        }
+
+        await using (var insertLock = connection.CreateCommand())
+        {
+            insertLock.Transaction = sqliteTransaction;
+            insertLock.CommandText = "INSERT OR IGNORE INTO \"__EFMigrationsLock\" (\"Id\", \"Timestamp\") VALUES (1, NULL);";
+            await insertLock.ExecuteNonQueryAsync();
+        }
+
+        await using (var resetLock = connection.CreateCommand())
+        {
+            resetLock.Transaction = sqliteTransaction;
+            resetLock.CommandText = "UPDATE \"__EFMigrationsLock\" SET \"Timestamp\" = NULL WHERE \"Id\" = 1;";
+            await resetLock.ExecuteNonQueryAsync();
         }
 
         await transaction.CommitAsync();
