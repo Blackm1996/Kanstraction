@@ -146,10 +146,13 @@ public partial class App : Application
         await using var transaction = await connection.BeginTransactionAsync();
         var sqliteTransaction = (SqliteTransaction)transaction;
 
+
         if (!hasHistoryTable)
         {
             await using var createHistory = connection.CreateCommand();
+
             createHistory.Transaction = sqliteTransaction;
+
             createHistory.CommandText = "CREATE TABLE IF NOT EXISTS \"__EFMigrationsHistory\" (\"MigrationId\" TEXT NOT NULL CONSTRAINT \"PK___EFMigrationsHistory\" PRIMARY KEY, \"ProductVersion\" TEXT NOT NULL);";
             await createHistory.ExecuteNonQueryAsync();
         }
@@ -157,6 +160,7 @@ public partial class App : Application
         await using (var insertBaseline = connection.CreateCommand())
         {
             insertBaseline.Transaction = sqliteTransaction;
+
             insertBaseline.CommandText = "INSERT OR IGNORE INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ($id, $version);";
             insertBaseline.Parameters.AddWithValue("$id", BaselineMigrationId);
             insertBaseline.Parameters.AddWithValue("$version", BaselineProductVersion);
