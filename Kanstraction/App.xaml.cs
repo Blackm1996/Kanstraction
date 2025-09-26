@@ -1,12 +1,15 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
 using System.IO;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using Kanstraction.Behaviors;
 using Kanstraction.Data;
+using Kanstraction.Entities;
 using Kanstraction.Services;
 using Kanstraction.Views;
 using Microsoft.Data.Sqlite;
@@ -16,8 +19,7 @@ namespace Kanstraction;
 
 public partial class App : Application
 {
-    private const string BaselineMigrationId = "20250924163704_BaselineExisting";
-    private const string BaselineProductVersion = "9.0.8";
+    private const string DatabaseResetSentinelFileName = "app.reset"; // Delete this file beside app.db to trigger another rebuild on next launch.
 
     public static BackupService BackupService { get; private set; } = null!;
 
@@ -38,12 +40,18 @@ public partial class App : Application
 
         try
         {
-            await EnsureLegacyDatabaseIsRegisteredAsync();
+            var databaseWasRecreated = EnsureDatabaseRecreatedOnce();
 
             loadingWindow.UpdateStatus("Application des migrations...");
-            using (var db = new AppDbContext())
+            await using (var db = new AppDbContext())
             {
                 await db.Database.MigrateAsync();
+
+                if (databaseWasRecreated)
+                {
+                    DbSeeder.Seed(db);
+                    await ImportMaterialsFromLatestBackupAsync(db);
+                }
             }
 
             loadingWindow.UpdateStatus("Préparation des sauvegardes...");
@@ -95,164 +103,136 @@ public partial class App : Application
         }
     }
 
-    private static async Task EnsureLegacyDatabaseIsRegisteredAsync()
+    private static bool EnsureDatabaseRecreatedOnce()
     {
         var dbPath = AppDbContext.GetDefaultDbPath();
-        if (!File.Exists(dbPath))
+        var dbDirectory = Path.GetDirectoryName(dbPath) ?? Directory.GetCurrentDirectory();
+        Directory.CreateDirectory(dbDirectory);
+
+        var sentinelPath = Path.Combine(dbDirectory, DatabaseResetSentinelFileName);
+
+        if (File.Exists(sentinelPath))
         {
-            return;
+            Debug.WriteLine($"Database reset sentinel present at '{sentinelPath}'. Skipping destructive reset.");
+            return false;
         }
 
-        var connectionString = new SqliteConnectionStringBuilder
-        {
-            DataSource = dbPath,
-            Pooling = false
-        }.ToString();
+        Debug.WriteLine($"Database reset sentinel missing at '{sentinelPath}'. Resetting database located at '{dbPath}'.");
 
-        await using var connection = new SqliteConnection(connectionString);
-        await connection.OpenAsync();
+        TryDeleteFile(dbPath);
+        TryDeleteFile($"{dbPath}-wal");
+        TryDeleteFile($"{dbPath}-shm");
 
-        var hasHistoryTable = false;
-        await using (var historyCheck = connection.CreateCommand())
+        File.WriteAllText(sentinelPath, $"Reset performed at {DateTimeOffset.Now:O}");
+
+        return true;
+    }
+
+    private static void TryDeleteFile(string path)
+    {
+        if (File.Exists(path))
         {
-            historyCheck.CommandText = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '__EFMigrationsHistory' LIMIT 1;";
-            hasHistoryTable = await historyCheck.ExecuteScalarAsync() != null;
+            File.Delete(path);
         }
+    }
 
-        bool baselineExists;
-        if (hasHistoryTable)
+    private static async Task ImportMaterialsFromLatestBackupAsync(AppDbContext db)
+    {
+        try
         {
-            await using var baselineCheck = connection.CreateCommand();
-            baselineCheck.CommandText = "SELECT 1 FROM \"__EFMigrationsHistory\" WHERE \"MigrationId\" = $id LIMIT 1;";
-            baselineCheck.Parameters.AddWithValue("$id", BaselineMigrationId);
-            baselineExists = await baselineCheck.ExecuteScalarAsync() != null;
-        }
-        else
-        {
-            baselineExists = false;
-        }
+            var backupService = new BackupService();
+            var backupFile = backupService.GetLatestStartupBackup() ?? backupService.GetLatestHourlyBackup();
 
-        var hasExistingTables = false;
-        await using (var tableCheck = connection.CreateCommand())
-        {
-            tableCheck.CommandText = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' LIMIT 1;";
-            hasExistingTables = await tableCheck.ExecuteScalarAsync() != null;
-        }
+            if (backupFile == null || !backupFile.Exists)
+            {
+                Debug.WriteLine("No backup available for material import after database reset.");
+                return;
+            }
 
-        if (!hasExistingTables)
-        {
-            return;
-        }
+            var connectionString = new SqliteConnectionStringBuilder
+            {
+                DataSource = backupFile.FullName,
+                Mode = SqliteOpenMode.ReadOnly,
+                Pooling = false
+            }.ToString();
 
-        var hasLockTable = false;
-        await using (var lockCheck = connection.CreateCommand())
-        {
-            lockCheck.CommandText = "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = '__EFMigrationsLock' LIMIT 1;";
-            hasLockTable = await lockCheck.ExecuteScalarAsync() != null;
-        }
+            await using var connection = new SqliteConnection(connectionString);
+            await connection.OpenAsync();
 
-        var lockTimestampIsNotNull = false;
-        if (hasLockTable)
-        {
-            await using var lockInfo = connection.CreateCommand();
-            lockInfo.CommandText = "PRAGMA table_info(\"__EFMigrationsLock\");";
-            await using var reader = await lockInfo.ExecuteReaderAsync();
+            var command = connection.CreateCommand();
+            command.CommandText = "SELECT \"Name\", \"Unit\", \"PricePerUnit\", \"EffectiveSince\", \"IsActive\" FROM \"Materials\";";
+
+            await using var reader = await command.ExecuteReaderAsync();
+
+            var existingByName = (await db.Materials.AsNoTracking().ToListAsync())
+                .GroupBy(m => m.Name, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
+
+            var imported = new List<Material>();
+
             while (await reader.ReadAsync())
             {
-                var columnName = reader.GetString(1);
-                if (string.Equals(columnName, "Timestamp", StringComparison.OrdinalIgnoreCase))
+                var name = reader.GetString(0);
+                if (existingByName.ContainsKey(name))
                 {
-                    lockTimestampIsNotNull = reader.GetInt32(3) == 1;
-                    break;
+                    continue;
                 }
+
+                var unit = reader.IsDBNull(1) ? string.Empty : reader.GetString(1);
+                var price = reader.IsDBNull(2) ? 0m : Convert.ToDecimal(reader.GetValue(2), CultureInfo.InvariantCulture);
+                var effectiveSince = reader.IsDBNull(3) ? DateTime.Today : ConvertToDateTime(reader.GetValue(3));
+                var isActive = reader.IsDBNull(4) || ConvertToBoolean(reader.GetValue(4));
+
+                imported.Add(new Material
+                {
+                    Name = name,
+                    Unit = unit,
+                    PricePerUnit = price,
+                    EffectiveSince = effectiveSince,
+                    IsActive = isActive
+                });
             }
-        }
 
-        await using var transaction = await connection.BeginTransactionAsync();
-        var sqliteTransaction = (SqliteTransaction)transaction;
-
-
-        if (!hasHistoryTable)
-        {
-            await using var createHistory = connection.CreateCommand();
-
-            createHistory.Transaction = sqliteTransaction;
-
-            createHistory.CommandText = "CREATE TABLE IF NOT EXISTS \"__EFMigrationsHistory\" (\"MigrationId\" TEXT NOT NULL CONSTRAINT \"PK___EFMigrationsHistory\" PRIMARY KEY, \"ProductVersion\" TEXT NOT NULL);";
-            await createHistory.ExecuteNonQueryAsync();
-        }
-
-        if (!baselineExists)
-        {
-            await using (var insertBaseline = connection.CreateCommand())
+            if (imported.Count == 0)
             {
-                insertBaseline.Transaction = sqliteTransaction;
-
-                insertBaseline.CommandText = "INSERT OR IGNORE INTO \"__EFMigrationsHistory\" (\"MigrationId\", \"ProductVersion\") VALUES ($id, $version);";
-                insertBaseline.Parameters.AddWithValue("$id", BaselineMigrationId);
-                insertBaseline.Parameters.AddWithValue("$version", BaselineProductVersion);
-                await insertBaseline.ExecuteNonQueryAsync();
+                Debug.WriteLine("No new materials found in backup to import.");
+                return;
             }
-        }
 
-        if (!hasLockTable || lockTimestampIsNotNull)
+            await db.Materials.AddRangeAsync(imported);
+            await db.SaveChangesAsync();
+
+            Debug.WriteLine($"Imported {imported.Count} material(s) from backup '{backupFile.FullName}'.");
+        }
+        catch (Exception ex)
         {
-            if (lockTimestampIsNotNull)
-            {
-                await using (var dropOldLock = connection.CreateCommand())
-                {
-                    dropOldLock.Transaction = sqliteTransaction;
-                    dropOldLock.CommandText = "DROP TABLE IF EXISTS \"__EFMigrationsLock_Old\";";
-                    await dropOldLock.ExecuteNonQueryAsync();
-                }
-
-                await using (var renameLock = connection.CreateCommand())
-                {
-                    renameLock.Transaction = sqliteTransaction;
-                    renameLock.CommandText = "ALTER TABLE \"__EFMigrationsLock\" RENAME TO \"__EFMigrationsLock_Old\";";
-                    await renameLock.ExecuteNonQueryAsync();
-                }
-            }
-
-            await using (var createLock = connection.CreateCommand())
-            {
-                createLock.Transaction = sqliteTransaction;
-                createLock.CommandText = "CREATE TABLE IF NOT EXISTS \"__EFMigrationsLock\" (\"Id\" INTEGER NOT NULL CONSTRAINT \"PK___EFMigrationsLock\" PRIMARY KEY, \"Timestamp\" TEXT NULL);";
-                await createLock.ExecuteNonQueryAsync();
-            }
-
-            if (lockTimestampIsNotNull)
-            {
-                await using (var migrateLock = connection.CreateCommand())
-                {
-                    migrateLock.Transaction = sqliteTransaction;
-                    migrateLock.CommandText = "INSERT OR IGNORE INTO \"__EFMigrationsLock\" (\"Id\", \"Timestamp\") SELECT \"Id\", NULL FROM \"__EFMigrationsLock_Old\";";
-                    await migrateLock.ExecuteNonQueryAsync();
-                }
-
-                await using (var dropRenamedLock = connection.CreateCommand())
-                {
-                    dropRenamedLock.Transaction = sqliteTransaction;
-                    dropRenamedLock.CommandText = "DROP TABLE IF EXISTS \"__EFMigrationsLock_Old\";";
-                    await dropRenamedLock.ExecuteNonQueryAsync();
-                }
-            }
+            Debug.WriteLine($"Failed to import materials from backup: {ex}");
         }
+    }
 
-        await using (var insertLock = connection.CreateCommand())
+    private static DateTime ConvertToDateTime(object value)
+    {
+        return value switch
         {
-            insertLock.Transaction = sqliteTransaction;
-            insertLock.CommandText = "INSERT OR IGNORE INTO \"__EFMigrationsLock\" (\"Id\", \"Timestamp\") VALUES (1, NULL);";
-            await insertLock.ExecuteNonQueryAsync();
-        }
+            DateTime dt => dt,
+            string s when DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed) => parsed,
+            string s when DateTime.TryParse(s, out var parsed) => parsed,
+            long ticks => DateTime.FromBinary(ticks),
+            _ => DateTime.Today
+        };
+    }
 
-        await using (var resetLock = connection.CreateCommand())
+    private static bool ConvertToBoolean(object value)
+    {
+        return value switch
         {
-            resetLock.Transaction = sqliteTransaction;
-            resetLock.CommandText = "UPDATE \"__EFMigrationsLock\" SET \"Timestamp\" = NULL WHERE \"Id\" = 1;";
-            await resetLock.ExecuteNonQueryAsync();
-        }
-
-        await transaction.CommitAsync();
+            bool b => b,
+            long l => l != 0,
+            int i => i != 0,
+            short s => s != 0,
+            byte bt => bt != 0,
+            string str when bool.TryParse(str, out var parsed) => parsed,
+            _ => false
+        };
     }
 }
