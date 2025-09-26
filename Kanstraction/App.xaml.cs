@@ -33,7 +33,7 @@ public partial class App : Application
 
         Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("Resources/StringResources.xaml", UriKind.Relative) });
         Resources.MergedDictionaries.Add(new ResourceDictionary { Source = new Uri("Resources/StringResources.fr.xaml", UriKind.Relative) });
-
+        ShutdownMode = ShutdownMode.OnExplicitShutdown;
         var loadingWindow = new StartupLoadingWindow();
         loadingWindow.UpdateStatus("Initialisation de la base de données...");
         loadingWindow.Show();
@@ -47,11 +47,11 @@ public partial class App : Application
             {
                 await db.Database.MigrateAsync();
 
-                if (databaseWasRecreated)
+                /*if (databaseWasRecreated)
                 {
                     DbSeeder.Seed(db);
                     await ImportMaterialsFromLatestBackupAsync(db);
-                }
+                }*/
             }
 
             loadingWindow.UpdateStatus("Préparation des sauvegardes...");
@@ -74,7 +74,7 @@ public partial class App : Application
             var mainWindow = new MainWindow();
             MainWindow = mainWindow;
             mainWindow.Show();
-
+            ShutdownMode = ShutdownMode.OnMainWindowClose;
             base.OnStartup(e);
         }
         catch (Exception ex)
