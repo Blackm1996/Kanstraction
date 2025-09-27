@@ -1,5 +1,6 @@
 using Kanstraction.Data;
 using Microsoft.Data.Sqlite;
+using Microsoft.EntityFrameworkCore;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -113,6 +114,9 @@ public class BackupService
                 Directory.CreateDirectory(destinationDirectory);
 
             await PerformSqliteBackupAsync(backupPath, _dbPath).ConfigureAwait(false);
+
+            await using var db = new AppDbContext();
+            await db.Database.MigrateAsync().ConfigureAwait(false);
         }
         finally
         {
