@@ -21,7 +21,7 @@ public partial class App : Application
 {
     private const string DatabaseResetSentinelFileName = "app.reset"; // Delete this file beside app.db to trigger another rebuild on next launch.
     private const string LegacyImportSentinelFileName = "client-backup.imported";
-    private const string LegacyBackupFilePath = "client-backup.db"; // Expected beside Kanstraction.exe unless overridden with an absolute path.
+    private const string LegacyBackupFilePath = "KanstractionBackup_20250926_185305.db"; // Expected beside Kanstraction.exe unless overridden with an absolute path.
 
 
     public static BackupService BackupService { get; private set; } = null!;
@@ -388,7 +388,7 @@ public partial class App : Application
         var results = new List<MaterialUsagePreset>();
 
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT \"Id\", \"SubStagePresetId\", \"MaterialId\", \"Qty\" FROM \"MaterialUsagePresets\";";
+        command.CommandText = "SELECT \"Id\", \"SubStagePresetId\", \"MaterialId\", \"Qty\" FROM \"MaterialUsagesPreset\";";
 
         await using var reader = await command.ExecuteReaderAsync();
         while (await reader.ReadAsync())
