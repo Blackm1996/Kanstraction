@@ -21,7 +21,8 @@ public partial class App : Application
 {
     private const string DatabaseResetSentinelFileName = "app.reset"; // Delete this file beside app.db to trigger another rebuild on next launch.
     private const string LegacyImportSentinelFileName = "client-backup.imported";
-    private const string LegacyBackupFilePath = "client-backup.db"; // Set to the exact path of the provided client backup.
+    private const string LegacyBackupFilePath = "client-backup.db"; // Expected beside Kanstraction.exe unless overridden with an absolute path.
+
 
     public static BackupService BackupService { get; private set; } = null!;
 
@@ -248,16 +249,32 @@ public partial class App : Application
                 return null;
             }
 
-            var resolvedPath = Path.IsPathRooted(LegacyBackupFilePath)
-                ? LegacyBackupFilePath
-                : Path.Combine(dbDirectory, LegacyBackupFilePath);
-
-            if (File.Exists(resolvedPath))
+            if (Path.IsPathRooted(LegacyBackupFilePath))
             {
-                return resolvedPath;
+                return File.Exists(LegacyBackupFilePath) ? LegacyBackupFilePath : null;
             }
 
-            Debug.WriteLine($"Legacy backup file not found at '{resolvedPath}'.");
+            var candidateDirectories = new List<string>
+            {
+                AppContext.BaseDirectory,
+                dbDirectory,
+                Directory.GetCurrentDirectory()
+            };
+
+            var searchedLocations = new List<string>();
+
+            foreach (var directory in candidateDirectories.Where(d => !string.IsNullOrWhiteSpace(d)))
+            {
+                var candidatePath = Path.Combine(directory, LegacyBackupFilePath);
+                searchedLocations.Add(candidatePath);
+                if (File.Exists(candidatePath))
+                {
+                    return candidatePath;
+                }
+            }
+
+            Debug.WriteLine(
+                $"Legacy backup file '{LegacyBackupFilePath}' not found. Looked in: {string.Join(", ", searchedLocations)}");
         }
         catch (Exception ex)
         {
