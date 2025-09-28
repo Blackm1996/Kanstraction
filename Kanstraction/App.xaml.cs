@@ -23,6 +23,7 @@ public partial class App : Application
     private const string LegacyImportSentinelFileName = "client-backup.imported";
     private const string LegacyBackupFilePath = "client-backup.db"; // Expected beside Kanstraction.exe unless overridden with an absolute path.
 
+
     public static BackupService BackupService { get; private set; } = null!;
 
     protected override async void OnStartup(StartupEventArgs e)
