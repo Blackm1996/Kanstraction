@@ -132,7 +132,7 @@ namespace Kanstraction.Migrations
                     StagePresetId = table.Column<int>(type: "INTEGER", nullable: false),
                     Name = table.Column<string>(type: "TEXT", nullable: false),
                     OrderIndex = table.Column<int>(type: "INTEGER", nullable: false),
-                    LaborCost = table.Column<decimal>(type: "TEXT", nullable: false)
+                    LaborCost = table.Column<decimal>(type: "TEXT", nullable: true)
                 },
                 constraints: table =>
                 {

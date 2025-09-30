@@ -8,7 +8,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
-using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 
@@ -532,6 +532,8 @@ namespace Kanstraction.Views
         private ObservableCollection<AssignedPresetVm> _btAssigned = new();
         private List<int> _currentBtAssignedIds = new();
         private Dictionary<int, int> _presetSubCounts = new(); // StagePresetId -> count
+        private Dictionary<int, ObservableCollection<SubStageLaborVm>> _btSubStageLabors = new();
+        private Dictionary<int, decimal> _currentBtLaborMap = new();
         // VM for the assigned presets list
         private class AssignedPresetVm
         {
@@ -571,6 +573,8 @@ namespace Kanstraction.Views
             {
                 // No selection; clear preview
                 if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
+                _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
+                _currentBtLaborMap = new Dictionary<int, decimal>();
             }
 
             // Also refresh the picker (available presets minus assigned), in case it was open
@@ -640,6 +644,8 @@ namespace Kanstraction.Views
             BtAssignedGrid.ItemsSource = _btAssigned;
             _currentBtAssignedIds = _btAssigned.Select(a => a.StagePresetId).ToList();
 
+            await LoadSubStageLaborsForAssignedPresetsAsync(bt.Id);
+
             // auto-select first assigned preset to show preview
             if (_btAssigned.Count > 0)
             {
@@ -667,6 +673,14 @@ namespace Kanstraction.Views
             _btAssigned = new ObservableCollection<AssignedPresetVm>();
             BtAssignedGrid.ItemsSource = _btAssigned;
             _currentBtAssignedIds = new List<int>();
+            foreach (var collection in _btSubStageLabors.Values)
+            {
+                foreach (var vm in collection)
+                    vm.PropertyChanged -= SubStageLaborVm_PropertyChanged;
+            }
+            _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
+            _currentBtLaborMap = new Dictionary<int, decimal>();
+            if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
 
             RefreshBtPresetPicker();
             BuildingTypesList.SelectedItem = null;
@@ -686,6 +700,119 @@ namespace Kanstraction.Views
 
             BtPresetPicker.ItemsSource = available;
             if (available.Count > 0) BtPresetPicker.SelectedIndex = 0; else BtPresetPicker.SelectedIndex = -1;
+        }
+
+        private async Task LoadSubStageLaborsForAssignedPresetsAsync(int buildingTypeId)
+        {
+            foreach (var list in _btSubStageLabors.Values)
+            {
+                foreach (var vm in list)
+                    vm.PropertyChanged -= SubStageLaborVm_PropertyChanged;
+            }
+
+            _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
+
+            var presetIds = _btAssigned.Select(a => a.StagePresetId).Distinct().ToList();
+            if (_db == null || presetIds.Count == 0)
+            {
+                _currentBtLaborMap = new Dictionary<int, decimal>();
+                return;
+            }
+
+            var subPresets = await _db.SubStagePresets
+                .Where(s => presetIds.Contains(s.StagePresetId))
+                .OrderBy(s => s.OrderIndex)
+                .Select(s => new { s.Id, s.StagePresetId, s.Name, s.OrderIndex, s.LaborCost })
+                .ToListAsync();
+
+            var laborRows = await _db.BuildingTypeSubStageLabors
+                .Where(x => x.BuildingTypeId == buildingTypeId)
+                .ToListAsync();
+
+            _currentBtLaborMap = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.LaborCost);
+            var laborLookup = laborRows.ToDictionary(x => x.SubStagePresetId, x => (decimal?)x.LaborCost);
+
+            foreach (var presetId in presetIds)
+            {
+                var list = new ObservableCollection<SubStageLaborVm>();
+                foreach (var sub in subPresets.Where(s => s.StagePresetId == presetId))
+                {
+                    var vm = new SubStageLaborVm
+                    {
+                        StagePresetId = presetId,
+                        SubStagePresetId = sub.Id,
+                        OrderIndex = sub.OrderIndex,
+                        Name = sub.Name,
+                        DefaultLaborCost = sub.LaborCost,
+                        LaborCost = laborLookup.TryGetValue(sub.Id, out var labor) ? labor : sub.LaborCost
+                    };
+                    vm.PropertyChanged += SubStageLaborVm_PropertyChanged;
+                    list.Add(vm);
+                }
+                _btSubStageLabors[presetId] = list;
+            }
+        }
+
+        private async Task<ObservableCollection<SubStageLaborVm>> EnsureSubStageLaborsForPresetAsync(int stagePresetId)
+        {
+            if (_btSubStageLabors.TryGetValue(stagePresetId, out var existing))
+            {
+                return existing;
+            }
+
+            if (_db == null)
+            {
+                var empty = new ObservableCollection<SubStageLaborVm>();
+                _btSubStageLabors[stagePresetId] = empty;
+                return empty;
+            }
+
+            var subs = await _db.SubStagePresets
+                .Where(s => s.StagePresetId == stagePresetId)
+                .OrderBy(s => s.OrderIndex)
+                .Select(s => new { s.Id, s.Name, s.OrderIndex, s.LaborCost })
+                .ToListAsync();
+
+            Dictionary<int, decimal>? existingLabors = null;
+            if (_editingBtId.HasValue)
+            {
+                var subIds = subs.Select(s => s.Id).ToList();
+                if (subIds.Count > 0)
+                {
+                    existingLabors = await _db.BuildingTypeSubStageLabors
+                        .Where(x => x.BuildingTypeId == _editingBtId.Value && subIds.Contains(x.SubStagePresetId))
+                        .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
+                }
+            }
+
+            var list = new ObservableCollection<SubStageLaborVm>();
+            foreach (var sub in subs)
+            {
+                decimal? labor = null;
+                if (existingLabors != null && existingLabors.TryGetValue(sub.Id, out var stored))
+                {
+                    labor = stored;
+                }
+                else
+                {
+                    labor = sub.LaborCost;
+                }
+
+                var vm = new SubStageLaborVm
+                {
+                    StagePresetId = stagePresetId,
+                    SubStagePresetId = sub.Id,
+                    OrderIndex = sub.OrderIndex,
+                    Name = sub.Name,
+                    DefaultLaborCost = sub.LaborCost,
+                    LaborCost = labor
+                };
+                vm.PropertyChanged += SubStageLaborVm_PropertyChanged;
+                list.Add(vm);
+            }
+
+            _btSubStageLabors[stagePresetId] = list;
+            return list;
         }
 
         private void UpdateBuildingDirtyState()
@@ -717,10 +844,65 @@ namespace Kanstraction.Views
                 }
             }
 
+            if (!dirty)
+            {
+                dirty = HaveLaborAssignmentsChanged();
+            }
+
             IsBuildingDirty = dirty;
         }
 
-        private void AddPresetToBuildingType_Click(object sender, RoutedEventArgs e)
+        private Dictionary<int, decimal?> GetCurrentLaborMap()
+        {
+            var map = new Dictionary<int, decimal?>();
+            var assignedIds = _btAssigned.Select(a => a.StagePresetId).ToHashSet();
+
+            foreach (var kvp in _btSubStageLabors)
+            {
+                if (!assignedIds.Contains(kvp.Key)) continue;
+                foreach (var vm in kvp.Value)
+                {
+                    map[vm.SubStagePresetId] = vm.LaborCost;
+                }
+            }
+
+            return map;
+        }
+
+        private bool HaveLaborAssignmentsChanged()
+        {
+            var currentMap = GetCurrentLaborMap();
+
+            if (_currentBt == null)
+            {
+                return currentMap.Count > 0;
+            }
+
+            if (currentMap.Count != _currentBtLaborMap.Count)
+            {
+                return true;
+            }
+
+            foreach (var kvp in _currentBtLaborMap)
+            {
+                if (!currentMap.TryGetValue(kvp.Key, out var value) || !value.HasValue || value.Value != kvp.Value)
+                {
+                    return true;
+                }
+            }
+
+            return currentMap.Values.Any(v => !v.HasValue);
+        }
+
+        private void SubStageLaborVm_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(SubStageLaborVm.LaborCost))
+            {
+                UpdateBuildingDirtyState();
+            }
+        }
+
+        private async void AddPresetToBuildingType_Click(object sender, RoutedEventArgs e)
         {
             if (BtPresetPicker?.SelectedValue is not int presetId)
             {
@@ -747,6 +929,8 @@ namespace Kanstraction.Views
             RenumberAssigned();
             RefreshBtPresetPicker();
 
+            await EnsureSubStageLaborsForPresetAsync(preset.Id);
+
             // ✅ select the newly added preset and show its preview
             BtAssignedGrid.SelectedItem = vm;
             BtAssignedGrid.ScrollIntoView(vm);
@@ -754,7 +938,6 @@ namespace Kanstraction.Views
 
         private async void BtAssignedGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (_db == null) return;
             var vm = BtAssignedGrid?.SelectedItem as AssignedPresetVm;
 
             if (vm == null)
@@ -770,11 +953,10 @@ namespace Kanstraction.Views
             if (BtSelectedPresetTitle != null)
                 BtSelectedPresetTitle.Text = vm.Name; // show preset name as the header
 
-            var subs = await _db.SubStagePresets
-                .Where(s => s.StagePresetId == vm.StagePresetId)
-                .OrderBy(s => s.OrderIndex)
-                .Select(s => new { s.OrderIndex, s.Name, s.LaborCost })
-                .ToListAsync();
+            if (!_btSubStageLabors.TryGetValue(vm.StagePresetId, out var subs))
+            {
+                subs = await EnsureSubStageLaborsForPresetAsync(vm.StagePresetId);
+            }
 
             BtSubStagesPreviewGrid.ItemsSource = subs;
         }
@@ -804,6 +986,12 @@ namespace Kanstraction.Views
         {
             var vm = (sender as FrameworkElement)?.Tag as AssignedPresetVm;
             if (vm == null) return;
+            if (_btSubStageLabors.TryGetValue(vm.StagePresetId, out var labors))
+            {
+                foreach (var s in labors)
+                    s.PropertyChanged -= SubStageLaborVm_PropertyChanged;
+                _btSubStageLabors.Remove(vm.StagePresetId);
+            }
             _btAssigned.Remove(vm);
             RenumberAssigned();
             RefreshBtPresetPicker();
@@ -887,6 +1075,77 @@ namespace Kanstraction.Views
                 }
                 await _db.SaveChangesAsync();
 
+                var assignedPresetIds = _btAssigned.Select(a => a.StagePresetId).ToList();
+                foreach (var presetId in assignedPresetIds)
+                {
+                    var labors = await EnsureSubStageLaborsForPresetAsync(presetId);
+                    foreach (var laborVm in labors)
+                    {
+                        if (!laborVm.LaborCost.HasValue)
+                        {
+                            MessageBox.Show(
+                                ResourceHelper.GetString("AdminHubView_LaborRequired", "Enter a labor cost for every sub-stage before saving."),
+                                ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
+                                MessageBoxButton.OK,
+                                MessageBoxImage.Warning);
+                            await tx.RollbackAsync();
+                            return;
+                        }
+                    }
+                }
+
+                var existingLabors = await _db.BuildingTypeSubStageLabors
+                    .Where(x => x.BuildingTypeId == _editingBtId!.Value)
+                    .ToListAsync();
+
+                var keepSubStageIds = assignedPresetIds
+                    .SelectMany(id => _btSubStageLabors.TryGetValue(id, out var list)
+                        ? list.Select(l => l.SubStagePresetId)
+                        : Enumerable.Empty<int>())
+                    .ToHashSet();
+
+                var toRemoveLabors = existingLabors
+                    .Where(x => !keepSubStageIds.Contains(x.SubStagePresetId))
+                    .ToList();
+
+                if (toRemoveLabors.Count > 0)
+                {
+                    _db.BuildingTypeSubStageLabors.RemoveRange(toRemoveLabors);
+                }
+
+                foreach (var presetId in assignedPresetIds)
+                {
+                    if (!_btSubStageLabors.TryGetValue(presetId, out var list)) continue;
+                    foreach (var laborVm in list)
+                    {
+                        var cost = laborVm.LaborCost!.Value;
+                        var existing = existingLabors.FirstOrDefault(x => x.SubStagePresetId == laborVm.SubStagePresetId);
+                        if (existing == null)
+                        {
+                            var entity = new BuildingTypeSubStageLabor
+                            {
+                                BuildingTypeId = _editingBtId.Value,
+                                SubStagePresetId = laborVm.SubStagePresetId,
+                                LaborCost = cost
+                            };
+                            _db.BuildingTypeSubStageLabors.Add(entity);
+                            existingLabors.Add(entity);
+                        }
+                        else
+                        {
+                            existing.LaborCost = cost;
+                        }
+                    }
+                }
+
+                await _db.SaveChangesAsync();
+
+                _currentBtLaborMap = assignedPresetIds
+                    .SelectMany(id => _btSubStageLabors.TryGetValue(id, out var list)
+                        ? list
+                        : Enumerable.Empty<SubStageLaborVm>())
+                    .ToDictionary(vm => vm.SubStagePresetId, vm => vm.LaborCost!.Value);
+
                 await tx.CommitAsync();
 
                 // refresh caches & UI
@@ -934,8 +1193,41 @@ namespace Kanstraction.Views
                 _editingBtId = null;
                 _currentBt = null;
                 _currentBtAssignedIds = new List<int>();
+                foreach (var collection in _btSubStageLabors.Values)
+                {
+                    foreach (var vm in collection)
+                        vm.PropertyChanged -= SubStageLaborVm_PropertyChanged;
+                }
+                _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
+                _currentBtLaborMap = new Dictionary<int, decimal>();
+                if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
                 UpdateBuildingDirtyState();
             }
         }
+
+        private class SubStageLaborVm : INotifyPropertyChanged
+        {
+            public int StagePresetId { get; set; }
+            public int SubStagePresetId { get; set; }
+            public int OrderIndex { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public decimal? DefaultLaborCost { get; set; }
+
+            private decimal? _laborCost;
+            public decimal? LaborCost
+            {
+                get => _laborCost;
+                set
+                {
+                    if (_laborCost != value)
+                    {
+                        _laborCost = value;
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LaborCost)));
+                    }
+                }
+            }
+
+            public event PropertyChangedEventHandler? PropertyChanged;
+        }
     }
-    }
+}
