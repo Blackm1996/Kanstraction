@@ -241,7 +241,7 @@ public partial class StagePresetDesignerView : UserControl
         var vm = new SubStageVm
         {
             Id = null,
-            LaborCost = 0,
+            LaborCost = null,
             OrderIndex = nextIndex,
             Materials = new ObservableCollection<MaterialUsageVm>()
         };
@@ -482,7 +482,7 @@ public partial class StagePresetDesignerView : UserControl
     {
         var totalSubStagesFormat = ResourceHelper.GetString("StagePresetDesignerView_TotalSubStages", "Total sub-stages: {0}");
         TxtTotalSubs.Text = string.Format(totalSubStagesFormat, _subStages.Count);
-        var totalLabor = _subStages.Sum(s => s.LaborCost);
+        var totalLabor = _subStages.Sum(s => s.LaborCost ?? 0m);
         var totalLaborFormat = ResourceHelper.GetString("StagePresetDesignerView_TotalLabor", "Total default labor: {0:0.##}");
         TxtTotalLabor.Text = string.Format(totalLaborFormat, totalLabor);
     }
@@ -603,7 +603,7 @@ public partial class StagePresetDesignerView : UserControl
                 MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_SubStageNameRequired", "Each sub-stage must have a name."));
                 return;
             }
-            if (s.LaborCost < 0)
+            if (s.LaborCost.HasValue && s.LaborCost.Value < 0)
             {
                 MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_LaborCostNonNegative", "Labor cost must be ≥ 0."));
                 return;
@@ -769,7 +769,7 @@ public partial class StagePresetDesignerView : UserControl
     {
         private int? _id;
         private string _name = string.Empty;
-        private decimal _laborCost;
+        private decimal? _laborCost;
         private int _orderIndex;
         private ObservableCollection<MaterialUsageVm> _materials = new();
 
@@ -785,7 +785,7 @@ public partial class StagePresetDesignerView : UserControl
             set => SetProperty(ref _name, value ?? string.Empty);
         }
 
-        public decimal LaborCost
+        public decimal? LaborCost
         {
             get => _laborCost;
             set => SetProperty(ref _laborCost, value);

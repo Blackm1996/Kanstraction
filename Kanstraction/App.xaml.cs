@@ -374,7 +374,9 @@ public partial class App : Application
                 StagePresetId = Convert.ToInt32(reader.GetValue(1)),
                 Name = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
                 OrderIndex = reader.IsDBNull(3) ? 0 : Convert.ToInt32(reader.GetValue(3)),
-                LaborCost = reader.IsDBNull(4) ? 0m : Convert.ToDecimal(reader.GetValue(4), CultureInfo.InvariantCulture)
+                LaborCost = reader.IsDBNull(4)
+                    ? null
+                    : NormalizeLegacyLaborCost(Convert.ToDecimal(reader.GetValue(4), CultureInfo.InvariantCulture))
             };
 
             results.Add(preset);
@@ -491,6 +493,11 @@ public partial class App : Application
             long ticks => DateTime.FromBinary(ticks),
             _ => DateTime.Today
         };
+    }
+
+    private static decimal? NormalizeLegacyLaborCost(decimal value)
+    {
+        return value == 0m ? null : value;
     }
 
     private static bool ConvertToBoolean(object value)

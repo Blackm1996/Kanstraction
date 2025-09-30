@@ -306,7 +306,7 @@ namespace Kanstraction.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<decimal>("LaborCost")
+                    b.Property<decimal?>("LaborCost")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")

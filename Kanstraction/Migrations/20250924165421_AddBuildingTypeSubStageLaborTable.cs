@@ -16,8 +16,8 @@ namespace Kanstraction.Migrations
                 {
                     BuildingTypeId = table.Column<int>(type: "INTEGER", nullable: false),
                     SubStagePresetId = table.Column<int>(type: "INTEGER", nullable: false),
-                    LaborCost = table.Column<decimal>(type: "TEXT", nullable: false)
-                },
+                LaborCost = table.Column<decimal>(type: "TEXT", nullable: false)
+            },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_BuildingTypeSubStageLabors", x => new { x.BuildingTypeId, x.SubStagePresetId });

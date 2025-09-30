@@ -372,12 +372,12 @@
                 Grid.Row="1"
                 AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
                 HeadersVisibility="Column" GridLinesVisibility="None"
-                IsReadOnly="True"
+                IsReadOnly="False"
                 Style="{StaticResource MaterialDesignDataGrid}">
                                                     <DataGrid.Columns>
-                                                        <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="60"/>
-                                                        <DataGridTextColumn Header="{DynamicResource AdminHubView_SubStages}" Binding="{Binding Name}" Width="*"/>
-                                                        <DataGridTextColumn Header="{DynamicResource AdminHubView_Labor}" Binding="{Binding LaborCost, StringFormat={}{0:0.##}}" Width="120"/>
+                                                        <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="60" IsReadOnly="True"/>
+                                                        <DataGridTextColumn Header="{DynamicResource AdminHubView_SubStages}" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
+                                                        <DataGridTextColumn Header="{DynamicResource AdminHubView_Labor}" Binding="{Binding LaborCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}" Width="140"/>
                                                     </DataGrid.Columns>
                                                 </DataGrid>
                                             </Grid>

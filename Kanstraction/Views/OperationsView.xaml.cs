@@ -465,6 +465,10 @@ public partial class OperationsView : UserControl
                 .Select(x => x.StagePresetId)
                 .ToListAsync();
 
+            var laborLookup = await _db.BuildingTypeSubStageLabors
+                .Where(x => x.BuildingTypeId == typeId.Value)
+                .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
+
             int stageOrder = 1;
 
             foreach (var presetId in stagePresetIds)
@@ -500,7 +504,9 @@ public partial class OperationsView : UserControl
                         Name = sp.Name,
                         OrderIndex = sp.OrderIndex,
                         Status = WorkStatus.NotStarted,
-                        LaborCost = sp.LaborCost
+                        LaborCost = laborLookup.TryGetValue(sp.Id, out var labor)
+                            ? labor
+                            : sp.LaborCost ?? 0m
                     };
                     _db.SubStages.Add(sub);
 
@@ -696,6 +702,10 @@ public partial class OperationsView : UserControl
             .GroupBy(s => s.StagePresetId)
             .ToDictionaryAsync(g => g.Key, g => g.ToList());
 
+        var laborLookup = await _db.BuildingTypeSubStageLabors
+            .Where(x => x.BuildingTypeId == buildingTypeId)
+            .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
+
         int stageOrder = 1;
 
         foreach (var link in links)
@@ -728,7 +738,9 @@ public partial class OperationsView : UserControl
                         Status = WorkStatus.NotStarted,
                         StartDate = null,
                         EndDate = null,
-                        LaborCost = ssp.LaborCost
+                        LaborCost = laborLookup.TryGetValue(ssp.Id, out var labor)
+                            ? labor
+                            : ssp.LaborCost ?? 0m
                     };
                     _db.SubStages.Add(newSub);
                 }
@@ -1440,6 +1452,11 @@ public partial class OperationsView : UserControl
 
         int buildingId = (int)bRow.Id;
 
+        var buildingTypeId = await _db.Buildings
+            .Where(b => b.Id == buildingId)
+            .Select(b => b.BuildingTypeId)
+            .FirstAsync();
+
         // Load current building stages (names + count)
         var currentStages = await _db.Stages
             .Where(s => s.BuildingId == buildingId)
@@ -1515,6 +1532,10 @@ public partial class OperationsView : UserControl
                 .OrderBy(sp => sp.OrderIndex)
                 .ToListAsync();
 
+            var laborLookup = await _db.BuildingTypeSubStageLabors
+                .Where(x => x.BuildingTypeId == buildingTypeId)
+                .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
+
             foreach (var sp in subPresets)
             {
                 var sub = new SubStage
@@ -1523,7 +1544,9 @@ public partial class OperationsView : UserControl
                     Name = sp.Name,
                     OrderIndex = sp.OrderIndex,
                     Status = WorkStatus.NotStarted,
-                    LaborCost = sp.LaborCost
+                    LaborCost = laborLookup.TryGetValue(sp.Id, out var labor)
+                        ? labor
+                        : sp.LaborCost ?? 0m
                 };
                 _db.SubStages.Add(sub);
                 await _db.SaveChangesAsync(); // need sub.Id to attach usages
