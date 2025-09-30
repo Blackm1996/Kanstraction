@@ -743,7 +743,6 @@ namespace Kanstraction.Views
                         SubStagePresetId = sub.Id,
                         OrderIndex = sub.OrderIndex,
                         Name = sub.Name,
-                        DefaultLaborCost = sub.LaborCost,
                         LaborCost = laborLookup.TryGetValue(sub.Id, out var labor) ? labor : sub.LaborCost
                     };
                     vm.PropertyChanged += SubStageLaborVm_PropertyChanged;
@@ -804,7 +803,6 @@ namespace Kanstraction.Views
                     SubStagePresetId = sub.Id,
                     OrderIndex = sub.OrderIndex,
                     Name = sub.Name,
-                    DefaultLaborCost = sub.LaborCost,
                     LaborCost = labor
                 };
                 vm.PropertyChanged += SubStageLaborVm_PropertyChanged;
@@ -1211,8 +1209,6 @@ namespace Kanstraction.Views
             public int SubStagePresetId { get; set; }
             public int OrderIndex { get; set; }
             public string Name { get; set; } = string.Empty;
-            public decimal? DefaultLaborCost { get; set; }
-
             private decimal? _laborCost;
             public decimal? LaborCost
             {

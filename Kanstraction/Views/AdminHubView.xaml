@@ -377,7 +377,6 @@
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="60" IsReadOnly="True"/>
                                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_SubStages}" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
-                                                        <DataGridTextColumn Header="{DynamicResource AdminHubView_DefaultLabor}" Binding="{Binding DefaultLaborCost, StringFormat={}{0:0.##}}" Width="120" IsReadOnly="True"/>
                                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_Labor}" Binding="{Binding LaborCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}" Width="140"/>
                                                     </DataGrid.Columns>
                                                 </DataGrid>
