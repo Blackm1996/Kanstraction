@@ -1018,6 +1018,9 @@ namespace Kanstraction.Views
 
             using var tx = await _db.Database.BeginTransactionAsync();
 
+            var isCreatingNew = _editingBtId == null;
+            BuildingType? createdBuildingType = null;
+
             try
             {
                 BuildingType bt;
@@ -1028,6 +1031,7 @@ namespace Kanstraction.Views
                     await _db.SaveChangesAsync();
                     _editingBtId = bt.Id;
                     _currentBt = bt;
+                    createdBuildingType = bt;
                 }
                 else
                 {
@@ -1099,6 +1103,10 @@ namespace Kanstraction.Views
                                 MessageBoxButton.OK,
                                 MessageBoxImage.Warning);
                             await tx.RollbackAsync();
+                            if (isCreatingNew)
+                            {
+                                ResetNewBuildingTypeDraft(createdBuildingType);
+                            }
                             return;
                         }
                     }
@@ -1177,6 +1185,10 @@ namespace Kanstraction.Views
             catch (Exception ex)
             {
                 await tx.RollbackAsync();
+                if (isCreatingNew)
+                {
+                    ResetNewBuildingTypeDraft(createdBuildingType);
+                }
                 MessageBox.Show(
                     string.Format(ResourceHelper.GetString("AdminHubView_SaveBuildingTypeFailedFormat", "Saving failed:\n{0}"), ex.Message),
                     ResourceHelper.GetString("Common_ErrorTitle", "Error"),
@@ -1227,6 +1239,19 @@ namespace Kanstraction.Views
             {
                 entry.State = EntityState.Detached;
             }
+        }
+
+        private void ResetNewBuildingTypeDraft(BuildingType? createdBuildingType)
+        {
+            if (_db == null) return;
+
+            if (createdBuildingType != null)
+            {
+                _db.Entry(createdBuildingType).State = EntityState.Detached;
+            }
+
+            _editingBtId = null;
+            _currentBt = null;
         }
 
         private class SubStageLaborVm : INotifyPropertyChanged
