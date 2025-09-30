@@ -1038,40 +1038,52 @@ namespace Kanstraction.Views
                 }
 
                 // Sync join table
+                DetachTrackedBuildingTypePresetLinks();
+
                 var existingLinks = await _db.BuildingTypeStagePresets
                     .Where(x => x.BuildingTypeId == _editingBtId!.Value)
+                    .AsNoTracking()
                     .ToListAsync();
 
-                // delete removed
-                var keepIds = _btAssigned.Select(a => a.StagePresetId).ToHashSet();
+                var orderedAssignments = _btAssigned
+                    .Select((a, index) => new { a.StagePresetId, OrderIndex = index + 1 })
+                    .ToList();
+
+                var keepIds = orderedAssignments.Select(x => x.StagePresetId).ToHashSet();
                 var toDelete = existingLinks.Where(x => !keepIds.Contains(x.StagePresetId)).ToList();
                 if (toDelete.Count > 0)
                 {
                     _db.BuildingTypeStagePresets.RemoveRange(toDelete);
-                    await _db.SaveChangesAsync();
                 }
 
-                // upsert / set order
-                for (int i = 0; i < _btAssigned.Count; i++)
+                foreach (var assignment in orderedAssignments)
                 {
-                    var a = _btAssigned[i];
-                    var link = existingLinks.FirstOrDefault(x => x.StagePresetId == a.StagePresetId);
-                    if (link == null)
+                    var existing = existingLinks.FirstOrDefault(x => x.StagePresetId == assignment.StagePresetId);
+                    if (existing == null)
                     {
-                        link = new BuildingTypeStagePreset
+                        var entity = new BuildingTypeStagePreset
                         {
                             BuildingTypeId = _editingBtId.Value,
-                            StagePresetId = a.StagePresetId,
-                            OrderIndex = i + 1
+                            StagePresetId = assignment.StagePresetId,
+                            OrderIndex = assignment.OrderIndex
                         };
-                        _db.BuildingTypeStagePresets.Add(link);
+                        _db.BuildingTypeStagePresets.Add(entity);
                     }
-                    else
+                    else if (existing.OrderIndex != assignment.OrderIndex)
                     {
-                        link.OrderIndex = i + 1;
+                        var stub = new BuildingTypeStagePreset
+                        {
+                            BuildingTypeId = _editingBtId.Value,
+                            StagePresetId = assignment.StagePresetId,
+                            OrderIndex = assignment.OrderIndex
+                        };
+                        _db.BuildingTypeStagePresets.Attach(stub);
+                        _db.Entry(stub).Property(x => x.OrderIndex).IsModified = true;
                     }
                 }
+
                 await _db.SaveChangesAsync();
+                DetachTrackedBuildingTypePresetLinks();
 
                 var assignedPresetIds = _btAssigned.Select(a => a.StagePresetId).ToList();
                 foreach (var presetId in assignedPresetIds)
@@ -1200,6 +1212,20 @@ namespace Kanstraction.Views
                 _currentBtLaborMap = new Dictionary<int, decimal>();
                 if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
                 UpdateBuildingDirtyState();
+            }
+        }
+
+        private void DetachTrackedBuildingTypePresetLinks()
+        {
+            if (_db == null) return;
+
+            var tracked = _db.ChangeTracker
+                .Entries<BuildingTypeStagePreset>()
+                .ToList();
+
+            foreach (var entry in tracked)
+            {
+                entry.State = EntityState.Detached;
             }
         }
 
