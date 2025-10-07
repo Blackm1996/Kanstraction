@@ -161,11 +161,13 @@
     <sys:String x:Key="OperationsView_Stage">Étape</sys:String>
     <sys:String x:Key="OperationsView_OngoingSubStage">Sous-étape en cours</sys:String>
     <sys:String x:Key="OperationsView_AddSubStageTooltip">Ajouter une sous-étape à l'étape sélectionnée</sys:String>
+    <sys:String x:Key="OperationsView_DeleteStageTooltip">Supprimer cette étape du bâtiment</sys:String>
     <sys:String x:Key="OperationsView_Name">Nom</sys:String>
     <sys:String x:Key="OperationsView_Labor">Main-d'œuvre</sys:String>
     <sys:String x:Key="OperationsView_StartSubStageTooltip">Commencer la sous-étape</sys:String>
     <sys:String x:Key="OperationsView_FinishSubStageTooltip">Terminer la sous-étape</sys:String>
     <sys:String x:Key="OperationsView_ResetSubStageTooltip">Marquer comme non commencé</sys:String>
+    <sys:String x:Key="OperationsView_DeleteSubStageTooltip">Supprimer cette sous-étape de l'étape</sys:String>
     <sys:String x:Key="OperationsView_Stages">Étapes</sys:String>
     <sys:String x:Key="OperationsView_SubStages">Sous-étapes</sys:String>
     <sys:String x:Key="OperationsView_MaterialHeader">Matériau</sys:String>
@@ -174,6 +176,7 @@
     <sys:String x:Key="OperationsView_UsageDate">Date d'utilisation</sys:String>
     <sys:String x:Key="OperationsView_UnitPrice">Prix unitaire</sys:String>
     <sys:String x:Key="OperationsView_Total">Total</sys:String>
+    <sys:String x:Key="OperationsView_DeleteMaterialTooltip">Supprimer ce matériau de la sous-étape</sys:String>
     <sys:String x:Key="OperationsView_ConfirmChangeTitle">Enregistrer</sys:String>
     <sys:String x:Key="OperationsView_ReturnToDefault">Annuler</sys:String>
     <sys:String x:Key="OperationsView_ConfirmLaborChangeMessage">Êtes-vous sûr de vouloir changer la main-d'œuvre de {0} à {1} ?</sys:String>
@@ -197,6 +200,15 @@
     <sys:String x:Key="OperationsView_SubStageCannotStart">Cette sous-étape ne peut pas être démarrée dans son état actuel.</sys:String>
     <sys:String x:Key="OperationsView_OnlyOngoingCanFinish">Vous ne pouvez terminer qu'une sous-étape En cours.</sys:String>
     <sys:String x:Key="OperationsView_OnlyOngoingCanReset">Seule une sous-étape En cours peut être réinitialisée à Non commencée.</sys:String>
+    <sys:String x:Key="OperationsView_DeleteStageTitle">Supprimer l'étape</sys:String>
+    <sys:String x:Key="OperationsView_DeleteStageConfirmFormat">Supprimer l'étape « {0} » ? Toutes ses sous-étapes et matériaux seront supprimés.</sys:String>
+    <sys:String x:Key="OperationsView_DeleteStageFailedFormat">Impossible de supprimer l'étape :&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_DeleteSubStageTitle">Supprimer la sous-étape</sys:String>
+    <sys:String x:Key="OperationsView_DeleteSubStageConfirmFormat">Supprimer la sous-étape « {0} » ? Les matériaux associés seront supprimés.</sys:String>
+    <sys:String x:Key="OperationsView_DeleteSubStageFailedFormat">Impossible de supprimer la sous-étape :&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_DeleteMaterialTitle">Supprimer le matériau</sys:String>
+    <sys:String x:Key="OperationsView_DeleteMaterialConfirmFormat">Supprimer le matériau « {0} » de cette sous-étape ?</sys:String>
+    <sys:String x:Key="OperationsView_DeleteMaterialFailedFormat">Impossible de supprimer le matériau :&#x0a;{0}</sys:String>
     <sys:String x:Key="OperationsView_SelectSubStageFirst">Sélectionnez d'abord une sous-étape.</sys:String>
     <sys:String x:Key="OperationsView_NoSubStageTitle">Aucune sous-étape</sys:String>
     <sys:String x:Key="OperationsView_SelectMaterialPrompt">Veuillez sélectionner un matériau.</sys:String>

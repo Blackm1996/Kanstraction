@@ -1196,6 +1196,69 @@ public partial class OperationsView : UserControl
         }
     }
 
+    private async void DeleteMaterialUsage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null)
+            return;
+
+        if (sender is not Button btn)
+            return;
+
+        if (btn.Tag is not int usageId)
+            return;
+
+        var usage = await _db.MaterialUsages
+            .Include(mu => mu.Material)
+            .Include(mu => mu.SubStage)
+            .FirstOrDefaultAsync(mu => mu.Id == usageId);
+
+        if (usage == null)
+            return;
+
+        var confirm = MessageBox.Show(
+            string.Format(ResourceHelper.GetString("OperationsView_DeleteMaterialConfirmFormat", "Delete material '{0}'?"), usage.Material.Name),
+            ResourceHelper.GetString("OperationsView_DeleteMaterialTitle", "Delete material"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            _db.MaterialUsages.Remove(usage);
+            await _db.SaveChangesAsync();
+
+            _editingMaterialUsage = null;
+            _originalMaterialQuantity = null;
+
+            if (usage.SubStage != null)
+            {
+                await LoadMaterialsForSubStageAsync(usage.SubStage);
+            }
+            else
+            {
+                var subStage = await _db.SubStages.FirstOrDefaultAsync(ss => ss.Id == usage.SubStageId);
+                if (subStage != null)
+                {
+                    await LoadMaterialsForSubStageAsync(subStage);
+                }
+                else
+                {
+                    MaterialsGrid.ItemsSource = null;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_DeleteMaterialFailedFormat", "Failed to delete material:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
     private async void AddSubStage_Click(object sender, RoutedEventArgs e)
     {
         if (_db == null) return;
@@ -1278,6 +1341,66 @@ public partial class OperationsView : UserControl
             await tx.RollbackAsync();
             MessageBox.Show(
                 string.Format(ResourceHelper.GetString("OperationsView_AddSubStageFailedFormat", "Failed to add sub-stage:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
+    private async void DeleteSubStageInstance_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null) return;
+
+        if (sender is not Button btn) return;
+
+        if (btn.Tag is not int subStageId) return;
+
+        var subStage = await _db.SubStages
+            .Include(ss => ss.Stage)
+                .ThenInclude(st => st.SubStages)
+            .Include(ss => ss.Stage.Building)
+                .ThenInclude(b => b.Stages)
+            .FirstOrDefaultAsync(ss => ss.Id == subStageId);
+
+        if (subStage == null) return;
+
+        var confirm = MessageBox.Show(
+            string.Format(ResourceHelper.GetString("OperationsView_DeleteSubStageConfirmFormat", "Delete sub-stage '{0}'?"), subStage.Name),
+            ResourceHelper.GetString("OperationsView_DeleteSubStageTitle", "Delete sub-stage"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        using var tx = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            int stageId = subStage.StageId;
+            int buildingId = subStage.Stage.BuildingId;
+            int removedOrder = subStage.OrderIndex;
+
+            foreach (var other in subStage.Stage.SubStages.Where(ss => ss.Id != subStage.Id && ss.OrderIndex > removedOrder))
+            {
+                other.OrderIndex -= 1;
+            }
+
+            subStage.Stage.SubStages.Remove(subStage);
+            _db.SubStages.Remove(subStage);
+
+            UpdateStageStatusFromSubStages(subStage.Stage);
+            UpdateBuildingStatusFromStages(subStage.Stage.Building);
+
+            await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            await ReloadStagesAndSubStagesAsync(buildingId, stageId);
+            await ReloadBuildingsAsync(buildingId);
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_DeleteSubStageFailedFormat", "Failed to delete sub-stage:\n{0}"), ex.Message),
                 ResourceHelper.GetString("Common_ErrorTitle", "Error"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
@@ -1440,6 +1563,64 @@ public partial class OperationsView : UserControl
     {
         public int Id { get; set; }
         public string Name { get; set; } = "";
+    }
+
+    private async void DeleteStage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null) return;
+
+        if (sender is not Button btn) return;
+
+        if (btn.Tag is not int stageId) return;
+
+        var stage = await _db.Stages
+            .Include(st => st.SubStages)
+            .Include(st => st.Building)
+                .ThenInclude(b => b.Stages)
+                    .ThenInclude(s => s.SubStages)
+            .FirstOrDefaultAsync(st => st.Id == stageId);
+
+        if (stage == null) return;
+
+        var confirm = MessageBox.Show(
+            string.Format(ResourceHelper.GetString("OperationsView_DeleteStageConfirmFormat", "Delete stage '{0}'?"), stage.Name),
+            ResourceHelper.GetString("OperationsView_DeleteStageTitle", "Delete stage"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        using var tx = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            int buildingId = stage.BuildingId;
+            int removedOrder = stage.OrderIndex;
+
+            foreach (var other in stage.Building.Stages.Where(s => s.Id != stage.Id && s.OrderIndex > removedOrder))
+            {
+                other.OrderIndex -= 1;
+            }
+
+            stage.Building.Stages.Remove(stage);
+            _db.Stages.Remove(stage);
+
+            UpdateBuildingStatusFromStages(stage.Building);
+
+            await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            await ReloadStagesAndSubStagesAsync(buildingId);
+            await ReloadBuildingsAsync(buildingId);
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_DeleteStageFailedFormat", "Failed to delete stage:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 
     private async void AddStageToBuilding_Click(object sender, RoutedEventArgs e)
