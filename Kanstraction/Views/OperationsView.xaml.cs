@@ -1120,9 +1120,9 @@ public partial class OperationsView : UserControl
         }
     }
 
-    private static void UpdateBuildingStatusFromStages(Building b)
+    private static void UpdateBuildingStatusFromStages(Building? b)
     {
-        if (b.Stages == null || b.Stages.Count == 0) return;
+        if (b == null || b.Stages == null || b.Stages.Count == 0) return;
 
         bool allPaid = b.Stages.All(st => st.Status == WorkStatus.Paid);
         bool anyOngoing = b.Stages.Any(st => st.Status == WorkStatus.Ongoing);
@@ -1386,20 +1386,58 @@ public partial class OperationsView : UserControl
         using var tx = await _db.Database.BeginTransactionAsync();
         try
         {
-            int stageId = subStage.StageId;
-            int buildingId = subStage.Stage.BuildingId;
-            int removedOrder = subStage.OrderIndex;
-
-            foreach (var other in subStage.Stage.SubStages.Where(ss => ss.Id != subStage.Id && ss.OrderIndex > removedOrder))
+            var stage = subStage.Stage;
+            if (stage == null)
             {
-                other.OrderIndex -= 1;
+                stage = await _db.Stages
+                    .Include(st => st.SubStages)
+                    .FirstOrDefaultAsync(st => st.Id == subStage.StageId);
+
+                if (stage == null)
+                {
+                    throw new InvalidOperationException($"Stage {subStage.StageId} could not be loaded for sub-stage {subStage.Id}.");
+                }
+
+                subStage.Stage = stage;
             }
 
-            subStage.Stage.SubStages.Remove(subStage);
+            var building = stage.Building;
+            if (building == null)
+            {
+                building = await _db.Buildings
+                    .Include(b => b.Stages)
+                    .FirstOrDefaultAsync(b => b.Id == stage.BuildingId);
+
+                if (building != null)
+                {
+                    stage.Building = building;
+                }
+            }
+
+            int stageId = stage.Id;
+            int buildingId = stage.BuildingId;
+            int removedOrder = subStage.OrderIndex;
+
+            var siblingsToShift = stage.SubStages?
+                .Where(ss => ss.Id != subStage.Id && ss.OrderIndex > removedOrder)
+                .ToList();
+
+            if (siblingsToShift != null)
+            {
+                foreach (var other in siblingsToShift)
+                {
+                    other.OrderIndex -= 1;
+                }
+            }
+
+            stage.SubStages?.Remove(subStage);
             _db.SubStages.Remove(subStage);
 
-            UpdateStageStatusFromSubStages(subStage.Stage);
-            UpdateBuildingStatusFromStages(subStage.Stage.Building);
+            UpdateStageStatusFromSubStages(stage);
+            if (building != null)
+            {
+                UpdateBuildingStatusFromStages(building);
+            }
 
             await _db.SaveChangesAsync();
             await tx.CommitAsync();
