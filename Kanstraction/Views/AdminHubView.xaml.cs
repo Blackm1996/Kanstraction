@@ -235,10 +235,32 @@ namespace Kanstraction.Views
 
                 await _db.SaveChangesAsync();
 
-                // If price or effective date changed, close previous period and open a new one
-                if (priceChanged && sinceChanged)
+                // If price changed, maintain history depending on whether the effective date shifted
+                if (priceChanged)
                 {
-                    await CloseOpenHistoryAndAddNewAsync(mat.Id, price, effSince!.Value);
+                    if (sinceChanged)
+                    {
+                        await CloseOpenHistoryAndAddNewAsync(mat.Id, price, effSince!.Value);
+                    }
+                    else
+                    {
+                        var openHistory = await _db!.MaterialPriceHistory
+                            .Where(h => h.MaterialId == mat.Id && h.EndDate == null)
+                            .OrderByDescending(h => h.StartDate)
+                            .FirstOrDefaultAsync();
+
+                        if (openHistory != null)
+                        {
+                            openHistory.PricePerUnit = price;
+                            await _db.SaveChangesAsync();
+                        }
+                        else
+                        {
+                            await CloseOpenHistoryAndAddNewAsync(mat.Id, price, effSince!.Value);
+                        }
+                    }
+
+                    await UpdateUsageDatesForActiveSubStagesAsync(mat.Id, (effSince ?? DateTime.Today).Date);
                 }
             }
 
@@ -390,6 +412,26 @@ namespace Kanstraction.Views
                 StartDate = newStart,
                 EndDate = null
             });
+            await _db.SaveChangesAsync();
+        }
+
+        private async Task UpdateUsageDatesForActiveSubStagesAsync(int materialId, DateTime newUsageDate)
+        {
+            var activeUsages = await _db!.MaterialUsages
+                .Where(mu => mu.MaterialId == materialId &&
+                            mu.SubStage.Status != WorkStatus.Finished &&
+                            mu.SubStage.Status != WorkStatus.Paid &&
+                            mu.SubStage.Status != WorkStatus.Stopped)
+                .ToListAsync();
+
+            if (activeUsages.Count == 0)
+                return;
+
+            foreach (var usage in activeUsages)
+            {
+                usage.UsageDate = newUsageDate;
+            }
+
             await _db.SaveChangesAsync();
         }
 
