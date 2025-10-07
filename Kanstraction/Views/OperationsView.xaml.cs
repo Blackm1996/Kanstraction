@@ -1074,9 +1074,20 @@ public partial class OperationsView : UserControl
         }
     }
 
-    private static void UpdateStageStatusFromSubStages(Stage s)
+    private static void UpdateStageStatusFromSubStages(Stage? s)
     {
-        if (s.SubStages == null || s.SubStages.Count == 0) return;
+        if (s == null)
+        {
+            return;
+        }
+
+        if (s.SubStages == null || s.SubStages.Count == 0)
+        {
+            s.Status = WorkStatus.NotStarted;
+            s.StartDate = null;
+            s.EndDate = null;
+            return;
+        }
 
         bool allPaid = s.SubStages.All(ss => ss.Status == WorkStatus.Paid);
         bool anyOngoing = s.SubStages.Any(ss => ss.Status == WorkStatus.Ongoing);
