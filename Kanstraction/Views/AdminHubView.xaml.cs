@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace Kanstraction.Views
 {
@@ -235,20 +236,45 @@ namespace Kanstraction.Views
 
                 await _db.SaveChangesAsync();
 
-                // If price or effective date changed, close previous period and open a new one
-                if (priceChanged && sinceChanged)
+                // If price changed, maintain history depending on whether the effective date shifted
+                if (priceChanged)
                 {
-                    await CloseOpenHistoryAndAddNewAsync(mat.Id, price, effSince!.Value);
+                    if (sinceChanged)
+                    {
+                        await CloseOpenHistoryAndAddNewAsync(mat.Id, price, effSince!.Value);
+                    }
+                    else
+                    {
+                        var openHistory = await _db!.MaterialPriceHistory
+                            .Where(h => h.MaterialId == mat.Id && h.EndDate == null)
+                            .OrderByDescending(h => h.StartDate)
+                            .FirstOrDefaultAsync();
+
+                        if (openHistory != null)
+                        {
+                            openHistory.PricePerUnit = price;
+                            await _db.SaveChangesAsync();
+                        }
+                        else
+                        {
+                            await CloseOpenHistoryAndAddNewAsync(mat.Id, price, effSince!.Value);
+                        }
+                    }
+
+                    await UpdateUsageDatesForActiveSubStagesAsync(mat.Id, (effSince ?? DateTime.Today).Date);
                 }
             }
 
             // Reload cache + UI and keep selection
+            var savedMaterialId = _editingMaterialId;
+
             await ReloadMaterialsCacheAsync();
             RefreshMaterialsList();
-            if (_editingMaterialId != null && MaterialsList != null)
+
+            if (savedMaterialId != null)
             {
-                var row = _allMaterials.FirstOrDefault(x => x.Id == _editingMaterialId.Value);
-                if (row != null) MaterialsList.SelectedItem = row;
+                SelectMaterialInList(savedMaterialId.Value);
+                Dispatcher.BeginInvoke(new Action(() => SelectMaterialInList(savedMaterialId.Value)), DispatcherPriority.ContextIdle);
             }
 
             MessageBox.Show(
@@ -256,6 +282,21 @@ namespace Kanstraction.Views
                 ResourceHelper.GetString("AdminHubView_MaterialDialogTitle", "Material"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+        }
+
+        private void SelectMaterialInList(int materialId)
+        {
+            if (MaterialsList == null) return;
+
+            foreach (var item in MaterialsList.Items)
+            {
+                if (item is Material material && material.Id == materialId)
+                {
+                    MaterialsList.SelectedItem = item;
+                    MaterialsList.ScrollIntoView(item);
+                    break;
+                }
+            }
         }
 
         private void CancelMaterial_Click(object sender, RoutedEventArgs e)
@@ -390,6 +431,26 @@ namespace Kanstraction.Views
                 StartDate = newStart,
                 EndDate = null
             });
+            await _db.SaveChangesAsync();
+        }
+
+        private async Task UpdateUsageDatesForActiveSubStagesAsync(int materialId, DateTime newUsageDate)
+        {
+            var activeUsages = await _db!.MaterialUsages
+                .Where(mu => mu.MaterialId == materialId &&
+                            mu.SubStage.Status != WorkStatus.Finished &&
+                            mu.SubStage.Status != WorkStatus.Paid &&
+                            mu.SubStage.Status != WorkStatus.Stopped)
+                .ToListAsync();
+
+            if (activeUsages.Count == 0)
+                return;
+
+            foreach (var usage in activeUsages)
+            {
+                usage.UsageDate = newUsageDate;
+            }
+
             await _db.SaveChangesAsync();
         }
 
