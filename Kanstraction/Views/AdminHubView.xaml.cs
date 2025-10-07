@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 
 namespace Kanstraction.Views
 {
@@ -265,12 +266,15 @@ namespace Kanstraction.Views
             }
 
             // Reload cache + UI and keep selection
+            var savedMaterialId = _editingMaterialId;
+
             await ReloadMaterialsCacheAsync();
             RefreshMaterialsList();
-            if (_editingMaterialId != null && MaterialsList != null)
+
+            if (savedMaterialId != null)
             {
-                var row = _allMaterials.FirstOrDefault(x => x.Id == _editingMaterialId.Value);
-                if (row != null) MaterialsList.SelectedItem = row;
+                SelectMaterialInList(savedMaterialId.Value);
+                Dispatcher.BeginInvoke(new Action(() => SelectMaterialInList(savedMaterialId.Value)), DispatcherPriority.ContextIdle);
             }
 
             MessageBox.Show(
@@ -278,6 +282,21 @@ namespace Kanstraction.Views
                 ResourceHelper.GetString("AdminHubView_MaterialDialogTitle", "Material"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+        }
+
+        private void SelectMaterialInList(int materialId)
+        {
+            if (MaterialsList == null) return;
+
+            foreach (var item in MaterialsList.Items)
+            {
+                if (item is Material material && material.Id == materialId)
+                {
+                    MaterialsList.SelectedItem = item;
+                    MaterialsList.ScrollIntoView(item);
+                    break;
+                }
+            }
         }
 
         private void CancelMaterial_Click(object sender, RoutedEventArgs e)
