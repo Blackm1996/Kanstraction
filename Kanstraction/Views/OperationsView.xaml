@@ -210,6 +210,18 @@
                     </DataGridTemplateColumn>
                     <DataGridTextColumn Header="{DynamicResource OperationsView_OngoingSubStage}" Binding="{Binding OngoingSubStageName}"/>
                     <DataGridTextColumn Header="{DynamicResource OperationsView_Percent}" Binding="{Binding ProgressPercent}"/>
+                    <DataGridTemplateColumn Header="" Width="60">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource TinyIconButton}"
+                                        Tag="{Binding Id}"
+                                        Click="DeleteStage_Click"
+                                        ToolTip="{DynamicResource OperationsView_DeleteStageTooltip}">
+                                    <iconPacks:PackIconFontAwesome Kind="TrashCanRegular" Width="12" Height="12" Foreground="Red"/>
+                                </Button>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>
@@ -336,6 +348,18 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="" Width="60">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource TinyIconButton}"
+                                        Tag="{Binding Id}"
+                                        Click="DeleteSubStageInstance_Click"
+                                        ToolTip="{DynamicResource OperationsView_DeleteSubStageTooltip}">
+                                    <iconPacks:PackIconFontAwesome Kind="TrashCanRegular" Width="12" Height="12" Foreground="Red"/>
+                                </Button>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                 </DataGrid.Columns>
             </DataGrid>
         </Grid>
@@ -404,6 +428,18 @@
                                         </MultiBinding>
                                     </TextBlock.Text>
                                 </TextBlock>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="" Width="60">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource TinyIconButton}"
+                                        Tag="{Binding Id}"
+                                        Click="DeleteMaterialUsage_Click"
+                                        ToolTip="{DynamicResource OperationsView_DeleteMaterialTooltip}">
+                                    <iconPacks:PackIconFontAwesome Kind="TrashCanRegular" Width="12" Height="12" Foreground="Red"/>
+                                </Button>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>

@@ -31,6 +31,7 @@ public partial class OperationsView : UserControl
     private decimal? _originalSubStageLabor;
     private MaterialUsage? _editingMaterialUsage;
     private decimal? _originalMaterialQuantity;
+    private int? _pendingStageSelection;
 
     private static string FormatDecimal(decimal value) => value.ToString("0.##", CultureInfo.CurrentCulture);
 
@@ -67,7 +68,10 @@ public partial class OperationsView : UserControl
 
         _currentBuildingId = (int)b.Id;
 
-        await ReloadStagesAndSubStagesAsync((int)b.Id);
+        int? preferredStageId = _pendingStageSelection;
+        _pendingStageSelection = null;
+
+        await ReloadStagesAndSubStagesAsync((int)b.Id, preferredStageId);
 
         Breadcrumb = UpdateBreadcrumbWithBuilding(b.Code);
     }
@@ -549,7 +553,7 @@ public partial class OperationsView : UserControl
         }
     }
 
-    private async Task ReloadBuildingsAsync(int? selectBuildingId = null)
+    private async Task ReloadBuildingsAsync(int? selectBuildingId = null, int? preferredStageId = null)
     {
         if (_currentProject == null) return;
 
@@ -584,12 +588,18 @@ public partial class OperationsView : UserControl
             var newly = data.FirstOrDefault(x => x.Id == selectBuildingId.Value);
             if (newly != null)
             {
+                _pendingStageSelection = preferredStageId;
                 BuildingsGrid.SelectedItem = newly;
                 BuildingsGrid.ScrollIntoView(newly);
+                return;
             }
             else if (data.Count > 0 && BuildingsGrid.SelectedItem == null)
             {
                 BuildingsGrid.SelectedIndex = 0;
+            }
+            else
+            {
+                _pendingStageSelection = null;
             }
         }
         else if (data.Count > 0 && BuildingsGrid.SelectedItem == null)
@@ -922,7 +932,7 @@ public partial class OperationsView : UserControl
 
         await _db.SaveChangesAsync();
 
-        await ReloadBuildingsAsync(ss.Stage.BuildingId);
+        await ReloadBuildingsAsync(ss.Stage.BuildingId, ss.StageId);
         await ReloadStagesAndSubStagesAsync(ss.Stage.BuildingId, ss.StageId);
     }
 
@@ -967,7 +977,7 @@ public partial class OperationsView : UserControl
 
         await _db.SaveChangesAsync();
 
-        await ReloadBuildingsAsync(ss.Stage.BuildingId);
+        await ReloadBuildingsAsync(ss.Stage.BuildingId, ss.StageId);
         await ReloadStagesAndSubStagesAsync(ss.Stage.BuildingId, ss.StageId);
     }
 
@@ -1004,7 +1014,7 @@ public partial class OperationsView : UserControl
 
         await _db.SaveChangesAsync();
 
-        await ReloadBuildingsAsync(ss.Stage.BuildingId);
+        await ReloadBuildingsAsync(ss.Stage.BuildingId, ss.StageId);
         await ReloadStagesAndSubStagesAsync(ss.Stage.BuildingId, ss.StageId);
     }
 
@@ -1074,9 +1084,20 @@ public partial class OperationsView : UserControl
         }
     }
 
-    private static void UpdateStageStatusFromSubStages(Stage s)
+    private static void UpdateStageStatusFromSubStages(Stage? s)
     {
-        if (s.SubStages == null || s.SubStages.Count == 0) return;
+        if (s == null)
+        {
+            return;
+        }
+
+        if (s.SubStages == null || s.SubStages.Count == 0)
+        {
+            s.Status = WorkStatus.NotStarted;
+            s.StartDate = null;
+            s.EndDate = null;
+            return;
+        }
 
         bool allPaid = s.SubStages.All(ss => ss.Status == WorkStatus.Paid);
         bool anyOngoing = s.SubStages.Any(ss => ss.Status == WorkStatus.Ongoing);
@@ -1109,9 +1130,9 @@ public partial class OperationsView : UserControl
         }
     }
 
-    private static void UpdateBuildingStatusFromStages(Building b)
+    private static void UpdateBuildingStatusFromStages(Building? b)
     {
-        if (b.Stages == null || b.Stages.Count == 0) return;
+        if (b == null || b.Stages == null || b.Stages.Count == 0) return;
 
         bool allPaid = b.Stages.All(st => st.Status == WorkStatus.Paid);
         bool anyOngoing = b.Stages.Any(st => st.Status == WorkStatus.Ongoing);
@@ -1190,6 +1211,69 @@ public partial class OperationsView : UserControl
         {
             MessageBox.Show(
                 string.Format(ResourceHelper.GetString("OperationsView_AddMaterialFailedFormat", "Failed to add material:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
+    private async void DeleteMaterialUsage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null)
+            return;
+
+        if (sender is not Button btn)
+            return;
+
+        if (btn.Tag is not int usageId)
+            return;
+
+        var usage = await _db.MaterialUsages
+            .Include(mu => mu.Material)
+            .Include(mu => mu.SubStage)
+            .FirstOrDefaultAsync(mu => mu.Id == usageId);
+
+        if (usage == null)
+            return;
+
+        var confirm = MessageBox.Show(
+            string.Format(ResourceHelper.GetString("OperationsView_DeleteMaterialConfirmFormat", "Delete material '{0}'?"), usage.Material.Name),
+            ResourceHelper.GetString("OperationsView_DeleteMaterialTitle", "Delete material"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes)
+            return;
+
+        try
+        {
+            _db.MaterialUsages.Remove(usage);
+            await _db.SaveChangesAsync();
+
+            _editingMaterialUsage = null;
+            _originalMaterialQuantity = null;
+
+            if (usage.SubStage != null)
+            {
+                await LoadMaterialsForSubStageAsync(usage.SubStage);
+            }
+            else
+            {
+                var subStage = await _db.SubStages.FirstOrDefaultAsync(ss => ss.Id == usage.SubStageId);
+                if (subStage != null)
+                {
+                    await LoadMaterialsForSubStageAsync(subStage);
+                }
+                else
+                {
+                    MaterialsGrid.ItemsSource = null;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_DeleteMaterialFailedFormat", "Failed to delete material:\n{0}"), ex.Message),
                 ResourceHelper.GetString("Common_ErrorTitle", "Error"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
@@ -1278,6 +1362,104 @@ public partial class OperationsView : UserControl
             await tx.RollbackAsync();
             MessageBox.Show(
                 string.Format(ResourceHelper.GetString("OperationsView_AddSubStageFailedFormat", "Failed to add sub-stage:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
+    private async void DeleteSubStageInstance_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null) return;
+
+        if (sender is not Button btn) return;
+
+        if (btn.Tag is not int subStageId) return;
+
+        var subStage = await _db.SubStages
+            .Include(ss => ss.Stage)
+                .ThenInclude(st => st.SubStages)
+            .Include(ss => ss.Stage.Building)
+                .ThenInclude(b => b.Stages)
+            .FirstOrDefaultAsync(ss => ss.Id == subStageId);
+
+        if (subStage == null) return;
+
+        var confirm = MessageBox.Show(
+            string.Format(ResourceHelper.GetString("OperationsView_DeleteSubStageConfirmFormat", "Delete sub-stage '{0}'?"), subStage.Name),
+            ResourceHelper.GetString("OperationsView_DeleteSubStageTitle", "Delete sub-stage"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        using var tx = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            var stage = subStage.Stage;
+            if (stage == null)
+            {
+                stage = await _db.Stages
+                    .Include(st => st.SubStages)
+                    .FirstOrDefaultAsync(st => st.Id == subStage.StageId);
+
+                if (stage == null)
+                {
+                    throw new InvalidOperationException($"Stage {subStage.StageId} could not be loaded for sub-stage {subStage.Id}.");
+                }
+
+                subStage.Stage = stage;
+            }
+
+            var building = stage.Building;
+            if (building == null)
+            {
+                building = await _db.Buildings
+                    .Include(b => b.Stages)
+                    .FirstOrDefaultAsync(b => b.Id == stage.BuildingId);
+
+                if (building != null)
+                {
+                    stage.Building = building;
+                }
+            }
+
+            int stageId = stage.Id;
+            int buildingId = stage.BuildingId;
+            int removedOrder = subStage.OrderIndex;
+
+            var siblingsToShift = stage.SubStages?
+                .Where(ss => ss.Id != subStage.Id && ss.OrderIndex > removedOrder)
+                .ToList();
+
+            if (siblingsToShift != null)
+            {
+                foreach (var other in siblingsToShift)
+                {
+                    other.OrderIndex -= 1;
+                }
+            }
+
+            stage.SubStages?.Remove(subStage);
+            _db.SubStages.Remove(subStage);
+
+            UpdateStageStatusFromSubStages(stage);
+            if (building != null)
+            {
+                UpdateBuildingStatusFromStages(building);
+            }
+
+            await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            await ReloadStagesAndSubStagesAsync(buildingId, stageId);
+            await ReloadBuildingsAsync(buildingId, stageId);
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_DeleteSubStageFailedFormat", "Failed to delete sub-stage:\n{0}"), ex.Message),
                 ResourceHelper.GetString("Common_ErrorTitle", "Error"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
@@ -1442,6 +1624,64 @@ public partial class OperationsView : UserControl
         public string Name { get; set; } = "";
     }
 
+    private async void DeleteStage_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null) return;
+
+        if (sender is not Button btn) return;
+
+        if (btn.Tag is not int stageId) return;
+
+        var stage = await _db.Stages
+            .Include(st => st.SubStages)
+            .Include(st => st.Building)
+                .ThenInclude(b => b.Stages)
+                    .ThenInclude(s => s.SubStages)
+            .FirstOrDefaultAsync(st => st.Id == stageId);
+
+        if (stage == null) return;
+
+        var confirm = MessageBox.Show(
+            string.Format(ResourceHelper.GetString("OperationsView_DeleteStageConfirmFormat", "Delete stage '{0}'?"), stage.Name),
+            ResourceHelper.GetString("OperationsView_DeleteStageTitle", "Delete stage"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        using var tx = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            int buildingId = stage.BuildingId;
+            int removedOrder = stage.OrderIndex;
+
+            foreach (var other in stage.Building.Stages.Where(s => s.Id != stage.Id && s.OrderIndex > removedOrder))
+            {
+                other.OrderIndex -= 1;
+            }
+
+            stage.Building.Stages.Remove(stage);
+            _db.Stages.Remove(stage);
+
+            UpdateBuildingStatusFromStages(stage.Building);
+
+            await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+
+            await ReloadStagesAndSubStagesAsync(buildingId);
+            await ReloadBuildingsAsync(buildingId);
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_DeleteStageFailedFormat", "Failed to delete stage:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
     private async void AddStageToBuilding_Click(object sender, RoutedEventArgs e)
     {
         if (_db == null) return;
@@ -1575,7 +1815,7 @@ public partial class OperationsView : UserControl
             // Refresh UI: reload stages for this building and select the new stage
             await ReloadStagesAndSubStagesAsync(buildingId, newStage.Id);
             // Also refresh buildings row (progress / current stage)
-            await ReloadBuildingsAsync(buildingId);
+            await ReloadBuildingsAsync(buildingId, newStage.Id);
         }
         catch (Exception ex)
         {

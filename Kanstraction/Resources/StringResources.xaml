@@ -163,11 +163,13 @@
     <sys:String x:Key="OperationsView_Stage">Stage</sys:String>
     <sys:String x:Key="OperationsView_OngoingSubStage">Ongoing Sub-stage</sys:String>
     <sys:String x:Key="OperationsView_AddSubStageTooltip">Add sub-stage to selected stage</sys:String>
+    <sys:String x:Key="OperationsView_DeleteStageTooltip">Remove this stage from the building</sys:String>
     <sys:String x:Key="OperationsView_Name">Name</sys:String>
     <sys:String x:Key="OperationsView_Labor">Labor</sys:String>
     <sys:String x:Key="OperationsView_StartSubStageTooltip">Start sub-stage</sys:String>
     <sys:String x:Key="OperationsView_FinishSubStageTooltip">Finish sub-stage</sys:String>
     <sys:String x:Key="OperationsView_ResetSubStageTooltip">Mark as Not Started</sys:String>
+    <sys:String x:Key="OperationsView_DeleteSubStageTooltip">Remove this sub-stage from the stage</sys:String>
     <sys:String x:Key="OperationsView_Stages">Stages</sys:String>
     <sys:String x:Key="OperationsView_SubStages">Sub-stages</sys:String>
     <sys:String x:Key="OperationsView_MaterialHeader">Material</sys:String>
@@ -176,6 +178,7 @@
     <sys:String x:Key="OperationsView_UsageDate">Usage Date</sys:String>
     <sys:String x:Key="OperationsView_UnitPrice">Unit Price</sys:String>
     <sys:String x:Key="OperationsView_Total">Total</sys:String>
+    <sys:String x:Key="OperationsView_DeleteMaterialTooltip">Remove this material from the sub-stage</sys:String>
     <sys:String x:Key="OperationsView_ConfirmChangeTitle">Save</sys:String>
     <sys:String x:Key="OperationsView_ReturnToDefault">Cancel</sys:String>
     <sys:String x:Key="OperationsView_ConfirmLaborChangeMessage">Are you sure you want to change the labor from {0} to {1}?</sys:String>
@@ -198,6 +201,15 @@
     <sys:String x:Key="OperationsView_PreviousStagesRequired">You must finish all previous stages before starting this stage.</sys:String>
     <sys:String x:Key="OperationsView_SubStageCannotStart">This sub-stage cannot be started in its current state.</sys:String>
     <sys:String x:Key="OperationsView_OnlyOngoingCanFinish">You can only finish an Ongoing sub-stage.</sys:String>
+    <sys:String x:Key="OperationsView_DeleteStageTitle">Delete stage</sys:String>
+    <sys:String x:Key="OperationsView_DeleteStageConfirmFormat">Delete stage '{0}'? All of its sub-stages and materials will be removed.</sys:String>
+    <sys:String x:Key="OperationsView_DeleteStageFailedFormat">Failed to delete stage:&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_DeleteSubStageTitle">Delete sub-stage</sys:String>
+    <sys:String x:Key="OperationsView_DeleteSubStageConfirmFormat">Delete sub-stage '{0}'? Materials assigned to it will be removed.</sys:String>
+    <sys:String x:Key="OperationsView_DeleteSubStageFailedFormat">Failed to delete sub-stage:&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_DeleteMaterialTitle">Delete material</sys:String>
+    <sys:String x:Key="OperationsView_DeleteMaterialConfirmFormat">Delete material '{0}' from this sub-stage?</sys:String>
+    <sys:String x:Key="OperationsView_DeleteMaterialFailedFormat">Failed to delete material:&#x0a;{0}</sys:String>
     <sys:String x:Key="OperationsView_OnlyOngoingCanReset">Only an Ongoing sub-stage can be reset to Not Started.</sys:String>
     <sys:String x:Key="OperationsView_SelectSubStageFirst">Select a sub-stage first.</sys:String>
     <sys:String x:Key="OperationsView_NoSubStageTitle">No sub-stage</sys:String>
