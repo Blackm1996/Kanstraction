@@ -31,6 +31,7 @@ public partial class OperationsView : UserControl
     private decimal? _originalSubStageLabor;
     private MaterialUsage? _editingMaterialUsage;
     private decimal? _originalMaterialQuantity;
+    private int? _pendingStageSelection;
 
     private static string FormatDecimal(decimal value) => value.ToString("0.##", CultureInfo.CurrentCulture);
 
@@ -67,7 +68,10 @@ public partial class OperationsView : UserControl
 
         _currentBuildingId = (int)b.Id;
 
-        await ReloadStagesAndSubStagesAsync((int)b.Id);
+        int? preferredStageId = _pendingStageSelection;
+        _pendingStageSelection = null;
+
+        await ReloadStagesAndSubStagesAsync((int)b.Id, preferredStageId);
 
         Breadcrumb = UpdateBreadcrumbWithBuilding(b.Code);
     }
@@ -549,7 +553,7 @@ public partial class OperationsView : UserControl
         }
     }
 
-    private async Task ReloadBuildingsAsync(int? selectBuildingId = null)
+    private async Task ReloadBuildingsAsync(int? selectBuildingId = null, int? preferredStageId = null)
     {
         if (_currentProject == null) return;
 
@@ -584,12 +588,18 @@ public partial class OperationsView : UserControl
             var newly = data.FirstOrDefault(x => x.Id == selectBuildingId.Value);
             if (newly != null)
             {
+                _pendingStageSelection = preferredStageId;
                 BuildingsGrid.SelectedItem = newly;
                 BuildingsGrid.ScrollIntoView(newly);
+                return;
             }
             else if (data.Count > 0 && BuildingsGrid.SelectedItem == null)
             {
                 BuildingsGrid.SelectedIndex = 0;
+            }
+            else
+            {
+                _pendingStageSelection = null;
             }
         }
         else if (data.Count > 0 && BuildingsGrid.SelectedItem == null)
@@ -922,7 +932,7 @@ public partial class OperationsView : UserControl
 
         await _db.SaveChangesAsync();
 
-        await ReloadBuildingsAsync(ss.Stage.BuildingId);
+        await ReloadBuildingsAsync(ss.Stage.BuildingId, ss.StageId);
         await ReloadStagesAndSubStagesAsync(ss.Stage.BuildingId, ss.StageId);
     }
 
@@ -967,7 +977,7 @@ public partial class OperationsView : UserControl
 
         await _db.SaveChangesAsync();
 
-        await ReloadBuildingsAsync(ss.Stage.BuildingId);
+        await ReloadBuildingsAsync(ss.Stage.BuildingId, ss.StageId);
         await ReloadStagesAndSubStagesAsync(ss.Stage.BuildingId, ss.StageId);
     }
 
@@ -1004,7 +1014,7 @@ public partial class OperationsView : UserControl
 
         await _db.SaveChangesAsync();
 
-        await ReloadBuildingsAsync(ss.Stage.BuildingId);
+        await ReloadBuildingsAsync(ss.Stage.BuildingId, ss.StageId);
         await ReloadStagesAndSubStagesAsync(ss.Stage.BuildingId, ss.StageId);
     }
 
@@ -1443,7 +1453,7 @@ public partial class OperationsView : UserControl
             await tx.CommitAsync();
 
             await ReloadStagesAndSubStagesAsync(buildingId, stageId);
-            await ReloadBuildingsAsync(buildingId);
+            await ReloadBuildingsAsync(buildingId, stageId);
         }
         catch (Exception ex)
         {
@@ -1805,7 +1815,7 @@ public partial class OperationsView : UserControl
             // Refresh UI: reload stages for this building and select the new stage
             await ReloadStagesAndSubStagesAsync(buildingId, newStage.Id);
             // Also refresh buildings row (progress / current stage)
-            await ReloadBuildingsAsync(buildingId);
+            await ReloadBuildingsAsync(buildingId, newStage.Id);
         }
         catch (Exception ex)
         {
