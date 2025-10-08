@@ -285,10 +285,10 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="{DynamicResource OperationsView_Labor}" Width="120" IsReadOnly="False"
+                    <DataGridTextColumn Header="{DynamicResource OperationsView_Labor}"  IsReadOnly="False"
                       Binding="{Binding LaborCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"/>
 
-                    <DataGridTemplateColumn Header="" Width="160">
+                    <DataGridTemplateColumn Header="">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
