@@ -72,6 +72,7 @@
     <sys:String x:Key="AdminHubView_New">New</sys:String>
     <sys:String x:Key="AdminHubView_MaterialHeader">Material</sys:String>
     <sys:String x:Key="AdminHubView_Name">Name</sys:String>
+    <sys:String x:Key="AdminHubView_Category">Category</sys:String>
     <sys:String x:Key="AdminHubView_Unit">Unit</sys:String>
     <sys:String x:Key="AdminHubView_PricePerUnit">Price / Unit</sys:String>
     <sys:String x:Key="AdminHubView_Active">Active</sys:String>
@@ -112,6 +113,12 @@
     <sys:String x:Key="AdminHubView_BuildingTypeNameRequired">Name is required.</sys:String>
     <sys:String x:Key="AdminHubView_BuildingTypeSavedMessage">Building type saved.</sys:String>
     <sys:String x:Key="AdminHubView_SaveBuildingTypeFailedFormat">Saving failed:&#x0a;{0}</sys:String>
+    <sys:String x:Key="AdminHubView_FilterByCategory">Filter by category</sys:String>
+    <sys:String x:Key="AdminHubView_AddCategoryTooltip">Add category</sys:String>
+    <sys:String x:Key="AdminHubView_NewCategoryDialogTitle">New category</sys:String>
+    <sys:String x:Key="AdminHubView_CategoryExistsMessage">A category with this name already exists.</sys:String>
+    <sys:String x:Key="AdminHubView_CategoryRequired">Category is required.</sys:String>
+    <sys:String x:Key="AdminHubView_CategoryFilterAll">All categories</sys:String>
 
     <!-- BackupHubView -->
     <sys:String x:Key="BackupHubView_Title">Backups &amp; Restore</sys:String>
@@ -173,6 +180,7 @@
     <sys:String x:Key="OperationsView_Stages">Stages</sys:String>
     <sys:String x:Key="OperationsView_SubStages">Sub-stages</sys:String>
     <sys:String x:Key="OperationsView_MaterialHeader">Material</sys:String>
+    <sys:String x:Key="OperationsView_Category">Category</sys:String>
     <sys:String x:Key="OperationsView_Qty">Qty</sys:String>
     <sys:String x:Key="OperationsView_Unit">Unit</sys:String>
     <sys:String x:Key="OperationsView_UsageDate">Usage Date</sys:String>
@@ -239,6 +247,7 @@
     <sys:String x:Key="StagePresetDesignerView_Labor">Labor</sys:String>
     <sys:String x:Key="StagePresetDesignerView_AddSubStage">Add Sub-stage</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialsForSelected">Materials for selected sub-stage</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_Category">Category</sys:String>
     <sys:String x:Key="StagePresetDesignerView_NewSubStage">New sub-stage</sys:String>
     <sys:String x:Key="StagePresetDesignerView_PresetNotFound">Preset not found.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DeleteSubStageConfirmFormat">Delete sub-stage '{0}'?</sys:String>

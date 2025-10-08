@@ -129,6 +129,8 @@ public partial class OperationsView : UserControl
         var usages = await _db.MaterialUsages
             .Include(mu => mu.Material)
                 .ThenInclude(m => m.PriceHistory)
+            .Include(mu => mu.Material)
+                .ThenInclude(m => m.MaterialCategory)
             .Where(mu => mu.SubStageId == subStage.Id)
             .OrderBy(mu => mu.Material.Name)
             .ToListAsync();

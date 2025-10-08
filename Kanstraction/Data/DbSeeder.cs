@@ -15,6 +15,8 @@ namespace Kanstraction.Data
     /// </summary>
     public static class DbSeeder
     {
+        private const string DefaultCategoryName = "Defaut";
+
         public static void Seed(AppDbContext db)
         {
             // No early return: let each Ensure* handle its own idempotency
@@ -26,18 +28,20 @@ namespace Kanstraction.Data
         // ---------------- MATERIALS ----------------
         private static Dictionary<string, Material> EnsureMaterials(AppDbContext db)
         {
+            var defaultCategory = EnsureDefaultMaterialCategory(db);
+
             // Target materials (French set — keep consistent names)
             var wanted = new[]
             {
-                new Material { Name = "Ciment",   Unit = "sac", PricePerUnit =  6.50m, EffectiveSince = DateTime.Today.AddMonths(-4), IsActive = true },
-                new Material { Name = "Sable",    Unit = "m³",  PricePerUnit = 12.00m, EffectiveSince = DateTime.Today.AddMonths(-3), IsActive = true },
-                new Material { Name = "Gravier",  Unit = "m³",  PricePerUnit = 15.00m, EffectiveSince = DateTime.Today.AddMonths(-3), IsActive = true },
-                new Material { Name = "Armature", Unit = "kg",  PricePerUnit =  1.20m, EffectiveSince = DateTime.Today.AddMonths(-5), IsActive = true },
-                new Material { Name = "Blocs",    Unit = "pcs", PricePerUnit =  0.90m, EffectiveSince = DateTime.Today.AddMonths(-2), IsActive = true },
-                new Material { Name = "Peinture", Unit = "gal", PricePerUnit = 18.00m, EffectiveSince = DateTime.Today.AddMonths(-1), IsActive = true },
-                new Material { Name = "Câblage",  Unit = "m",   PricePerUnit =  0.35m, EffectiveSince = DateTime.Today.AddMonths(-6), IsActive = true },
-                new Material { Name = "Tuyaux",   Unit = "m",   PricePerUnit =  0.80m, EffectiveSince = DateTime.Today.AddMonths(-6), IsActive = true },
-                new Material { Name = "Plâtre",   Unit = "sac", PricePerUnit =  7.20m, EffectiveSince = DateTime.Today.AddMonths(-2), IsActive = true },
+                new Material { Name = "Ciment",   Unit = "sac", PricePerUnit =  6.50m, EffectiveSince = DateTime.Today.AddMonths(-4), IsActive = true, MaterialCategoryId = defaultCategory.Id },
+                new Material { Name = "Sable",    Unit = "m³",  PricePerUnit = 12.00m, EffectiveSince = DateTime.Today.AddMonths(-3), IsActive = true, MaterialCategoryId = defaultCategory.Id },
+                new Material { Name = "Gravier",  Unit = "m³",  PricePerUnit = 15.00m, EffectiveSince = DateTime.Today.AddMonths(-3), IsActive = true, MaterialCategoryId = defaultCategory.Id },
+                new Material { Name = "Armature", Unit = "kg",  PricePerUnit =  1.20m, EffectiveSince = DateTime.Today.AddMonths(-5), IsActive = true, MaterialCategoryId = defaultCategory.Id },
+                new Material { Name = "Blocs",    Unit = "pcs", PricePerUnit =  0.90m, EffectiveSince = DateTime.Today.AddMonths(-2), IsActive = true, MaterialCategoryId = defaultCategory.Id },
+                new Material { Name = "Peinture", Unit = "gal", PricePerUnit = 18.00m, EffectiveSince = DateTime.Today.AddMonths(-1), IsActive = true, MaterialCategoryId = defaultCategory.Id },
+                new Material { Name = "Câblage",  Unit = "m",   PricePerUnit =  0.35m, EffectiveSince = DateTime.Today.AddMonths(-6), IsActive = true, MaterialCategoryId = defaultCategory.Id },
+                new Material { Name = "Tuyaux",   Unit = "m",   PricePerUnit =  0.80m, EffectiveSince = DateTime.Today.AddMonths(-6), IsActive = true, MaterialCategoryId = defaultCategory.Id },
+                new Material { Name = "Plâtre",   Unit = "sac", PricePerUnit =  7.20m, EffectiveSince = DateTime.Today.AddMonths(-2), IsActive = true, MaterialCategoryId = defaultCategory.Id },
             };
 
             // Upsert materials by (case-insensitive) name
@@ -102,6 +106,25 @@ namespace Kanstraction.Data
             }
 
             return byName;
+        }
+
+        private static MaterialCategory EnsureDefaultMaterialCategory(AppDbContext db)
+        {
+            var existing = db.MaterialCategories.FirstOrDefault(c => c.Name == DefaultCategoryName);
+            if (existing != null)
+            {
+                return existing;
+            }
+
+            var category = new MaterialCategory
+            {
+                Name = DefaultCategoryName
+            };
+
+            db.MaterialCategories.Add(category);
+            db.SaveChanges();
+
+            return category;
         }
 
         // ---------------- STAGE PRESETS (+ SUBS + MATERIAL USAGES) ----------------

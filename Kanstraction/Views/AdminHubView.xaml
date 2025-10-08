@@ -50,6 +50,17 @@
                             <CheckBox x:Name="MatActiveOnly"
                         Content="{DynamicResource AdminHubView_ActiveOnly}" Margin="0,8,0,0"
                         IsChecked="True" Checked="MatFilterChanged" Unchecked="MatFilterChanged"/>
+                            <ComboBox x:Name="MatCategoryFilter"
+                                      Margin="0,8,0,0"
+                                      Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                      materialDesign:HintAssist.Hint="{DynamicResource AdminHubView_FilterByCategory}"
+                                      IsEditable="True"
+                                      IsTextSearchEnabled="True"
+                                      StaysOpenOnEdit="True"
+                                      TextSearch.TextPath="Name"
+                                      DisplayMemberPath="Name"
+                                      SelectedValuePath="Id"
+                                      SelectionChanged="MatFilterChanged" />
                         </StackPanel>
 
                         <ListView x:Name="MaterialsList" Grid.Row="1" Margin="10"
@@ -86,6 +97,38 @@
                                 <DockPanel Margin="0,0,0,8">
                                     <TextBlock Text="{DynamicResource AdminHubView_Name}" Width="120" VerticalAlignment="Center"/>
                                     <TextBox x:Name="MatName" Padding="8" TextChanged="MaterialEditor_TextChanged" />
+                                </DockPanel>
+                                <DockPanel Margin="0,0,0,8">
+                                    <TextBlock Text="{DynamicResource AdminHubView_Category}" Width="120" VerticalAlignment="Center"/>
+                                    <Grid Margin="0">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="MatCategory"
+                                                  Grid.Column="0"
+                                                  MinWidth="220"
+                                                  Padding="8"
+                                                  Style="{StaticResource MaterialDesignOutlinedComboBox}"
+                                                  materialDesign:HintAssist.Hint="{DynamicResource Common_Required}"
+                                                  IsEditable="True"
+                                                  IsTextSearchEnabled="True"
+                                                  StaysOpenOnEdit="True"
+                                                  TextSearch.TextPath="Name"
+                                                  DisplayMemberPath="Name"
+                                                  SelectedValuePath="Id"
+                                                  SelectionChanged="MatCategory_SelectionChanged" />
+                                        <Button Grid.Column="1"
+                                                Margin="8,0,0,0"
+                                                Style="{StaticResource TinyIconButton}"
+                                                Width="32"
+                                                Height="32"
+                                                Background="#3f51b5"
+                                                Click="AddCategory_Click"
+                                                ToolTip="{DynamicResource AdminHubView_AddCategoryTooltip}">
+                                            <iconPacks:PackIconFontAwesome Kind="PlusSolid" Width="14" Height="14" Foreground="White"/>
+                                        </Button>
+                                    </Grid>
                                 </DockPanel>
                                 <DockPanel Margin="0,0,0,8">
                                     <TextBlock Text="{DynamicResource AdminHubView_Unit}" Width="120" VerticalAlignment="Center"/>

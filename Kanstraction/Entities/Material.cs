@@ -8,6 +8,9 @@ public class Material
     public decimal PricePerUnit { get; set; }
     public DateTime EffectiveSince { get; set; }
     public bool IsActive { get; set; } = true;
+    public int MaterialCategoryId { get; set; }
+
+    public MaterialCategory MaterialCategory { get; set; } = null!;
 
     public ICollection<MaterialPriceHistory> PriceHistory { get; set; } = new List<MaterialPriceHistory>();
 }
