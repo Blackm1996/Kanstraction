@@ -22,6 +22,7 @@ public partial class App : Application
     private const string DatabaseResetSentinelFileName = "app.reset"; // Delete this file beside app.db to trigger another rebuild on next launch.
     private const string LegacyImportSentinelFileName = "client-backup.imported";
     private const string LegacyBackupFilePath = "KanstractionBackup_20250926_185305.db"; // Expected beside Kanstraction.exe unless overridden with an absolute path.
+    private const string DefaultMaterialCategoryName = "Defaut";
 
 
     public static BackupService BackupService { get; private set; } = null!;
@@ -198,8 +199,15 @@ public partial class App : Application
 
             await using var transaction = await db.Database.BeginTransactionAsync();
 
+            var defaultCategory = await EnsureDefaultMaterialCategoryAsync(db);
+
             if (materials.Count > 0)
             {
+                foreach (var material in materials)
+                {
+                    material.MaterialCategoryId = defaultCategory.Id;
+                }
+
                 await db.Materials.AddRangeAsync(materials);
                 await db.SaveChangesAsync();
             }
@@ -237,6 +245,25 @@ public partial class App : Application
         {
             Debug.WriteLine($"Failed to import legacy client data: {ex}");
         }
+    }
+
+    private static async Task<MaterialCategory> EnsureDefaultMaterialCategoryAsync(AppDbContext db)
+    {
+        var existing = await db.MaterialCategories.FirstOrDefaultAsync(c => c.Name == DefaultMaterialCategoryName);
+        if (existing != null)
+        {
+            return existing;
+        }
+
+        var category = new MaterialCategory
+        {
+            Name = DefaultMaterialCategoryName
+        };
+
+        db.MaterialCategories.Add(category);
+        await db.SaveChangesAsync();
+
+        return category;
     }
 
     private static string? ResolveLegacyBackupFilePath(string dbDirectory)
@@ -442,6 +469,7 @@ public partial class App : Application
                 .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
 
             var imported = new List<Material>();
+            var defaultCategory = await EnsureDefaultMaterialCategoryAsync(db);
 
             while (await reader.ReadAsync())
             {
@@ -462,7 +490,8 @@ public partial class App : Application
                     Unit = unit,
                     PricePerUnit = price,
                     EffectiveSince = effectiveSince,
-                    IsActive = isActive
+                    IsActive = isActive,
+                    MaterialCategoryId = defaultCategory.Id
                 });
             }
 

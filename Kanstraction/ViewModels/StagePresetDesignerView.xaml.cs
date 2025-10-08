@@ -120,7 +120,9 @@ public partial class StagePresetDesignerView : UserControl
         // Load active materials (for picker)
         _activeMaterials = await _db.Materials.AsNoTracking()
                                .Where(m => m.IsActive)
-                               .OrderBy(m => m.Name)
+                               .Include(m => m.MaterialCategory)
+                               .OrderBy(m => m.MaterialCategory != null ? m.MaterialCategory.Name : string.Empty)
+                               .ThenBy(m => m.Name)
                                .ToListAsync();
 
         if (stagePresetId == null)
@@ -128,7 +130,9 @@ public partial class StagePresetDesignerView : UserControl
             // load active materials
             _activeMaterials = await _db.Materials.AsNoTracking()
                 .Where(m => m.IsActive)
-                .OrderBy(m => m.Name)
+                .Include(m => m.MaterialCategory)
+                .OrderBy(m => m.MaterialCategory != null ? m.MaterialCategory.Name : string.Empty)
+                .ThenBy(m => m.Name)
                 .ToListAsync();
 
             TxtPresetName.Text = "";
@@ -169,6 +173,7 @@ public partial class StagePresetDesignerView : UserControl
         var usageLookup = await _db.MaterialUsagesPreset
             .Where(mu => subIds.Contains(mu.SubStagePresetId))
             .Include(mu => mu.Material)
+                .ThenInclude(m => m.MaterialCategory)
             .AsNoTracking()
             .ToListAsync();
 
@@ -190,6 +195,7 @@ public partial class StagePresetDesignerView : UserControl
                     Id = mu.Id,
                     MaterialId = mu.MaterialId,
                     MaterialName = mu.Material?.Name ?? "",
+                    CategoryName = mu.Material?.MaterialCategory?.Name ?? "",
                     Unit = mu.Material?.Unit ?? "",
                     Qty = mu.Qty
                 });
@@ -440,6 +446,7 @@ public partial class StagePresetDesignerView : UserControl
             Id = null,
             MaterialId = mat.Id,
             MaterialName = mat.Name,
+            CategoryName = mat.MaterialCategory?.Name ?? "",
             Unit = mat.Unit ?? "",
             Qty = qty
         });
@@ -828,6 +835,7 @@ public partial class StagePresetDesignerView : UserControl
         public int? Id { get; set; }
         public int MaterialId { get; set; }
         public string MaterialName { get; set; } = "";
+        public string CategoryName { get; set; } = "";
         public string Unit { get; set; } = "";
         public decimal Qty { get; set; }
     }

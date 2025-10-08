@@ -162,7 +162,23 @@
                                 <!-- Add material row -->
                                 <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
                                     <ComboBox x:Name="CboMaterial" Width="280" Margin="0,0,8,0"
-                          DisplayMemberPath="Name" SelectedValuePath="Id" SelectionChanged="MaterialSelected"/>
+                                              SelectedValuePath="Id"
+                                              IsEditable="True"
+                                              IsTextSearchEnabled="True"
+                                              StaysOpenOnEdit="True"
+                                              TextSearch.TextPath="Name"
+                                              SelectionChanged="MaterialSelected">
+                                        <ComboBox.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel>
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="{Binding MaterialCategory.Name}"
+                                                               FontSize="12"
+                                                               Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ComboBox.ItemTemplate>
+                                    </ComboBox>
                                     <TextBox x:Name="TxtQty" Width="120" Margin="0,0,8,0"
                          materialDesign:HintAssist.Hint="{DynamicResource AddMaterialToSubStageDialog_QuantityHint}" />
                                     <TextBlock x:Name="TxtMTUnit" Width="30" Margin="8,0,8,0" VerticalAlignment="Center" FontWeight="Bold"/>
@@ -175,6 +191,7 @@
                         Style="{StaticResource MaterialDesignDataGrid}">
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="{DynamicResource OperationsView_MaterialHeader}" Binding="{Binding MaterialName}" IsReadOnly="True" Width="*"/>
+                                        <DataGridTextColumn Header="{DynamicResource StagePresetDesignerView_Category}" Binding="{Binding CategoryName}" IsReadOnly="True" Width="160"/>
                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_Unit}" Binding="{Binding Unit}" IsReadOnly="True" Width="80"/>
                                         <DataGridTextColumn Header="{DynamicResource OperationsView_Qty}" Binding="{Binding Qty, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}" Width="120"/>
                                         <DataGridTemplateColumn Header="" Width="80">

@@ -40,8 +40,10 @@ public partial class AddMaterialToSubStageDialog : Window
 
         var materials = await _db.Materials
             .AsNoTracking()
+            .Include(m => m.MaterialCategory)
             .Where(m => m.IsActive && !usedIds.Contains(m.Id))
-            .OrderBy(m => m.Name)
+            .OrderBy(m => m.MaterialCategory != null ? m.MaterialCategory.Name : string.Empty)
+            .ThenBy(m => m.Name)
             .ToListAsync();
 
         CboMaterial.ItemsSource = materials;

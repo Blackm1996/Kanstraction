@@ -22,9 +22,22 @@
                 <TextBlock Text="{DynamicResource AddMaterialToSubStageDialog_Material}" Width="110" VerticalAlignment="Center"/>
                 <ComboBox x:Name="CboMaterial"
                   Style="{StaticResource MaterialDesignOutlinedComboBox}"
-                  DisplayMemberPath="Name" SelectedValuePath="Id"
+                  SelectedValuePath="Id"
+                  IsEditable="True"
+                  IsTextSearchEnabled="True"
+                  StaysOpenOnEdit="True"
+                  TextSearch.TextPath="Name"
                   Padding="6" FontSize="14" Width="320"
-                  SelectionChanged="CboMaterial_SelectionChanged"/>
+                  SelectionChanged="CboMaterial_SelectionChanged">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <StackPanel>
+                                <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                <TextBlock Text="{Binding MaterialCategory.Name}" FontSize="12" Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
             </DockPanel>
 
             <DockPanel>

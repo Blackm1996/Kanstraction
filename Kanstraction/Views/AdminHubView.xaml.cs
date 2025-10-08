@@ -21,6 +21,7 @@ namespace Kanstraction.Views
 
         // Caches for quick filtering
         private List<Material> _allMaterials = new();
+        private List<MaterialCategory> _allMaterialCategories = new();
         private List<StagePreset> _allPresets = new();
         private List<BuildingType> _allBuildingTypes = new();
 
@@ -108,6 +109,9 @@ namespace Kanstraction.Views
             if (MatActiveOnly?.IsChecked == true)
                 data = data.Where(m => m.IsActive);
 
+            if (MatCategoryFilter?.SelectedValue is int categoryId)
+                data = data.Where(m => m.MaterialCategoryId == categoryId);
+
             var q = MatSearchBox?.Text?.Trim();
             if (!string.IsNullOrWhiteSpace(q))
                 data = data.Where(m =>
@@ -127,6 +131,52 @@ namespace Kanstraction.Views
 
         private void MaterialEditor_TextChanged(object sender, TextChangedEventArgs e) => UpdateMaterialDirtyState();
         private void MaterialEditor_CheckChanged(object sender, RoutedEventArgs e) => UpdateMaterialDirtyState();
+        private void MatCategory_SelectionChanged(object sender, SelectionChangedEventArgs e) => UpdateMaterialDirtyState();
+
+        private async void AddCategory_Click(object sender, RoutedEventArgs e)
+        {
+            if (_db == null) return;
+
+            var dialog = new PromptTextDialog(ResourceHelper.GetString("AdminHubView_NewCategoryDialogTitle", "New category"));
+            var owner = Window.GetWindow(this);
+            if (owner != null)
+            {
+                dialog.Owner = owner;
+            }
+
+            if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.Value))
+            {
+                return;
+            }
+
+            var name = dialog.Value.Trim();
+
+            if (_allMaterialCategories.Any(c => string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)))
+            {
+                MessageBox.Show(
+                    ResourceHelper.GetString("AdminHubView_CategoryExistsMessage", "A category with this name already exists."),
+                    ResourceHelper.GetString("Common_InvalidTitle", "Invalid"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
+            var category = new MaterialCategory
+            {
+                Name = name
+            };
+
+            _db.MaterialCategories.Add(category);
+            await _db.SaveChangesAsync();
+
+            await ReloadMaterialsCacheAsync();
+            RefreshMaterialsList();
+
+            if (MatCategory != null)
+            {
+                MatCategory.SelectedValue = category.Id;
+            }
+        }
 
         private async void MaterialsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -143,7 +193,9 @@ namespace Kanstraction.Views
 
             // Set current editing context
             _editingMaterialId = m.Id;
-            _currentMaterial = await _db.Materials.FirstAsync(x => x.Id == m.Id);
+            _currentMaterial = await _db.Materials
+                .Include(x => x.MaterialCategory)
+                .FirstAsync(x => x.Id == m.Id);
 
             WriteMaterialToEditor(_currentMaterial);
             UpdateMaterialDirtyState();
@@ -174,6 +226,7 @@ namespace Kanstraction.Views
             ClearMaterialEditor();
 
             if (MatIsActive != null) MatIsActive.IsChecked = true;
+            if (MatCategory != null) MatCategory.SelectedIndex = -1;
 
             // deselect list so user knows they're creating a new one
             if (MaterialsList != null) MaterialsList.SelectedItem = null;
@@ -183,7 +236,7 @@ namespace Kanstraction.Views
         {
             if (_db == null) return;
 
-            if (!TryReadMaterialFromEditor(out var name, out var unit, out var price, out var effSince, out var isActive, out var validationError))
+            if (!TryReadMaterialFromEditor(out var name, out var unit, out var price, out var effSince, out var isActive, out var categoryId, out var validationError))
             {
                 MessageBox.Show(validationError,
                     ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
@@ -200,7 +253,8 @@ namespace Kanstraction.Views
                     Unit = unit,
                     PricePerUnit = price,
                     EffectiveSince = effSince ?? DateTime.Now,
-                    IsActive = isActive
+                    IsActive = isActive,
+                    MaterialCategoryId = categoryId
                 };
                 _db.Materials.Add(mat);
                 await _db.SaveChangesAsync();
@@ -229,6 +283,7 @@ namespace Kanstraction.Views
                 mat.Name = name!;
                 mat.Unit = unit;
                 mat.IsActive = isActive;
+                mat.MaterialCategoryId = categoryId;
 
                 // We always keep current price_per_unit & effective_since in Materials for quick reads
                 mat.PricePerUnit = price;
@@ -316,6 +371,7 @@ namespace Kanstraction.Views
             if (MatUnit != null) MatUnit.Text = "";
             if (MatPrice != null) MatPrice.Text = "";
             if (MatIsActive != null) MatIsActive.IsChecked = true;
+            if (MatCategory != null) MatCategory.SelectedIndex = -1;
             if (MatHistoryGrid != null) MatHistoryGrid.ItemsSource = null;
             UpdateMaterialDirtyState();
         }
@@ -326,15 +382,23 @@ namespace Kanstraction.Views
             if (MatUnit != null) MatUnit.Text = m.Unit ?? "";
             if (MatPrice != null) MatPrice.Text = m.PricePerUnit.ToString(CultureInfo.InvariantCulture);
             if (MatIsActive != null) MatIsActive.IsChecked = (m.IsActive);
+            if (MatCategory != null)
+            {
+                if (_allMaterialCategories.Any(c => c.Id == m.MaterialCategoryId))
+                    MatCategory.SelectedValue = m.MaterialCategoryId;
+                else
+                    MatCategory.SelectedIndex = -1;
+            }
             UpdateMaterialDirtyState();
         }
 
         private bool TryReadMaterialFromEditor(out string? name, out string? unit, out decimal price,
-            out DateTime? effSince, out bool isActive, out string error)
+            out DateTime? effSince, out bool isActive, out int categoryId, out string error)
         {
             name = MatName?.Text?.Trim();
             unit = MatUnit?.Text?.Trim();
             isActive = MatIsActive?.IsChecked == true;
+            categoryId = 0;
 
             error = "";
             if (string.IsNullOrWhiteSpace(name))
@@ -343,6 +407,15 @@ namespace Kanstraction.Views
                 error = ResourceHelper.GetString("AdminHubView_MaterialNameRequired", "Name is required.");
                 return false;
             }
+
+            if (MatCategory?.SelectedValue is not int selectedCategoryId)
+            {
+                price = 0; effSince = null;
+                error = ResourceHelper.GetString("AdminHubView_CategoryRequired", "Category is required.");
+                return false;
+            }
+
+            categoryId = selectedCategoryId;
 
             if (!decimal.TryParse(MatPrice?.Text?.Trim(), NumberStyles.Number, CultureInfo.InvariantCulture, out price) || price < 0)
             {
@@ -373,6 +446,11 @@ namespace Kanstraction.Views
             var unit = MatUnit.Text?.Trim() ?? string.Empty;
             var priceText = MatPrice.Text?.Trim() ?? string.Empty;
             var isActive = MatIsActive.IsChecked == true;
+            int? selectedCategoryId = MatCategory?.SelectedValue switch
+            {
+                int value => value,
+                _ => null
+            };
 
             bool dirty;
 
@@ -381,13 +459,15 @@ namespace Kanstraction.Views
                 dirty = !(string.IsNullOrEmpty(name) &&
                           string.IsNullOrEmpty(unit) &&
                           string.IsNullOrEmpty(priceText) &&
-                          isActive);
+                          isActive &&
+                          !selectedCategoryId.HasValue);
             }
             else
             {
                 dirty = !string.Equals(name, _currentMaterial.Name ?? string.Empty, StringComparison.Ordinal) ||
                         !string.Equals(unit, _currentMaterial.Unit ?? string.Empty, StringComparison.Ordinal) ||
-                        isActive != _currentMaterial.IsActive;
+                        isActive != _currentMaterial.IsActive ||
+                        selectedCategoryId != _currentMaterial.MaterialCategoryId;
 
                 if (!decimal.TryParse(priceText, NumberStyles.Number, CultureInfo.InvariantCulture, out var price))
                 {
@@ -454,9 +534,89 @@ namespace Kanstraction.Views
             await _db.SaveChangesAsync();
         }
 
+        private sealed class CategoryOption
+        {
+            public int? Id { get; init; }
+            public string Name { get; init; } = string.Empty;
+        }
+
         private async Task ReloadMaterialsCacheAsync()
         {
-            _allMaterials = await _db!.Materials.AsNoTracking().OrderBy(m => m.Name).ToListAsync();
+            _allMaterialCategories = await _db!.MaterialCategories
+                .AsNoTracking()
+                .OrderBy(c => c.Name)
+                .ToListAsync();
+
+            _allMaterials = await _db!.Materials
+                .AsNoTracking()
+                .Include(m => m.MaterialCategory)
+                .OrderBy(m => m.Name)
+                .ToListAsync();
+
+            RefreshMaterialCategoryControls();
+        }
+
+        private void RefreshMaterialCategoryControls()
+        {
+            if (MatCategory != null)
+            {
+                int? previousCategoryId = MatCategory.SelectedValue switch
+                {
+                    int value => value,
+                    _ => null
+                };
+
+                MatCategory.ItemsSource = _allMaterialCategories;
+
+                if (previousCategoryId.HasValue && _allMaterialCategories.Any(c => c.Id == previousCategoryId.Value))
+                {
+                    MatCategory.SelectedValue = previousCategoryId.Value;
+                }
+                else if (_currentMaterial != null && _allMaterialCategories.Any(c => c.Id == _currentMaterial.MaterialCategoryId))
+                {
+                    MatCategory.SelectedValue = _currentMaterial.MaterialCategoryId;
+                }
+                else
+                {
+                    MatCategory.SelectedIndex = -1;
+                }
+            }
+
+            if (MatCategoryFilter != null)
+            {
+                int? previousFilterId = MatCategoryFilter.SelectedValue switch
+                {
+                    int value => value,
+                    _ => null
+                };
+
+                var items = new List<CategoryOption>
+                {
+                    new CategoryOption
+                    {
+                        Id = null,
+                        Name = ResourceHelper.GetString("AdminHubView_CategoryFilterAll", "All categories")
+                    }
+                };
+
+                items.AddRange(_allMaterialCategories
+                    .Select(c => new CategoryOption
+                    {
+                        Id = c.Id,
+                        Name = c.Name ?? string.Empty
+                    }));
+
+                MatCategoryFilter.ItemsSource = items;
+
+                if (previousFilterId.HasValue && items.Any(i => i.Id == previousFilterId.Value))
+                {
+                    MatCategoryFilter.SelectedValue = previousFilterId.Value;
+                }
+                else
+                {
+                    MatCategoryFilter.SelectedIndex = 0;
+                }
+            }
         }
 
         // -------------------- STAGE PRESETS --------------------

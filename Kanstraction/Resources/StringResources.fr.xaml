@@ -72,6 +72,7 @@
     <sys:String x:Key="AdminHubView_New">Nouveau</sys:String>
     <sys:String x:Key="AdminHubView_MaterialHeader">Matériau</sys:String>
     <sys:String x:Key="AdminHubView_Name">Nom</sys:String>
+    <sys:String x:Key="AdminHubView_Category">Catégorie</sys:String>
     <sys:String x:Key="AdminHubView_Unit">Unité</sys:String>
     <sys:String x:Key="AdminHubView_PricePerUnit">Prix / Unité</sys:String>
     <sys:String x:Key="AdminHubView_Active">Actif</sys:String>
@@ -110,6 +111,12 @@
     <sys:String x:Key="AdminHubView_BuildingTypeNameRequired">Le nom est requis.</sys:String>
     <sys:String x:Key="AdminHubView_BuildingTypeSavedMessage">Type de bâtiment enregistré.</sys:String>
     <sys:String x:Key="AdminHubView_SaveBuildingTypeFailedFormat">Échec de l'enregistrement :&#x0a;{0}</sys:String>
+    <sys:String x:Key="AdminHubView_FilterByCategory">Filtrer par catégorie</sys:String>
+    <sys:String x:Key="AdminHubView_AddCategoryTooltip">Ajouter une catégorie</sys:String>
+    <sys:String x:Key="AdminHubView_NewCategoryDialogTitle">Nouvelle catégorie</sys:String>
+    <sys:String x:Key="AdminHubView_CategoryExistsMessage">Une catégorie portant ce nom existe déjà.</sys:String>
+    <sys:String x:Key="AdminHubView_CategoryRequired">La catégorie est obligatoire.</sys:String>
+    <sys:String x:Key="AdminHubView_CategoryFilterAll">Toutes les catégories</sys:String>
 
     <!-- BackupHubView -->
     <sys:String x:Key="BackupHubView_Title">Sauvegardes et restauration</sys:String>
@@ -171,6 +178,7 @@
     <sys:String x:Key="OperationsView_Stages">Étapes</sys:String>
     <sys:String x:Key="OperationsView_SubStages">Sous-étapes</sys:String>
     <sys:String x:Key="OperationsView_MaterialHeader">Matériau</sys:String>
+    <sys:String x:Key="OperationsView_Category">Catégorie</sys:String>
     <sys:String x:Key="OperationsView_Qty">Qté</sys:String>
     <sys:String x:Key="OperationsView_Unit">Unité</sys:String>
     <sys:String x:Key="OperationsView_UsageDate">Date d'utilisation</sys:String>
@@ -237,6 +245,7 @@
     <sys:String x:Key="StagePresetDesignerView_Labor">Main-d'œuvre</sys:String>
     <sys:String x:Key="StagePresetDesignerView_AddSubStage">Ajouter une sous-étape</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialsForSelected">Matériaux pour la sous-étape sélectionnée</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_Category">Catégorie</sys:String>
     <sys:String x:Key="StagePresetDesignerView_NewSubStage">Nouvelle sous-étape</sys:String>
     <sys:String x:Key="StagePresetDesignerView_PresetNotFound">Préréglage introuvable.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DeleteSubStageConfirmFormat">Supprimer la sous-étape '{0}' ?</sys:String>

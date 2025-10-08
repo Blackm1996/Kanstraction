@@ -412,6 +412,7 @@
                 PreparingCellForEdit="MaterialsGrid_PreparingCellForEdit">
                 <DataGrid.Columns>
                     <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_MaterialHeader}" Binding="{Binding Material.Name}"/>
+                    <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_Category}" Binding="{Binding Material.MaterialCategory.Name}" Width="160"/>
                     <DataGridTextColumn Header="{DynamicResource OperationsView_Qty}" Width="100" IsReadOnly="False"
                         Binding="{Binding Qty, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"/>
                     <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_Unit}" Binding="{Binding Material.Unit}"/>

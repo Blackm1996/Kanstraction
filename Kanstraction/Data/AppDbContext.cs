@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<SubStagePreset> SubStagePresets => Set<SubStagePreset>();
     public DbSet<BuildingTypeStagePreset> BuildingTypeStagePresets => Set<BuildingTypeStagePreset>();
     public DbSet<BuildingTypeSubStageLabor> BuildingTypeSubStageLabors => Set<BuildingTypeSubStageLabor>();
+    public DbSet<MaterialCategory> MaterialCategories => Set<MaterialCategory>();
     public DbSet<Material> Materials => Set<Material>();
     public DbSet<MaterialPriceHistory> MaterialPriceHistory => Set<MaterialPriceHistory>();
     public DbSet<MaterialUsagePreset> MaterialUsagesPreset => Set<MaterialUsagePreset>();
@@ -85,6 +86,12 @@ public class AppDbContext : DbContext
             .HasOne(x => x.Material).WithMany(m => m.PriceHistory)
             .HasForeignKey(x => x.MaterialId).OnDelete(DeleteBehavior.Cascade);
 
+        b.Entity<Material>()
+            .HasOne(m => m.MaterialCategory)
+            .WithMany(c => c.Materials)
+            .HasForeignKey(m => m.MaterialCategoryId)
+            .OnDelete(DeleteBehavior.Restrict);
+
         b.Entity<MaterialUsage>()
             .HasOne(x => x.SubStage).WithMany(ss => ss.MaterialUsages)
             .HasForeignKey(x => x.SubStageId).OnDelete(DeleteBehavior.Cascade);
@@ -92,6 +99,8 @@ public class AppDbContext : DbContext
             .HasOne(x => x.Material).WithMany().HasForeignKey(x => x.MaterialId);
 
         // indexes
+        b.Entity<MaterialCategory>().HasIndex(x => x.Name).IsUnique();
+        b.Entity<Material>().HasIndex(x => x.MaterialCategoryId);
         b.Entity<Stage>().HasIndex(x => new { x.BuildingId, x.OrderIndex });
         b.Entity<SubStage>().HasIndex(x => new { x.StageId, x.OrderIndex });
         b.Entity<MaterialUsage>().HasIndex(x => new { x.SubStageId, x.UsageDate });
