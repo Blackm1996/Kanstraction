@@ -44,14 +44,14 @@ public partial class App : Application
 
         try
         {
-            var databaseWasRecreated = EnsureDatabaseRecreatedOnce();
+            //var databaseWasRecreated = EnsureDatabaseRecreatedOnce();
 
             loadingWindow.UpdateStatus("Application des migrations...");
             await using (var db = new AppDbContext())
             {
                 await db.Database.MigrateAsync();
 
-                await ImportLegacyDataFromClientBackupAsync(db, databaseWasRecreated);
+                //await ImportLegacyDataFromClientBackupAsync(db, databaseWasRecreated);
 
                 /*if (databaseWasRecreated)
                 {
@@ -195,6 +195,23 @@ public partial class App : Application
             {
                 Debug.WriteLine($"Legacy database '{legacyDbPath}' did not contain any relevant data to import.");
                 return;
+            }
+
+            if (materials.Count > 0 && materialPriceHistory.Count > 0)
+            {
+                foreach (var material in materials)
+                {
+                    var latestHistoryEntry = materialPriceHistory
+                        .Where(h => h.MaterialId == material.Id && h.EndDate == null)
+                        .OrderByDescending(h => h.StartDate)
+                        .ThenByDescending(h => h.Id)
+                        .FirstOrDefault();
+
+                    if (latestHistoryEntry != null)
+                    {
+                        latestHistoryEntry.PricePerUnit = material.PricePerUnit;
+                    }
+                }
             }
 
             await using var transaction = await db.Database.BeginTransactionAsync();
