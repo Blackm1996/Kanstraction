@@ -90,7 +90,9 @@
     <sys:String x:Key="AdminHubView_AssignedPresets">Preset</sys:String>
     <sys:String x:Key="AdminHubView_SubStages">Sub-stages</sys:String>
     <sys:String x:Key="AdminHubView_Labor">Labor</sys:String>
+    <sys:String x:Key="AdminHubView_Materials">Materials</sys:String>
     <sys:String x:Key="AdminHubView_LaborRequired">Enter a labor cost for every sub-stage before saving.</sys:String>
+    <sys:String x:Key="AdminHubView_MaterialQuantityRequired">Enter a quantity for every material before saving.</sys:String>
     <sys:String x:Key="AdminHubView_DefaultLabor">Preset labor</sys:String>
     <sys:String x:Key="AdminHubView_Order">Order</sys:String>
     <sys:String x:Key="AdminHubView_Remove">Remove</sys:String>

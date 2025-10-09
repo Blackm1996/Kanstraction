@@ -89,7 +89,9 @@
     <sys:String x:Key="AdminHubView_AssignedPresets">Préréglage</sys:String>
     <sys:String x:Key="AdminHubView_SubStages">Sous-étapes</sys:String>
     <sys:String x:Key="AdminHubView_Labor">Main-d'œuvre</sys:String>
+    <sys:String x:Key="AdminHubView_Materials">Matériaux</sys:String>
     <sys:String x:Key="AdminHubView_LaborRequired">Entrez un coût de main-d'œuvre pour chaque sous-étape avant d'enregistrer.</sys:String>
+    <sys:String x:Key="AdminHubView_MaterialQuantityRequired">Saisissez une quantité pour chaque matériau avant d'enregistrer.</sys:String>
     <sys:String x:Key="AdminHubView_DefaultLabor">Main-d'œuvre du gabarit</sys:String>
     <sys:String x:Key="AdminHubView_Order">Ordre</sys:String>
     <sys:String x:Key="AdminHubView_Remove">Supprimer</sys:String>

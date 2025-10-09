@@ -3,6 +3,7 @@ using System;
 using Kanstraction.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Kanstraction.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250924173000_AddBuildingTypeMaterialUsageTable")]
+    partial class AddBuildingTypeMaterialUsageTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.8");
@@ -136,36 +139,13 @@ namespace Kanstraction.Migrations
                     b.Property<decimal>("PricePerUnit")
                         .HasColumnType("TEXT");
 
-                    b.Property<int>("MaterialCategoryId")
-                        .HasColumnType("INTEGER");
-
                     b.Property<string>("Unit")
                         .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("MaterialCategoryId");
-
                     b.ToTable("Materials");
-                });
-
-            modelBuilder.Entity("Kanstraction.Entities.MaterialCategory", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Name")
-                        .IsUnique();
-
-                    b.ToTable("MaterialCategories");
                 });
 
             modelBuilder.Entity("Kanstraction.Entities.MaterialPriceHistory", b =>
@@ -362,7 +342,7 @@ namespace Kanstraction.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
-                    b.Property<decimal?>("LaborCost")
+                    b.Property<decimal>("LaborCost")
                         .HasColumnType("TEXT");
 
                     b.Property<string>("Name")
@@ -545,20 +525,7 @@ namespace Kanstraction.Migrations
 
             modelBuilder.Entity("Kanstraction.Entities.Material", b =>
                 {
-                    b.HasOne("Kanstraction.Entities.MaterialCategory", "MaterialCategory")
-                        .WithMany("Materials")
-                        .HasForeignKey("MaterialCategoryId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("MaterialCategory");
-
                     b.Navigation("PriceHistory");
-                });
-
-            modelBuilder.Entity("Kanstraction.Entities.MaterialCategory", b =>
-                {
-                    b.Navigation("Materials");
                 });
 
             modelBuilder.Entity("Kanstraction.Entities.Project", b =>

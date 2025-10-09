@@ -421,6 +421,28 @@
                                                         <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="60" IsReadOnly="True"/>
                                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_SubStages}" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
                                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_Labor}" Binding="{Binding LaborCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}" Width="140"/>
+                                                        <DataGridTemplateColumn Header="{DynamicResource AdminHubView_Materials}" Width="2*">
+                                                            <DataGridTemplateColumn.CellTemplate>
+                                                                <DataTemplate>
+                                                                    <ItemsControl ItemsSource="{Binding Materials}">
+                                                                        <ItemsControl.ItemTemplate>
+                                                                            <DataTemplate>
+                                                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                                                                                    <TextBlock Text="{Binding DisplayLabel}" Width="200"/>
+                                                                                    <TextBox Width="80"
+                                                                                             HorizontalContentAlignment="Right"
+                                                                                             Text="{Binding Qty, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"/>
+                                                                                    <TextBlock Text="{Binding BaseQty, StringFormat=({0:0.##} default)}"
+                                                                                               Margin="8,0,0,0"
+                                                                                               FontSize="11"
+                                                                                               Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                                                                </StackPanel>
+                                                                            </DataTemplate>
+                                                                        </ItemsControl.ItemTemplate>
+                                                                    </ItemsControl>
+                                                                </DataTemplate>
+                                                            </DataGridTemplateColumn.CellTemplate>
+                                                        </DataGridTemplateColumn>
                                                     </DataGrid.Columns>
                                                 </DataGrid>
                                             </Grid>
