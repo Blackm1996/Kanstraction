@@ -1013,7 +1013,7 @@ namespace Kanstraction.Views
                                 Name = m.MaterialName,
                                 Unit = m.Unit,
                                 BaseQty = m.Qty,
-                                Qty = materialLookup.TryGetValue(m.Id, out var qty) ? qty : m.Qty
+                                Qty = materialLookup.TryGetValue(m.Id, out var qty) ? qty : null
                             }));
                     }
                     else
@@ -1120,7 +1120,7 @@ namespace Kanstraction.Views
                             BaseQty = m.Qty,
                             Qty = existingMaterials != null && existingMaterials.TryGetValue(m.Id, out var qty)
                                 ? qty
-                                : m.Qty
+                                : null
                         }));
                 }
                 else
@@ -1869,7 +1869,19 @@ namespace Kanstraction.Views
                 }
             }
 
-            public string DisplayLabel => string.IsNullOrWhiteSpace(Unit) ? Name : $"{Name} ({Unit})";
+            public string DisplayLabel
+            {
+                get
+                {
+                    var baseLabel = string.IsNullOrWhiteSpace(Unit) ? Name : $"{Name} ({Unit})";
+                    if (BaseQty.HasValue)
+                    {
+                        return $"{baseLabel} – Default: {BaseQty.Value:0.##}";
+                    }
+
+                    return baseLabel;
+                }
+            }
 
             public event PropertyChangedEventHandler? PropertyChanged;
         }
