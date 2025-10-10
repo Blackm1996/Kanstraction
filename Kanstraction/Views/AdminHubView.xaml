@@ -475,7 +475,10 @@
                                                               AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserSortColumns="False"
                                                               HeadersVisibility="Column" GridLinesVisibility="None"
                                                               IsReadOnly="False"
-                                                              MinHeight="200"
+                                                              RowHeight="40"
+                                                              MaxHeight="240"
+                                                              ScrollViewer.CanContentScroll="True"
+                                                              ScrollViewer.VerticalScrollBarVisibility="Auto"
                                                               Style="{StaticResource MaterialDesignDataGrid}">
                                                         <DataGrid.Columns>
                                                             <DataGridTextColumn Header="{DynamicResource AdminHubView_Materials}" Binding="{Binding DisplayLabel}" Width="2*" IsReadOnly="True"/>
