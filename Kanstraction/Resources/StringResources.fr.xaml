@@ -90,6 +90,11 @@
     <sys:String x:Key="AdminHubView_SubStages">Sous-étapes</sys:String>
     <sys:String x:Key="AdminHubView_Labor">Main-d'œuvre</sys:String>
     <sys:String x:Key="AdminHubView_Materials">Matériaux</sys:String>
+    <sys:String x:Key="AdminHubView_DefaultQuantity">Valeur par défaut</sys:String>
+    <sys:String x:Key="AdminHubView_OverrideQuantity">Quantité</sys:String>
+    <sys:String x:Key="AdminHubView_SelectSubStagePrompt">Sélectionnez une sous-étape pour modifier les matériaux.</sys:String>
+    <sys:String x:Key="AdminHubView_MaterialsForSubStageFormat">Matériaux pour {0}</sys:String>
+    <sys:String x:Key="AdminHubView_NoMaterialsForSubStage">Cette sous-étape n'a aucun matériau.</sys:String>
     <sys:String x:Key="AdminHubView_LaborRequired">Entrez un coût de main-d'œuvre pour chaque sous-étape avant d'enregistrer.</sys:String>
     <sys:String x:Key="AdminHubView_MaterialQuantityRequired">Saisissez une quantité pour chaque matériau avant d'enregistrer.</sys:String>
     <sys:String x:Key="AdminHubView_DefaultLabor">Main-d'œuvre du gabarit</sys:String>

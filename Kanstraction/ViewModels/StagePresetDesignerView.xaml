@@ -193,7 +193,11 @@
                                         <DataGridTextColumn Header="{DynamicResource OperationsView_MaterialHeader}" Binding="{Binding MaterialName}" IsReadOnly="True" Width="*"/>
                                         <DataGridTextColumn Header="{DynamicResource StagePresetDesignerView_Category}" Binding="{Binding CategoryName}" IsReadOnly="True" Width="160"/>
                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_Unit}" Binding="{Binding Unit}" IsReadOnly="True" Width="80"/>
-                                        <DataGridTextColumn Header="{DynamicResource OperationsView_Qty}" Binding="{Binding Qty, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}" Width="120"/>
+                                        <DataGridTextColumn Header="{DynamicResource OperationsView_Qty}" Width="120">
+                                            <DataGridTextColumn.Binding>
+                                                <Binding Path="Qty" UpdateSourceTrigger="PropertyChanged" StringFormat="{}{0:0.##}" TargetNullValue="" />
+                                            </DataGridTextColumn.Binding>
+                                        </DataGridTextColumn>
                                         <DataGridTemplateColumn Header="" Width="80">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>

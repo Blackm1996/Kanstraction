@@ -532,7 +532,9 @@ public partial class OperationsView : UserControl
                         {
                             SubStage = sub,                  // link via navigation
                             MaterialId = mup.MaterialId,
-                            Qty = materialOverrideLookup.TryGetValue(mup.Id, out var overrideQty) ? overrideQty : mup.Qty,
+                            Qty = materialOverrideLookup.TryGetValue(mup.Id, out var overrideQty)
+                                ? overrideQty
+                                : (mup.Qty ?? 0m),
                             UsageDate = DateTime.Today,
                             Notes = null
                         };
@@ -1811,7 +1813,9 @@ public partial class OperationsView : UserControl
                     {
                         SubStageId = sub.Id,
                         MaterialId = mup.MaterialId,
-                        Qty = materialOverrideLookup.TryGetValue(mup.Id, out var overrideQty) ? overrideQty : mup.Qty,
+                        Qty = materialOverrideLookup.TryGetValue(mup.Id, out var overrideQty)
+                            ? overrideQty
+                            : (mup.Qty ?? 0m),
                         UsageDate = DateTime.Today,
                         Notes = null
                     };

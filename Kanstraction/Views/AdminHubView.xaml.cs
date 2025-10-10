@@ -757,6 +757,7 @@ namespace Kanstraction.Views
         private Dictionary<int, ObservableCollection<SubStageLaborVm>> _btSubStageLabors = new();
         private Dictionary<int, decimal> _currentBtLaborMap = new();
         private Dictionary<int, decimal> _currentBtMaterialMap = new();
+        private SubStageLaborVm? _selectedSubStageVm = null;
         // VM for the assigned presets list
         private class AssignedPresetVm
         {
@@ -795,7 +796,8 @@ namespace Kanstraction.Views
             else
             {
                 // No selection; clear preview
-                if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
+                if (BtSubStagesGrid != null) BtSubStagesGrid.ItemsSource = null;
+                UpdateMaterialsPanel(null);
                 _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
                 _currentBtLaborMap = new Dictionary<int, decimal>();
                 _currentBtMaterialMap = new Dictionary<int, decimal>();
@@ -877,7 +879,8 @@ namespace Kanstraction.Views
             }
             else
             {
-                BtSubStagesPreviewGrid.ItemsSource = null;
+                if (BtSubStagesGrid != null) BtSubStagesGrid.ItemsSource = null;
+                UpdateMaterialsPanel(null);
             }
 
             // fill picker with available (active, not already assigned)
@@ -905,7 +908,8 @@ namespace Kanstraction.Views
             _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
             _currentBtLaborMap = new Dictionary<int, decimal>();
             _currentBtMaterialMap = new Dictionary<int, decimal>();
-            if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
+            if (BtSubStagesGrid != null) BtSubStagesGrid.ItemsSource = null;
+            UpdateMaterialsPanel(null);
 
             RefreshBtPresetPicker();
             BuildingTypesList.SelectedItem = null;
@@ -1116,7 +1120,7 @@ namespace Kanstraction.Views
                             BaseQty = m.Qty,
                             Qty = existingMaterials != null && existingMaterials.TryGetValue(m.Id, out var qty)
                                 ? qty
-                                : (decimal?)m.Qty
+                                : m.Qty
                         }));
                 }
                 else
@@ -1268,6 +1272,12 @@ namespace Kanstraction.Views
             {
                 UpdateBuildingDirtyState();
             }
+
+            if (sender is SubStageLaborVm vm && ReferenceEquals(vm, _selectedSubStageVm) &&
+                e.PropertyName == nameof(SubStageLaborVm.Materials))
+            {
+                UpdateMaterialsPanel(vm);
+            }
         }
 
         private async void AddPresetToBuildingType_Click(object sender, RoutedEventArgs e)
@@ -1314,7 +1324,8 @@ namespace Kanstraction.Views
                     BtSelectedPresetTitle.Text = ResourceHelper.GetString(
                         "AdminHubView_SelectedPresetTitle",
                         "Select a preset to preview its sub-stages");
-                BtSubStagesPreviewGrid.ItemsSource = null;
+                if (BtSubStagesGrid != null) BtSubStagesGrid.ItemsSource = null;
+                UpdateMaterialsPanel(null);
                 return;
             }
 
@@ -1326,7 +1337,60 @@ namespace Kanstraction.Views
                 subs = await EnsureSubStageLaborsForPresetAsync(vm.StagePresetId);
             }
 
-            BtSubStagesPreviewGrid.ItemsSource = subs;
+            if (BtSubStagesGrid != null)
+            {
+                BtSubStagesGrid.ItemsSource = subs;
+                if (subs.Count > 0)
+                {
+                    BtSubStagesGrid.SelectedIndex = 0;
+                }
+                else
+                {
+                    UpdateMaterialsPanel(null);
+                }
+            }
+        }
+
+        private void BtSubStagesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var vm = BtSubStagesGrid?.SelectedItem as SubStageLaborVm;
+            UpdateMaterialsPanel(vm);
+        }
+
+        private void UpdateMaterialsPanel(SubStageLaborVm? vm)
+        {
+            _selectedSubStageVm = vm;
+
+            if (BtSelectedSubStageTitle == null || BtMaterialsGrid == null || BtMaterialsPlaceholder == null)
+            {
+                if (BtMaterialsGrid != null)
+                    BtMaterialsGrid.ItemsSource = vm?.Materials;
+                return;
+            }
+
+            if (vm == null)
+            {
+                var prompt = ResourceHelper.GetString("AdminHubView_SelectSubStagePrompt", "Select a sub-stage to edit materials.");
+                BtSelectedSubStageTitle.Text = prompt;
+                BtMaterialsGrid.ItemsSource = null;
+                BtMaterialsPlaceholder.Text = prompt;
+                BtMaterialsPlaceholder.Visibility = Visibility.Visible;
+                return;
+            }
+
+            var titleFormat = ResourceHelper.GetString("AdminHubView_MaterialsForSubStageFormat", "Materials for {0}");
+            BtSelectedSubStageTitle.Text = string.Format(titleFormat, vm.Name);
+            BtMaterialsGrid.ItemsSource = vm.Materials;
+
+            if (vm.Materials.Count == 0)
+            {
+                BtMaterialsPlaceholder.Text = ResourceHelper.GetString("AdminHubView_NoMaterialsForSubStage", "This sub-stage has no materials.");
+                BtMaterialsPlaceholder.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                BtMaterialsPlaceholder.Visibility = Visibility.Collapsed;
+            }
         }
 
         // Reordering & Remove
@@ -1665,7 +1729,8 @@ namespace Kanstraction.Views
                 _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
                 _currentBtLaborMap = new Dictionary<int, decimal>();
                 _currentBtMaterialMap = new Dictionary<int, decimal>();
-                if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
+                if (BtSubStagesGrid != null) BtSubStagesGrid.ItemsSource = null;
+                UpdateMaterialsPanel(null);
                 UpdateBuildingDirtyState();
             }
         }
@@ -1788,7 +1853,7 @@ namespace Kanstraction.Views
             public int MaterialUsagePresetId { get; set; }
             public string Name { get; set; } = string.Empty;
             public string Unit { get; set; } = string.Empty;
-            public decimal BaseQty { get; set; }
+            public decimal? BaseQty { get; set; }
 
             private decimal? _qty;
             public decimal? Qty

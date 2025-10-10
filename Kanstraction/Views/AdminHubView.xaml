@@ -337,23 +337,24 @@
                                         </StackPanel>
                                     </StackPanel>
 
-                                    <!-- Two-panel body -->
+                                    <!-- Three-panel body -->
                                     <Grid Grid.Row="2">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="10" />
-                                            <!-- wider, more visible -->
+                                            <ColumnDefinition Width="8" />
                                             <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="8" />
+                                            <ColumnDefinition Width="1.4*" />
                                         </Grid.ColumnDefinitions>
 
                                         <!-- LEFT: Assigned presets -->
                                         <DataGrid x:Name="BtAssignedGrid"
-            Grid.Column="0"
-            Height="300"
-            AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
-            HeadersVisibility="Column" GridLinesVisibility="None"
-            SelectionChanged="BtAssignedGrid_SelectionChanged"
-            Style="{StaticResource MaterialDesignDataGrid}">
+                                                  Grid.Column="0"
+                                                  Height="300"
+                                                  AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
+                                                  HeadersVisibility="Column" GridLinesVisibility="None"
+                                                  SelectionChanged="BtAssignedGrid_SelectionChanged"
+                                                  Style="{StaticResource MaterialDesignDataGrid}">
                                             <DataGrid.Columns>
                                                 <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="50" IsReadOnly="True"/>
                                                 <DataGridTextColumn Header="{DynamicResource AdminHubView_AssignedPresets}" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
@@ -385,66 +386,108 @@
                                             </DataGrid.Columns>
                                         </DataGrid>
 
-                                        <!-- Splitter: more apparent separation -->
+                                        <!-- Splitter between assigned presets and sub-stages -->
                                         <GridSplitter Grid.Column="1"
-                Width="10"
-                Background="{DynamicResource PrimaryHueMidBrush}"
-                HorizontalAlignment="Stretch"
-                ResizeBehavior="PreviousAndNext"
-                ShowsPreview="True"
-                Cursor="SizeWE"/>
+                                                      Width="8"
+                                                      Background="{DynamicResource PrimaryHueMidBrush}"
+                                                      HorizontalAlignment="Stretch"
+                                                      ResizeBehavior="PreviousAndNext"
+                                                      ShowsPreview="True"
+                                                      Cursor="SizeWE"/>
 
-                                        <!-- RIGHT: Sub-stages preview (read-only) with a title -->
+                                        <!-- MIDDLE: Sub-stages with labor cost editing -->
                                         <Border Grid.Column="2" Padding="10"
-          Background="{DynamicResource MaterialDesignCardBackground}"
-          BorderBrush="{DynamicResource MaterialDesignDivider}"
-          BorderThickness="1" CornerRadius="8">
+                                                Background="{DynamicResource MaterialDesignCardBackground}"
+                                                BorderBrush="{DynamicResource MaterialDesignDivider}"
+                                                BorderThickness="1" CornerRadius="8">
                                             <Grid>
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height="Auto"/>
                                                     <RowDefinition Height="*" />
                                                 </Grid.RowDefinitions>
 
-                                                <!-- Title shows selected preset name -->
                                                 <TextBlock x:Name="BtSelectedPresetTitle"
-                 Text="{DynamicResource AdminHubView_SelectedPresetTitle}"
-                 FontWeight="SemiBold"
-                 Margin="0,0,0,8"/>
+                                                           Text="{DynamicResource AdminHubView_SelectedPresetTitle}"
+                                                           FontWeight="SemiBold"
+                                                           Margin="0,0,0,8"/>
 
-                                                <DataGrid x:Name="BtSubStagesPreviewGrid"
-                Grid.Row="1"
-                AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
-                HeadersVisibility="Column" GridLinesVisibility="None"
-                IsReadOnly="False"
-                Style="{StaticResource MaterialDesignDataGrid}">
+                                                <DataGrid x:Name="BtSubStagesGrid"
+                                                          Grid.Row="1"
+                                                          AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
+                                                          HeadersVisibility="Column" GridLinesVisibility="None"
+                                                          IsReadOnly="False"
+                                                          SelectionChanged="BtSubStagesGrid_SelectionChanged"
+                                                          Style="{StaticResource MaterialDesignDataGrid}">
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="60" IsReadOnly="True"/>
                                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_SubStages}" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
                                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_Labor}" Binding="{Binding LaborCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}" Width="140"/>
-                                                        <DataGridTemplateColumn Header="{DynamicResource AdminHubView_Materials}" Width="2*">
-                                                            <DataGridTemplateColumn.CellTemplate>
-                                                                <DataTemplate>
-                                                                    <ItemsControl ItemsSource="{Binding Materials}">
-                                                                        <ItemsControl.ItemTemplate>
-                                                                            <DataTemplate>
-                                                                                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-                                                                                    <TextBlock Text="{Binding DisplayLabel}" Width="200"/>
-                                                                                    <TextBox Width="80"
-                                                                                             HorizontalContentAlignment="Right"
-                                                                                             Text="{Binding Qty, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"/>
-                                                                                    <TextBlock Text="{Binding BaseQty, StringFormat=({0:0.##} default)}"
-                                                                                               Margin="8,0,0,0"
-                                                                                               FontSize="11"
-                                                                                               Foreground="{DynamicResource MaterialDesignBodyLight}"/>
-                                                                                </StackPanel>
-                                                                            </DataTemplate>
-                                                                        </ItemsControl.ItemTemplate>
-                                                                    </ItemsControl>
-                                                                </DataTemplate>
-                                                            </DataGridTemplateColumn.CellTemplate>
-                                                        </DataGridTemplateColumn>
                                                     </DataGrid.Columns>
                                                 </DataGrid>
+                                            </Grid>
+                                        </Border>
+
+                                        <!-- Splitter between sub-stages and materials -->
+                                        <GridSplitter Grid.Column="3"
+                                                      Width="8"
+                                                      Background="{DynamicResource PrimaryHueMidBrush}"
+                                                      HorizontalAlignment="Stretch"
+                                                      ResizeBehavior="PreviousAndNext"
+                                                      ShowsPreview="True"
+                                                      Cursor="SizeWE"/>
+
+                                        <!-- RIGHT: Materials panel for selected sub-stage -->
+                                        <Border Grid.Column="4" Padding="10"
+                                                Background="{DynamicResource MaterialDesignCardBackground}"
+                                                BorderBrush="{DynamicResource MaterialDesignDivider}"
+                                                BorderThickness="1" CornerRadius="8">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="*" />
+                                                </Grid.RowDefinitions>
+
+                                                <TextBlock x:Name="BtSelectedSubStageTitle"
+                                                           Text="{DynamicResource AdminHubView_SelectSubStagePrompt}"
+                                                           FontWeight="SemiBold"
+                                                           Margin="0,0,0,8"/>
+
+                                                <Grid Grid.Row="1">
+                                                    <DataGrid x:Name="BtMaterialsGrid"
+                                                              AutoGenerateColumns="False" CanUserAddRows="False" CanUserDeleteRows="False" CanUserSortColumns="False"
+                                                              HeadersVisibility="Column" GridLinesVisibility="None"
+                                                              IsReadOnly="False"
+                                                              Style="{StaticResource MaterialDesignDataGrid}">
+                                                        <DataGrid.Columns>
+                                                            <DataGridTextColumn Header="{DynamicResource AdminHubView_Materials}" Binding="{Binding DisplayLabel}" Width="*" IsReadOnly="True"/>
+                                                            <DataGridTextColumn Header="{DynamicResource AdminHubView_DefaultQuantity}" Width="120">
+                                                                <DataGridTextColumn.ElementStyle>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="HorizontalAlignment" Value="Right"/>
+                                                                    </Style>
+                                                                </DataGridTextColumn.ElementStyle>
+                                                                <DataGridTextColumn.Binding>
+                                                                    <Binding Path="BaseQty" StringFormat="{}{0:0.##}" TargetNullValue="—" />
+                                                                </DataGridTextColumn.Binding>
+                                                            </DataGridTextColumn>
+                                                            <DataGridTemplateColumn Header="{DynamicResource AdminHubView_OverrideQuantity}" Width="140">
+                                                                <DataGridTemplateColumn.CellTemplate>
+                                                                    <DataTemplate>
+                                                                        <TextBox Width="120"
+                                                                                 HorizontalContentAlignment="Right"
+                                                                                 Text="{Binding Qty, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"/>
+                                                                    </DataTemplate>
+                                                                </DataGridTemplateColumn.CellTemplate>
+                                                            </DataGridTemplateColumn>
+                                                        </DataGrid.Columns>
+                                                    </DataGrid>
+                                                    <TextBlock x:Name="BtMaterialsPlaceholder"
+                                                               Text="{DynamicResource AdminHubView_SelectSubStagePrompt}"
+                                                               TextWrapping="Wrap"
+                                                               HorizontalAlignment="Center"
+                                                               VerticalAlignment="Center"
+                                                               Foreground="{DynamicResource MaterialDesignBodyLight}"/>
+                                                </Grid>
                                             </Grid>
                                         </Border>
                                     </Grid>
