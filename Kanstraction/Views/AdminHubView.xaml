@@ -340,9 +340,9 @@
                                     <!-- Stage / Sub-stage overview with materials underneath -->
                                     <Grid Grid.Row="2">
                                         <Grid.RowDefinitions>
-                                            <RowDefinition Height="*" />
+                                            <RowDefinition Height="Auto" />
                                             <RowDefinition Height="6" />
-                                            <RowDefinition Height="240" />
+                                            <RowDefinition Height="*" />
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
 
@@ -359,6 +359,11 @@
                                                       Grid.Column="0"
                                                       AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
                                                       HeadersVisibility="Column" GridLinesVisibility="None"
+                                                      VerticalAlignment="Top"
+                                                      RowHeight="40"
+                                                      MaxHeight="320"
+                                                      ScrollViewer.CanContentScroll="True"
+                                                      ScrollViewer.VerticalScrollBarVisibility="Auto"
                                                       SelectionChanged="BtAssignedGrid_SelectionChanged"
                                                       Style="{StaticResource MaterialDesignDataGrid}">
                                                 <DataGrid.Columns>
@@ -405,7 +410,8 @@
                                             <Border Grid.Column="2" Padding="10"
                                                     Background="{DynamicResource MaterialDesignCardBackground}"
                                                     BorderBrush="{DynamicResource MaterialDesignDivider}"
-                                                    BorderThickness="1" CornerRadius="8">
+                                                    BorderThickness="1" CornerRadius="8"
+                                                    VerticalAlignment="Top">
                                                 <Grid>
                                                     <Grid.RowDefinitions>
                                                         <RowDefinition Height="Auto"/>
@@ -422,6 +428,11 @@
                                                               AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
                                                               HeadersVisibility="Column" GridLinesVisibility="None"
                                                               IsReadOnly="False"
+                                                              VerticalAlignment="Top"
+                                                              RowHeight="40"
+                                                              MaxHeight="320"
+                                                              ScrollViewer.CanContentScroll="True"
+                                                              ScrollViewer.VerticalScrollBarVisibility="Auto"
                                                               SelectionChanged="BtSubStagesGrid_SelectionChanged"
                                                               Style="{StaticResource MaterialDesignDataGrid}">
                                                         <DataGrid.Columns>
@@ -473,7 +484,7 @@
                                                                     <DataTemplate>
                                                                         <TextBox MinWidth="160"
                                                                                  HorizontalAlignment="Stretch"
-                                                                                 HorizontalContentAlignment="Right"
+                                                                                 HorizontalContentAlignment="Left"
                                                                                  Text="{Binding Qty, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"/>
                                                                     </DataTemplate>
                                                                 </DataGridTemplateColumn.CellTemplate>
