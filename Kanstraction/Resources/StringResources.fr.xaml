@@ -90,7 +90,6 @@
     <sys:String x:Key="AdminHubView_SubStages">Sous-étapes</sys:String>
     <sys:String x:Key="AdminHubView_Labor">Main-d'œuvre</sys:String>
     <sys:String x:Key="AdminHubView_Materials">Matériaux</sys:String>
-    <sys:String x:Key="AdminHubView_DefaultQuantity">Valeur par défaut</sys:String>
     <sys:String x:Key="AdminHubView_OverrideQuantity">Quantité</sys:String>
     <sys:String x:Key="AdminHubView_SelectSubStagePrompt">Sélectionnez une sous-étape pour modifier les matériaux.</sys:String>
     <sys:String x:Key="AdminHubView_MaterialsForSubStageFormat">Matériaux pour {0}</sys:String>

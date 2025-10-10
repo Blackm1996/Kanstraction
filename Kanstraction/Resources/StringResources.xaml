@@ -91,7 +91,6 @@
     <sys:String x:Key="AdminHubView_SubStages">Sub-stages</sys:String>
     <sys:String x:Key="AdminHubView_Labor">Labor</sys:String>
     <sys:String x:Key="AdminHubView_Materials">Materials</sys:String>
-    <sys:String x:Key="AdminHubView_DefaultQuantity">Default</sys:String>
     <sys:String x:Key="AdminHubView_OverrideQuantity">Quantity</sys:String>
     <sys:String x:Key="AdminHubView_SelectSubStagePrompt">Select a sub-stage to edit materials.</sys:String>
     <sys:String x:Key="AdminHubView_MaterialsForSubStageFormat">Materials for {0}</sys:String>

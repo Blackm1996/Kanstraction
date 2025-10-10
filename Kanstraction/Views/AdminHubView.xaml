@@ -467,21 +467,12 @@
                                                               MinHeight="200"
                                                               Style="{StaticResource MaterialDesignDataGrid}">
                                                         <DataGrid.Columns>
-                                                            <DataGridTextColumn Header="{DynamicResource AdminHubView_Materials}" Binding="{Binding DisplayLabel}" Width="*" IsReadOnly="True"/>
-                                                            <DataGridTextColumn Header="{DynamicResource AdminHubView_DefaultQuantity}" Width="120">
-                                                                <DataGridTextColumn.ElementStyle>
-                                                                    <Style TargetType="TextBlock">
-                                                                        <Setter Property="HorizontalAlignment" Value="Right"/>
-                                                                    </Style>
-                                                                </DataGridTextColumn.ElementStyle>
-                                                                <DataGridTextColumn.Binding>
-                                                                    <Binding Path="BaseQty" StringFormat="{}{0:0.##}" TargetNullValue="—" />
-                                                                </DataGridTextColumn.Binding>
-                                                            </DataGridTextColumn>
-                                                            <DataGridTemplateColumn Header="{DynamicResource AdminHubView_OverrideQuantity}" Width="140">
+                                                            <DataGridTextColumn Header="{DynamicResource AdminHubView_Materials}" Binding="{Binding DisplayLabel}" Width="2*" IsReadOnly="True"/>
+                                                            <DataGridTemplateColumn Header="{DynamicResource AdminHubView_OverrideQuantity}" Width="*">
                                                                 <DataGridTemplateColumn.CellTemplate>
                                                                     <DataTemplate>
-                                                                        <TextBox Width="120"
+                                                                        <TextBox MinWidth="160"
+                                                                                 HorizontalAlignment="Stretch"
                                                                                  HorizontalContentAlignment="Right"
                                                                                  Text="{Binding Qty, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"/>
                                                                     </DataTemplate>
