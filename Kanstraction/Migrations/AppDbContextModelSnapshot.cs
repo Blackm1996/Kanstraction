@@ -205,7 +205,7 @@ namespace Kanstraction.Migrations
                     b.Property<string>("Notes")
                         .HasColumnType("TEXT");
 
-                    b.Property<decimal?>("Qty")
+                    b.Property<decimal>("Qty")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("SubStageId")
