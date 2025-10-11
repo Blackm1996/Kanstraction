@@ -1121,15 +1121,16 @@ namespace Kanstraction.Views
                         mats.Select(m =>
                         {
                             var hasOverride = existingMaterials != null && existingMaterials.TryGetValue(m.Id, out var qty);
+                            var effectiveQty = hasOverride ? qty : m.Qty;
                             return new MaterialQuantityVm
                             {
                                 MaterialUsagePresetId = m.Id,
                                 Name = m.MaterialName,
                                 Unit = m.Unit,
                                 BaseQty = m.Qty,
-                                Qty = hasOverride ? qty : m.Qty,
+                                Qty = effectiveQty,
                                 IsOverridePersisted = hasOverride,
-                                InitialQty = hasOverride ? qty : m.Qty
+                                InitialQty = effectiveQty
                             };
                         }));
                 }
