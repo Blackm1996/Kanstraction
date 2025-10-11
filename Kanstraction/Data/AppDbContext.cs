@@ -16,6 +16,7 @@ public class AppDbContext : DbContext
     public DbSet<SubStagePreset> SubStagePresets => Set<SubStagePreset>();
     public DbSet<BuildingTypeStagePreset> BuildingTypeStagePresets => Set<BuildingTypeStagePreset>();
     public DbSet<BuildingTypeSubStageLabor> BuildingTypeSubStageLabors => Set<BuildingTypeSubStageLabor>();
+    public DbSet<BuildingTypeMaterialUsage> BuildingTypeMaterialUsages => Set<BuildingTypeMaterialUsage>();
     public DbSet<MaterialCategory> MaterialCategories => Set<MaterialCategory>();
     public DbSet<Material> Materials => Set<Material>();
     public DbSet<MaterialPriceHistory> MaterialPriceHistory => Set<MaterialPriceHistory>();
@@ -57,6 +58,8 @@ public class AppDbContext : DbContext
 
         b.Entity<BuildingTypeSubStageLabor>().HasKey(x => new { x.BuildingTypeId, x.SubStagePresetId });
         b.Entity<BuildingTypeSubStageLabor>().HasIndex(x => x.SubStagePresetId);
+        b.Entity<BuildingTypeMaterialUsage>().HasKey(x => new { x.BuildingTypeId, x.MaterialUsagePresetId });
+        b.Entity<BuildingTypeMaterialUsage>().HasIndex(x => x.MaterialUsagePresetId);
 
         b.Entity<BuildingTypeSubStageLabor>()
             .HasOne(x => x.BuildingType)
@@ -68,6 +71,18 @@ public class AppDbContext : DbContext
             .HasOne(x => x.SubStagePreset)
             .WithMany()
             .HasForeignKey(x => x.SubStagePresetId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        b.Entity<BuildingTypeMaterialUsage>()
+            .HasOne(x => x.BuildingType)
+            .WithMany()
+            .HasForeignKey(x => x.BuildingTypeId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        b.Entity<BuildingTypeMaterialUsage>()
+            .HasOne(x => x.MaterialUsagePreset)
+            .WithMany()
+            .HasForeignKey(x => x.MaterialUsagePresetId)
             .OnDelete(DeleteBehavior.Cascade);
 
         b.Entity<Building>()

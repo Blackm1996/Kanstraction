@@ -427,7 +427,7 @@ public partial class App : Application
                 Id = Convert.ToInt32(reader.GetValue(0)),
                 SubStagePresetId = Convert.ToInt32(reader.GetValue(1)),
                 MaterialId = Convert.ToInt32(reader.GetValue(2)),
-                Qty = reader.IsDBNull(3) ? 0m : Convert.ToDecimal(reader.GetValue(3), CultureInfo.InvariantCulture)
+                Qty = reader.IsDBNull(3) ? (decimal?)null : Convert.ToDecimal(reader.GetValue(3), CultureInfo.InvariantCulture)
             };
 
             results.Add(preset);

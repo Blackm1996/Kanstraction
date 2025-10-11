@@ -475,6 +475,10 @@ public partial class OperationsView : UserControl
                 .Where(x => x.BuildingTypeId == typeId.Value)
                 .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
 
+            var materialOverrideLookup = await _db.BuildingTypeMaterialUsages
+                .Where(x => x.BuildingTypeId == typeId.Value)
+                .ToDictionaryAsync(x => x.MaterialUsagePresetId, x => x.Qty);
+
             int stageOrder = 1;
 
             foreach (var presetId in stagePresetIds)
@@ -528,7 +532,9 @@ public partial class OperationsView : UserControl
                         {
                             SubStage = sub,                  // link via navigation
                             MaterialId = mup.MaterialId,
-                            Qty = mup.Qty,
+                            Qty = materialOverrideLookup.TryGetValue(mup.Id, out var overrideQty)
+                                ? overrideQty
+                                : (mup.Qty ?? 0m),
                             UsageDate = DateTime.Today,
                             Notes = null
                         };
@@ -1778,6 +1784,10 @@ public partial class OperationsView : UserControl
                 .Where(x => x.BuildingTypeId == buildingTypeId)
                 .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
 
+            var materialOverrideLookup = await _db.BuildingTypeMaterialUsages
+                .Where(x => x.BuildingTypeId == buildingTypeId)
+                .ToDictionaryAsync(x => x.MaterialUsagePresetId, x => x.Qty);
+
             foreach (var sp in subPresets)
             {
                 var sub = new SubStage
@@ -1803,7 +1813,9 @@ public partial class OperationsView : UserControl
                     {
                         SubStageId = sub.Id,
                         MaterialId = mup.MaterialId,
-                        Qty = mup.Qty,
+                        Qty = materialOverrideLookup.TryGetValue(mup.Id, out var overrideQty)
+                            ? overrideQty
+                            : (mup.Qty ?? 0m),
                         UsageDate = DateTime.Today,
                         Notes = null
                     };

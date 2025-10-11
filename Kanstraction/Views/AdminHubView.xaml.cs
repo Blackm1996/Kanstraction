@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
@@ -755,6 +756,8 @@ namespace Kanstraction.Views
         private Dictionary<int, int> _presetSubCounts = new(); // StagePresetId -> count
         private Dictionary<int, ObservableCollection<SubStageLaborVm>> _btSubStageLabors = new();
         private Dictionary<int, decimal> _currentBtLaborMap = new();
+        private Dictionary<int, decimal> _currentBtMaterialMap = new();
+        private SubStageLaborVm? _selectedSubStageVm = null;
         // VM for the assigned presets list
         private class AssignedPresetVm
         {
@@ -793,9 +796,11 @@ namespace Kanstraction.Views
             else
             {
                 // No selection; clear preview
-                if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
+                if (BtSubStagesGrid != null) BtSubStagesGrid.ItemsSource = null;
+                UpdateMaterialsPanel(null);
                 _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
                 _currentBtLaborMap = new Dictionary<int, decimal>();
+                _currentBtMaterialMap = new Dictionary<int, decimal>();
             }
 
             // Also refresh the picker (available presets minus assigned), in case it was open
@@ -874,7 +879,8 @@ namespace Kanstraction.Views
             }
             else
             {
-                BtSubStagesPreviewGrid.ItemsSource = null;
+                if (BtSubStagesGrid != null) BtSubStagesGrid.ItemsSource = null;
+                UpdateMaterialsPanel(null);
             }
 
             // fill picker with available (active, not already assigned)
@@ -901,7 +907,9 @@ namespace Kanstraction.Views
             }
             _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
             _currentBtLaborMap = new Dictionary<int, decimal>();
-            if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
+            _currentBtMaterialMap = new Dictionary<int, decimal>();
+            if (BtSubStagesGrid != null) BtSubStagesGrid.ItemsSource = null;
+            UpdateMaterialsPanel(null);
 
             RefreshBtPresetPicker();
             BuildingTypesList.SelectedItem = null;
@@ -928,7 +936,10 @@ namespace Kanstraction.Views
             foreach (var list in _btSubStageLabors.Values)
             {
                 foreach (var vm in list)
+                {
                     vm.PropertyChanged -= SubStageLaborVm_PropertyChanged;
+                    vm.Cleanup();
+                }
             }
 
             _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
@@ -937,6 +948,7 @@ namespace Kanstraction.Views
             if (_db == null || presetIds.Count == 0)
             {
                 _currentBtLaborMap = new Dictionary<int, decimal>();
+                _currentBtMaterialMap = new Dictionary<int, decimal>();
                 return;
             }
 
@@ -946,12 +958,37 @@ namespace Kanstraction.Views
                 .Select(s => new { s.Id, s.StagePresetId, s.Name, s.OrderIndex, s.LaborCost })
                 .ToListAsync();
 
+            var subIds = subPresets.Select(s => s.Id).ToList();
+
+            var materialPresets = await _db.MaterialUsagesPreset
+                .Where(mu => subIds.Contains(mu.SubStagePresetId))
+                .Select(mu => new
+                {
+                    mu.Id,
+                    mu.SubStagePresetId,
+                    mu.Qty,
+                    MaterialName = mu.Material.Name,
+                    mu.Material.Unit
+                })
+                .ToListAsync();
+
+            var materialsBySubStage = materialPresets
+                .GroupBy(m => m.SubStagePresetId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
             var laborRows = await _db.BuildingTypeSubStageLabors
                 .Where(x => x.BuildingTypeId == buildingTypeId)
                 .ToListAsync();
 
             _currentBtLaborMap = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.LaborCost);
             var laborLookup = laborRows.ToDictionary(x => x.SubStagePresetId, x => (decimal?)x.LaborCost);
+
+            var materialRows = await _db.BuildingTypeMaterialUsages
+                .Where(x => x.BuildingTypeId == buildingTypeId)
+                .ToListAsync();
+
+            _currentBtMaterialMap = materialRows.ToDictionary(x => x.MaterialUsagePresetId, x => x.Qty);
+            var materialLookup = materialRows.ToDictionary(x => x.MaterialUsagePresetId, x => (decimal?)x.Qty);
 
             foreach (var presetId in presetIds)
             {
@@ -966,6 +1003,30 @@ namespace Kanstraction.Views
                         Name = sub.Name,
                         LaborCost = laborLookup.TryGetValue(sub.Id, out var labor) ? labor : sub.LaborCost
                     };
+
+                    if (materialsBySubStage.TryGetValue(sub.Id, out var mats))
+                    {
+                        vm.Materials = new ObservableCollection<MaterialQuantityVm>(
+                            mats.Select(m =>
+                            {
+                                var hasOverride = materialLookup.TryGetValue(m.Id, out var qty);
+                                return new MaterialQuantityVm
+                                {
+                                    MaterialUsagePresetId = m.Id,
+                                    Name = m.MaterialName,
+                                    Unit = m.Unit,
+                                    BaseQty = m.Qty,
+                                    Qty = hasOverride ? qty : m.Qty,
+                                    IsOverridePersisted = hasOverride,
+                                    InitialQty = hasOverride ? qty : m.Qty
+                                };
+                            }));
+                    }
+                    else
+                    {
+                        vm.Materials = new ObservableCollection<MaterialQuantityVm>();
+                    }
+
                     vm.PropertyChanged += SubStageLaborVm_PropertyChanged;
                     list.Add(vm);
                 }
@@ -993,15 +1054,42 @@ namespace Kanstraction.Views
                 .Select(s => new { s.Id, s.Name, s.OrderIndex, s.LaborCost })
                 .ToListAsync();
 
+            var subIds = subs.Select(s => s.Id).ToList();
+
+            var materialPresets = await _db.MaterialUsagesPreset
+                .Where(mu => subIds.Contains(mu.SubStagePresetId))
+                .Select(mu => new
+                {
+                    mu.Id,
+                    mu.SubStagePresetId,
+                    mu.Qty,
+                    MaterialName = mu.Material.Name,
+                    mu.Material.Unit
+                })
+                .ToListAsync();
+
+            var materialsBySubStage = materialPresets
+                .GroupBy(m => m.SubStagePresetId)
+                .ToDictionary(g => g.Key, g => g.ToList());
+
             Dictionary<int, decimal>? existingLabors = null;
+            Dictionary<int, decimal>? existingMaterials = null;
+
             if (_editingBtId.HasValue)
             {
-                var subIds = subs.Select(s => s.Id).ToList();
                 if (subIds.Count > 0)
                 {
                     existingLabors = await _db.BuildingTypeSubStageLabors
                         .Where(x => x.BuildingTypeId == _editingBtId.Value && subIds.Contains(x.SubStagePresetId))
                         .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
+                }
+
+                var materialPresetIds = materialPresets.Select(m => m.Id).ToList();
+                if (materialPresetIds.Count > 0)
+                {
+                    existingMaterials = await _db.BuildingTypeMaterialUsages
+                        .Where(x => x.BuildingTypeId == _editingBtId.Value && materialPresetIds.Contains(x.MaterialUsagePresetId))
+                        .ToDictionaryAsync(x => x.MaterialUsagePresetId, x => x.Qty);
                 }
             }
 
@@ -1026,6 +1114,31 @@ namespace Kanstraction.Views
                     Name = sub.Name,
                     LaborCost = labor
                 };
+
+                if (materialsBySubStage.TryGetValue(sub.Id, out var mats))
+                {
+                    vm.Materials = new ObservableCollection<MaterialQuantityVm>(
+                        mats.Select(m =>
+                        {
+                            var hasOverride = existingMaterials != null && existingMaterials.TryGetValue(m.Id, out var qty);
+                            var effectiveQty = hasOverride ? qty : m.Qty;
+                            return new MaterialQuantityVm
+                            {
+                                MaterialUsagePresetId = m.Id,
+                                Name = m.MaterialName,
+                                Unit = m.Unit,
+                                BaseQty = m.Qty,
+                                Qty = effectiveQty,
+                                IsOverridePersisted = hasOverride,
+                                InitialQty = effectiveQty
+                            };
+                        }));
+                }
+                else
+                {
+                    vm.Materials = new ObservableCollection<MaterialQuantityVm>();
+                }
+
                 vm.PropertyChanged += SubStageLaborVm_PropertyChanged;
                 list.Add(vm);
             }
@@ -1066,6 +1179,11 @@ namespace Kanstraction.Views
             if (!dirty)
             {
                 dirty = HaveLaborAssignmentsChanged();
+            }
+
+            if (!dirty)
+            {
+                dirty = HaveMaterialAssignmentsChanged();
             }
 
             IsBuildingDirty = dirty;
@@ -1113,11 +1231,91 @@ namespace Kanstraction.Views
             return currentMap.Values.Any(v => !v.HasValue);
         }
 
+        private bool HaveMaterialAssignmentsChanged()
+        {
+            var assignedIds = _btAssigned.Select(a => a.StagePresetId).ToHashSet();
+
+            foreach (var kvp in _btSubStageLabors)
+            {
+                if (!assignedIds.Contains(kvp.Key)) continue;
+                foreach (var vm in kvp.Value)
+                {
+                    foreach (var material in vm.Materials)
+                    {
+                        if (!material.Qty.HasValue)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            var currentMap = GetCurrentMaterialOverrideMap();
+
+            if (_currentBt == null)
+            {
+                return currentMap.Count > 0;
+            }
+
+            if (currentMap.Count != _currentBtMaterialMap.Count)
+            {
+                return true;
+            }
+
+            foreach (var kvp in _currentBtMaterialMap)
+            {
+                if (!currentMap.TryGetValue(kvp.Key, out var value) || value != kvp.Value)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private Dictionary<int, decimal> GetCurrentMaterialOverrideMap()
+        {
+            var map = new Dictionary<int, decimal>();
+            var assignedIds = _btAssigned.Select(a => a.StagePresetId).ToHashSet();
+
+            foreach (var kvp in _btSubStageLabors)
+            {
+                if (!assignedIds.Contains(kvp.Key)) continue;
+                foreach (var vm in kvp.Value)
+                {
+                    foreach (var material in vm.Materials)
+                    {
+                        if (!material.Qty.HasValue)
+                        {
+                            continue;
+                        }
+
+                        var differsFromBase = !material.BaseQty.HasValue || material.Qty.Value != material.BaseQty.Value;
+                        var matchesInitial = material.InitialQty.HasValue && material.Qty.Value == material.InitialQty.Value;
+
+                        if (differsFromBase || (material.IsOverridePersisted && matchesInitial))
+                        {
+                            map[material.MaterialUsagePresetId] = material.Qty.Value;
+                        }
+                    }
+                }
+            }
+
+            return map;
+        }
+
         private void SubStageLaborVm_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(SubStageLaborVm.LaborCost))
+            if (e.PropertyName == nameof(SubStageLaborVm.LaborCost) ||
+                e.PropertyName == nameof(SubStageLaborVm.Materials))
             {
                 UpdateBuildingDirtyState();
+            }
+
+            if (sender is SubStageLaborVm vm && ReferenceEquals(vm, _selectedSubStageVm) &&
+                e.PropertyName == nameof(SubStageLaborVm.Materials))
+            {
+                UpdateMaterialsPanel(vm);
             }
         }
 
@@ -1165,7 +1363,8 @@ namespace Kanstraction.Views
                     BtSelectedPresetTitle.Text = ResourceHelper.GetString(
                         "AdminHubView_SelectedPresetTitle",
                         "Select a preset to preview its sub-stages");
-                BtSubStagesPreviewGrid.ItemsSource = null;
+                if (BtSubStagesGrid != null) BtSubStagesGrid.ItemsSource = null;
+                UpdateMaterialsPanel(null);
                 return;
             }
 
@@ -1177,7 +1376,60 @@ namespace Kanstraction.Views
                 subs = await EnsureSubStageLaborsForPresetAsync(vm.StagePresetId);
             }
 
-            BtSubStagesPreviewGrid.ItemsSource = subs;
+            if (BtSubStagesGrid != null)
+            {
+                BtSubStagesGrid.ItemsSource = subs;
+                if (subs.Count > 0)
+                {
+                    BtSubStagesGrid.SelectedIndex = 0;
+                }
+                else
+                {
+                    UpdateMaterialsPanel(null);
+                }
+            }
+        }
+
+        private void BtSubStagesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var vm = BtSubStagesGrid?.SelectedItem as SubStageLaborVm;
+            UpdateMaterialsPanel(vm);
+        }
+
+        private void UpdateMaterialsPanel(SubStageLaborVm? vm)
+        {
+            _selectedSubStageVm = vm;
+
+            if (BtSelectedSubStageTitle == null || BtMaterialsGrid == null || BtMaterialsPlaceholder == null)
+            {
+                if (BtMaterialsGrid != null)
+                    BtMaterialsGrid.ItemsSource = vm?.Materials;
+                return;
+            }
+
+            if (vm == null)
+            {
+                var prompt = ResourceHelper.GetString("AdminHubView_SelectSubStagePrompt", "Select a sub-stage to edit materials.");
+                BtSelectedSubStageTitle.Text = prompt;
+                BtMaterialsGrid.ItemsSource = null;
+                BtMaterialsPlaceholder.Text = prompt;
+                BtMaterialsPlaceholder.Visibility = Visibility.Visible;
+                return;
+            }
+
+            var titleFormat = ResourceHelper.GetString("AdminHubView_MaterialsForSubStageFormat", "Materials for {0}");
+            BtSelectedSubStageTitle.Text = string.Format(titleFormat, vm.Name);
+            BtMaterialsGrid.ItemsSource = vm.Materials;
+
+            if (vm.Materials.Count == 0)
+            {
+                BtMaterialsPlaceholder.Text = ResourceHelper.GetString("AdminHubView_NoMaterialsForSubStage", "This sub-stage has no materials.");
+                BtMaterialsPlaceholder.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                BtMaterialsPlaceholder.Visibility = Visibility.Collapsed;
+            }
         }
 
         // Reordering & Remove
@@ -1208,7 +1460,10 @@ namespace Kanstraction.Views
             if (_btSubStageLabors.TryGetValue(vm.StagePresetId, out var labors))
             {
                 foreach (var s in labors)
+                {
                     s.PropertyChanged -= SubStageLaborVm_PropertyChanged;
+                    s.Cleanup();
+                }
                 _btSubStageLabors.Remove(vm.StagePresetId);
             }
             _btAssigned.Remove(vm);
@@ -1330,6 +1585,24 @@ namespace Kanstraction.Views
                             }
                             return;
                         }
+
+                        foreach (var materialVm in laborVm.Materials)
+                        {
+                            if (!materialVm.Qty.HasValue)
+                            {
+                                MessageBox.Show(
+                                    ResourceHelper.GetString("AdminHubView_MaterialQuantityRequired", "Enter a quantity for every material before saving."),
+                                    ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
+                                    MessageBoxButton.OK,
+                                    MessageBoxImage.Warning);
+                                await tx.RollbackAsync();
+                                if (isCreatingNew)
+                                {
+                                    ResetNewBuildingTypeDraft(createdBuildingType);
+                                }
+                                return;
+                            }
+                        }
                     }
                 }
 
@@ -1337,9 +1610,19 @@ namespace Kanstraction.Views
                     .Where(x => x.BuildingTypeId == _editingBtId!.Value)
                     .ToListAsync();
 
+                var existingMaterials = await _db.BuildingTypeMaterialUsages
+                    .Where(x => x.BuildingTypeId == _editingBtId!.Value)
+                    .ToListAsync();
+
                 var keepSubStageIds = assignedPresetIds
                     .SelectMany(id => _btSubStageLabors.TryGetValue(id, out var list)
                         ? list.Select(l => l.SubStagePresetId)
+                        : Enumerable.Empty<int>())
+                    .ToHashSet();
+
+                var keepMaterialPresetIds = assignedPresetIds
+                    .SelectMany(id => _btSubStageLabors.TryGetValue(id, out var list)
+                        ? list.SelectMany(l => l.Materials).Select(m => m.MaterialUsagePresetId)
                         : Enumerable.Empty<int>())
                     .ToHashSet();
 
@@ -1350,6 +1633,17 @@ namespace Kanstraction.Views
                 if (toRemoveLabors.Count > 0)
                 {
                     _db.BuildingTypeSubStageLabors.RemoveRange(toRemoveLabors);
+                }
+
+                var toRemoveMaterials = existingMaterials
+                    .Where(x => !keepMaterialPresetIds.Contains(x.MaterialUsagePresetId))
+                    .ToList();
+
+                if (toRemoveMaterials.Count > 0)
+                {
+                    _db.BuildingTypeMaterialUsages.RemoveRange(toRemoveMaterials);
+                    foreach (var removed in toRemoveMaterials)
+                        existingMaterials.Remove(removed);
                 }
 
                 foreach (var presetId in assignedPresetIds)
@@ -1374,6 +1668,43 @@ namespace Kanstraction.Views
                         {
                             existing.LaborCost = cost;
                         }
+
+                        foreach (var materialVm in laborVm.Materials)
+                        {
+                            var qty = materialVm.Qty!.Value;
+                            var existingMaterial = existingMaterials.FirstOrDefault(x => x.MaterialUsagePresetId == materialVm.MaterialUsagePresetId);
+                            var shouldPersist = !materialVm.BaseQty.HasValue || qty != materialVm.BaseQty.Value;
+
+                            if (!shouldPersist)
+                            {
+                                if (existingMaterial != null)
+                                {
+                                    _db.BuildingTypeMaterialUsages.Remove(existingMaterial);
+                                    existingMaterials.Remove(existingMaterial);
+                                }
+
+                                materialVm.IsOverridePersisted = false;
+                                continue;
+                            }
+
+                            if (existingMaterial == null)
+                            {
+                                var entity = new BuildingTypeMaterialUsage
+                                {
+                                    BuildingTypeId = _editingBtId.Value,
+                                    MaterialUsagePresetId = materialVm.MaterialUsagePresetId,
+                                    Qty = qty
+                                };
+                                _db.BuildingTypeMaterialUsages.Add(entity);
+                                existingMaterials.Add(entity);
+                                materialVm.IsOverridePersisted = true;
+                            }
+                            else
+                            {
+                                existingMaterial.Qty = qty;
+                                materialVm.IsOverridePersisted = true;
+                            }
+                        }
                     }
                 }
 
@@ -1384,6 +1715,20 @@ namespace Kanstraction.Views
                         ? list
                         : Enumerable.Empty<SubStageLaborVm>())
                     .ToDictionary(vm => vm.SubStagePresetId, vm => vm.LaborCost!.Value);
+
+                _currentBtMaterialMap = GetCurrentMaterialOverrideMap();
+
+                foreach (var kvp in _btSubStageLabors)
+                {
+                    foreach (var laborVm in kvp.Value)
+                    {
+                        foreach (var materialVm in laborVm.Materials)
+                        {
+                            materialVm.IsOverridePersisted = _currentBtMaterialMap.ContainsKey(materialVm.MaterialUsagePresetId);
+                            materialVm.InitialQty = materialVm.Qty;
+                        }
+                    }
+                }
 
                 await tx.CommitAsync();
 
@@ -1439,11 +1784,16 @@ namespace Kanstraction.Views
                 foreach (var collection in _btSubStageLabors.Values)
                 {
                     foreach (var vm in collection)
+                    {
                         vm.PropertyChanged -= SubStageLaborVm_PropertyChanged;
+                        vm.Cleanup();
+                    }
                 }
                 _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
                 _currentBtLaborMap = new Dictionary<int, decimal>();
-                if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
+                _currentBtMaterialMap = new Dictionary<int, decimal>();
+                if (BtSubStagesGrid != null) BtSubStagesGrid.ItemsSource = null;
+                UpdateMaterialsPanel(null);
                 UpdateBuildingDirtyState();
             }
         }
@@ -1473,6 +1823,8 @@ namespace Kanstraction.Views
 
             _editingBtId = null;
             _currentBt = null;
+            _currentBtLaborMap = new Dictionary<int, decimal>();
+            _currentBtMaterialMap = new Dictionary<int, decimal>();
         }
 
         private class SubStageLaborVm : INotifyPropertyChanged
@@ -1481,6 +1833,7 @@ namespace Kanstraction.Views
             public int SubStagePresetId { get; set; }
             public int OrderIndex { get; set; }
             public string Name { get; set; } = string.Empty;
+
             private decimal? _laborCost;
             public decimal? LaborCost
             {
@@ -1492,6 +1845,106 @@ namespace Kanstraction.Views
                         _laborCost = value;
                         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(LaborCost)));
                     }
+                }
+            }
+
+            private ObservableCollection<MaterialQuantityVm> _materials = new();
+            public ObservableCollection<MaterialQuantityVm> Materials
+            {
+                get => _materials;
+                set
+                {
+                    if (!ReferenceEquals(_materials, value))
+                    {
+                        if (_materials != null)
+                        {
+                            _materials.CollectionChanged -= Materials_CollectionChanged;
+                            foreach (var material in _materials)
+                                material.PropertyChanged -= MaterialVm_PropertyChanged;
+                        }
+
+                        _materials = value ?? new ObservableCollection<MaterialQuantityVm>();
+                        _materials.CollectionChanged += Materials_CollectionChanged;
+                        foreach (var material in _materials)
+                            material.PropertyChanged += MaterialVm_PropertyChanged;
+
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Materials)));
+                    }
+                }
+            }
+
+            public void Cleanup()
+            {
+                if (_materials != null)
+                {
+                    _materials.CollectionChanged -= Materials_CollectionChanged;
+                    foreach (var material in _materials)
+                        material.PropertyChanged -= MaterialVm_PropertyChanged;
+                }
+            }
+
+            private void Materials_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+            {
+                if (e.OldItems != null)
+                {
+                    foreach (MaterialQuantityVm material in e.OldItems)
+                        material.PropertyChanged -= MaterialVm_PropertyChanged;
+                }
+
+                if (e.NewItems != null)
+                {
+                    foreach (MaterialQuantityVm material in e.NewItems)
+                        material.PropertyChanged += MaterialVm_PropertyChanged;
+                }
+
+                PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Materials)));
+            }
+
+            private void MaterialVm_PropertyChanged(object? sender, PropertyChangedEventArgs e)
+            {
+                if (e.PropertyName == nameof(MaterialQuantityVm.Qty))
+                {
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Materials)));
+                }
+            }
+
+            public event PropertyChangedEventHandler? PropertyChanged;
+        }
+
+        private class MaterialQuantityVm : INotifyPropertyChanged
+        {
+            public int MaterialUsagePresetId { get; set; }
+            public string Name { get; set; } = string.Empty;
+            public string Unit { get; set; } = string.Empty;
+            public decimal? BaseQty { get; set; }
+            public bool IsOverridePersisted { get; set; }
+            public decimal? InitialQty { get; set; }
+
+            private decimal? _qty;
+            public decimal? Qty
+            {
+                get => _qty;
+                set
+                {
+                    if (_qty != value)
+                    {
+                        _qty = value;
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Qty)));
+                    }
+                }
+            }
+
+            public string DisplayLabel
+            {
+                get
+                {
+                    var baseLabel = string.IsNullOrWhiteSpace(Unit) ? Name : $"{Name} ({Unit})";
+                    if (BaseQty.HasValue)
+                    {
+                        return $"{baseLabel} – Default: {BaseQty.Value:0.##}";
+                    }
+
+                    return baseLabel;
                 }
             }
 
