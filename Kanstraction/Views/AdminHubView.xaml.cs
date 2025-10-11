@@ -1007,13 +1007,19 @@ namespace Kanstraction.Views
                     if (materialsBySubStage.TryGetValue(sub.Id, out var mats))
                     {
                         vm.Materials = new ObservableCollection<MaterialQuantityVm>(
-                            mats.Select(m => new MaterialQuantityVm
+                            mats.Select(m =>
                             {
-                                MaterialUsagePresetId = m.Id,
-                                Name = m.MaterialName,
-                                Unit = m.Unit,
-                                BaseQty = m.Qty,
-                                Qty = materialLookup.TryGetValue(m.Id, out var qty) ? qty : null
+                                var hasOverride = materialLookup.TryGetValue(m.Id, out var qty);
+                                return new MaterialQuantityVm
+                                {
+                                    MaterialUsagePresetId = m.Id,
+                                    Name = m.MaterialName,
+                                    Unit = m.Unit,
+                                    BaseQty = m.Qty,
+                                    Qty = hasOverride ? qty : m.Qty,
+                                    IsOverridePersisted = hasOverride,
+                                    InitialQty = hasOverride ? qty : m.Qty
+                                };
                             }));
                     }
                     else
@@ -1112,15 +1118,19 @@ namespace Kanstraction.Views
                 if (materialsBySubStage.TryGetValue(sub.Id, out var mats))
                 {
                     vm.Materials = new ObservableCollection<MaterialQuantityVm>(
-                        mats.Select(m => new MaterialQuantityVm
+                        mats.Select(m =>
                         {
-                            MaterialUsagePresetId = m.Id,
-                            Name = m.MaterialName,
-                            Unit = m.Unit,
-                            BaseQty = m.Qty,
-                            Qty = existingMaterials != null && existingMaterials.TryGetValue(m.Id, out var qty)
-                                ? qty
-                                : null
+                            var hasOverride = existingMaterials != null && existingMaterials.TryGetValue(m.Id, out var qty);
+                            return new MaterialQuantityVm
+                            {
+                                MaterialUsagePresetId = m.Id,
+                                Name = m.MaterialName,
+                                Unit = m.Unit,
+                                BaseQty = m.Qty,
+                                Qty = hasOverride ? qty : m.Qty,
+                                IsOverridePersisted = hasOverride,
+                                InitialQty = hasOverride ? qty : m.Qty
+                            };
                         }));
                 }
                 else
@@ -1220,9 +1230,8 @@ namespace Kanstraction.Views
             return currentMap.Values.Any(v => !v.HasValue);
         }
 
-        private Dictionary<int, decimal?> GetCurrentMaterialMap()
+        private bool HaveMaterialAssignmentsChanged()
         {
-            var map = new Dictionary<int, decimal?>();
             var assignedIds = _btAssigned.Select(a => a.StagePresetId).ToHashSet();
 
             foreach (var kvp in _btSubStageLabors)
@@ -1232,17 +1241,15 @@ namespace Kanstraction.Views
                 {
                     foreach (var material in vm.Materials)
                     {
-                        map[material.MaterialUsagePresetId] = material.Qty;
+                        if (!material.Qty.HasValue)
+                        {
+                            return true;
+                        }
                     }
                 }
             }
 
-            return map;
-        }
-
-        private bool HaveMaterialAssignmentsChanged()
-        {
-            var currentMap = GetCurrentMaterialMap();
+            var currentMap = GetCurrentMaterialOverrideMap();
 
             if (_currentBt == null)
             {
@@ -1256,13 +1263,44 @@ namespace Kanstraction.Views
 
             foreach (var kvp in _currentBtMaterialMap)
             {
-                if (!currentMap.TryGetValue(kvp.Key, out var value) || !value.HasValue || value.Value != kvp.Value)
+                if (!currentMap.TryGetValue(kvp.Key, out var value) || value != kvp.Value)
                 {
                     return true;
                 }
             }
 
-            return currentMap.Values.Any(v => !v.HasValue);
+            return false;
+        }
+
+        private Dictionary<int, decimal> GetCurrentMaterialOverrideMap()
+        {
+            var map = new Dictionary<int, decimal>();
+            var assignedIds = _btAssigned.Select(a => a.StagePresetId).ToHashSet();
+
+            foreach (var kvp in _btSubStageLabors)
+            {
+                if (!assignedIds.Contains(kvp.Key)) continue;
+                foreach (var vm in kvp.Value)
+                {
+                    foreach (var material in vm.Materials)
+                    {
+                        if (!material.Qty.HasValue)
+                        {
+                            continue;
+                        }
+
+                        var differsFromBase = !material.BaseQty.HasValue || material.Qty.Value != material.BaseQty.Value;
+                        var matchesInitial = material.InitialQty.HasValue && material.Qty.Value == material.InitialQty.Value;
+
+                        if (differsFromBase || (material.IsOverridePersisted && matchesInitial))
+                        {
+                            map[material.MaterialUsagePresetId] = material.Qty.Value;
+                        }
+                    }
+                }
+            }
+
+            return map;
         }
 
         private void SubStageLaborVm_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -1634,6 +1672,20 @@ namespace Kanstraction.Views
                         {
                             var qty = materialVm.Qty!.Value;
                             var existingMaterial = existingMaterials.FirstOrDefault(x => x.MaterialUsagePresetId == materialVm.MaterialUsagePresetId);
+                            var shouldPersist = !materialVm.BaseQty.HasValue || qty != materialVm.BaseQty.Value;
+
+                            if (!shouldPersist)
+                            {
+                                if (existingMaterial != null)
+                                {
+                                    _db.BuildingTypeMaterialUsages.Remove(existingMaterial);
+                                    existingMaterials.Remove(existingMaterial);
+                                }
+
+                                materialVm.IsOverridePersisted = false;
+                                continue;
+                            }
+
                             if (existingMaterial == null)
                             {
                                 var entity = new BuildingTypeMaterialUsage
@@ -1644,10 +1696,12 @@ namespace Kanstraction.Views
                                 };
                                 _db.BuildingTypeMaterialUsages.Add(entity);
                                 existingMaterials.Add(entity);
+                                materialVm.IsOverridePersisted = true;
                             }
                             else
                             {
                                 existingMaterial.Qty = qty;
+                                materialVm.IsOverridePersisted = true;
                             }
                         }
                     }
@@ -1661,11 +1715,19 @@ namespace Kanstraction.Views
                         : Enumerable.Empty<SubStageLaborVm>())
                     .ToDictionary(vm => vm.SubStagePresetId, vm => vm.LaborCost!.Value);
 
-                _currentBtMaterialMap = assignedPresetIds
-                    .SelectMany(id => _btSubStageLabors.TryGetValue(id, out var list)
-                        ? list.SelectMany(l => l.Materials)
-                        : Enumerable.Empty<MaterialQuantityVm>())
-                    .ToDictionary(vm => vm.MaterialUsagePresetId, vm => vm.Qty!.Value);
+                _currentBtMaterialMap = GetCurrentMaterialOverrideMap();
+
+                foreach (var kvp in _btSubStageLabors)
+                {
+                    foreach (var laborVm in kvp.Value)
+                    {
+                        foreach (var materialVm in laborVm.Materials)
+                        {
+                            materialVm.IsOverridePersisted = _currentBtMaterialMap.ContainsKey(materialVm.MaterialUsagePresetId);
+                            materialVm.InitialQty = materialVm.Qty;
+                        }
+                    }
+                }
 
                 await tx.CommitAsync();
 
@@ -1854,6 +1916,8 @@ namespace Kanstraction.Views
             public string Name { get; set; } = string.Empty;
             public string Unit { get; set; } = string.Empty;
             public decimal? BaseQty { get; set; }
+            public bool IsOverridePersisted { get; set; }
+            public decimal? InitialQty { get; set; }
 
             private decimal? _qty;
             public decimal? Qty
