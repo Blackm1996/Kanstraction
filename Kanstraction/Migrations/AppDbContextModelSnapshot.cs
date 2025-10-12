@@ -235,7 +235,7 @@ namespace Kanstraction.Migrations
                     b.Property<int>("MaterialId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<decimal>("Qty")
+                    b.Property<decimal?>("Qty")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("SubStagePresetId")
