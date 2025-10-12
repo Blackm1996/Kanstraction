@@ -1792,9 +1792,15 @@ public partial class OperationsView : UserControl
                 .OrderBy(sp => sp.OrderIndex)
                 .ToListAsync();
 
+            var subPresetIds = subPresets.ConvertAll(sp => sp.Id);
+
             var laborLookup = await _db.BuildingTypeSubStageLabors
                 .Where(x => x.BuildingTypeId == buildingTypeId)
                 .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
+
+            var materialUsageLookup = await _db.BuildingTypeMaterialUsages
+                .Where(x => x.BuildingTypeId == buildingTypeId && subPresetIds.Contains(x.SubStagePresetId))
+                .ToDictionaryAsync(x => (x.SubStagePresetId, x.MaterialId), x => x.Qty);
 
             foreach (var sp in subPresets)
             {
@@ -1817,11 +1823,15 @@ public partial class OperationsView : UserControl
 
                 foreach (var mup in muPresets)
                 {
+                    var qty = materialUsageLookup.TryGetValue((sp.Id, mup.MaterialId), out var buildingTypeQty)
+                        ? buildingTypeQty
+                        : (mup.Qty ?? 0m);
+
                     var mu = new MaterialUsage
                     {
                         SubStageId = sub.Id,
                         MaterialId = mup.MaterialId,
-                        Qty = mup.Qty,
+                        Qty = qty,
                         UsageDate = DateTime.Today,
                         Notes = null
                     };
