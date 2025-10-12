@@ -425,10 +425,17 @@ public partial class StagePresetDesignerView : UserControl
             return;
         }
 
-        if (!decimal.TryParse(TxtQty.Text?.Trim(), out var qty) || qty < 0)
+        var qtyText = TxtQty.Text?.Trim();
+        decimal? qty = null;
+        if (!string.IsNullOrEmpty(qtyText))
         {
-            MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_QtyMustBeNonNegative", "Quantity must be a non-negative number."));
-            return;
+            if (!decimal.TryParse(qtyText, out var parsed) || parsed < 0)
+            {
+                MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_QtyMustBeNonNegative", "Quantity must be a non-negative number."));
+                return;
+            }
+
+            qty = parsed;
         }
 
         // prevent duplicates
@@ -617,7 +624,7 @@ public partial class StagePresetDesignerView : UserControl
             }
             foreach (var mu in s.Materials)
             {
-                if (mu.Qty < 0)
+                if (mu.Qty.HasValue && mu.Qty.Value < 0)
                 {
                     MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_MaterialQuantityNonNegative", "Material quantity must be ≥ 0."));
                     return;
@@ -837,6 +844,6 @@ public partial class StagePresetDesignerView : UserControl
         public string MaterialName { get; set; } = "";
         public string CategoryName { get; set; } = "";
         public string Unit { get; set; } = "";
-        public decimal Qty { get; set; }
+        public decimal? Qty { get; set; }
     }
 }

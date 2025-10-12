@@ -403,6 +403,8 @@
                                                 <Grid.RowDefinitions>
                                                     <RowDefinition Height="Auto"/>
                                                     <RowDefinition Height="*" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="220" />
                                                 </Grid.RowDefinitions>
 
                                                 <!-- Title shows selected preset name -->
@@ -416,11 +418,38 @@
                 AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
                 HeadersVisibility="Column" GridLinesVisibility="None"
                 IsReadOnly="False"
+                SelectionChanged="BtSubStagesPreviewGrid_SelectionChanged"
                 Style="{StaticResource MaterialDesignDataGrid}">
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="60" IsReadOnly="True"/>
                                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_SubStages}" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
                                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_Labor}" Binding="{Binding LaborCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}" Width="140"/>
+                                                    </DataGrid.Columns>
+                                                </DataGrid>
+
+                                                <TextBlock x:Name="BtMaterialsTitle"
+                Grid.Row="2"
+                Margin="0,16,0,4"
+                FontWeight="SemiBold"
+                Text="{DynamicResource AdminHubView_SelectedSubStageMaterialsTitle}"/>
+
+                                                <DataGrid x:Name="BtMaterialsGrid"
+                Grid.Row="3"
+                AutoGenerateColumns="False"
+                CanUserAddRows="False"
+                CanUserSortColumns="False"
+                HeadersVisibility="Column"
+                GridLinesVisibility="None"
+                IsReadOnly="False"
+                Style="{StaticResource MaterialDesignDataGrid}">
+                                                    <DataGrid.Columns>
+                                                        <DataGridTextColumn Header="{DynamicResource OperationsView_MaterialHeader}" Binding="{Binding MaterialName}" Width="*" IsReadOnly="True"/>
+                                                        <DataGridTextColumn Header="{DynamicResource AdminHubView_Unit}" Binding="{Binding Unit}" Width="120" IsReadOnly="True"/>
+                                                        <DataGridTextColumn Header="{DynamicResource OperationsView_Qty}" Width="140">
+                                                            <DataGridTextColumn.Binding>
+                                                                <Binding Path="Qty" UpdateSourceTrigger="PropertyChanged" StringFormat="{}{0:0.##}" TargetNullValue="" />
+                                                            </DataGridTextColumn.Binding>
+                                                        </DataGridTextColumn>
                                                     </DataGrid.Columns>
                                                 </DataGrid>
                                             </Grid>

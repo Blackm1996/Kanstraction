@@ -94,6 +94,9 @@
     <sys:String x:Key="AdminHubView_Order">Ordre</sys:String>
     <sys:String x:Key="AdminHubView_Remove">Supprimer</sys:String>
     <sys:String x:Key="AdminHubView_SelectedPresetTitle">Sélectionnez un préréglage pour prévisualiser ses sous-étapes</sys:String>
+    <sys:String x:Key="AdminHubView_SelectedSubStageMaterialsTitle">Sélectionnez un sous-chantier pour modifier les matériaux</sys:String>
+    <sys:String x:Key="AdminHubView_MaterialsForSubStageFormat">Matériaux pour « {0} »</sys:String>
+    <sys:String x:Key="AdminHubView_MaterialQuantityRequired">Saisissez une quantité pour chaque matériau avant d'enregistrer.</sys:String>
     <sys:String x:Key="AdminHubView_Tip">Astuce : l'ordre reflète la séquence d'exécution lors de la création d'un bâtiment de ce type.</sys:String>
     <sys:String x:Key="AdminHubView_AssignStagePresets">Attribuer des modèles d'étape</sys:String>
     <sys:String x:Key="AdminHubView_ChoosePresetHint">Choisissez un préréglage à ajouter</sys:String>

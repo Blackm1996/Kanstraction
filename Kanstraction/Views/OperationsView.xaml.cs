@@ -475,6 +475,10 @@ public partial class OperationsView : UserControl
                 .Where(x => x.BuildingTypeId == typeId.Value)
                 .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
 
+            var materialLookup = await _db.BuildingTypeMaterialUsages
+                .Where(x => x.BuildingTypeId == typeId.Value)
+                .ToDictionaryAsync(x => (x.SubStagePresetId, x.MaterialId), x => x.Qty);
+
             int stageOrder = 1;
 
             foreach (var presetId in stagePresetIds)
@@ -523,12 +527,26 @@ public partial class OperationsView : UserControl
 
                     foreach (var mup in muPresets)
                     {
+                        decimal qty;
+                        if (materialLookup.TryGetValue((sp.Id, mup.MaterialId), out var btQty))
+                        {
+                            qty = btQty;
+                        }
+                        else if (mup.Qty.HasValue)
+                        {
+                            qty = mup.Qty.Value;
+                        }
+                        else
+                        {
+                            qty = 0m;
+                        }
+
                         // Seed with today's date; you can edit later
                         var mu = new MaterialUsage
                         {
                             SubStage = sub,                  // link via navigation
                             MaterialId = mup.MaterialId,
-                            Qty = mup.Qty,
+                            Qty = qty,
                             UsageDate = DateTime.Today,
                             Notes = null
                         };
