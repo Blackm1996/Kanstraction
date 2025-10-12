@@ -55,13 +55,15 @@ namespace Kanstraction.Migrations
                 table: "BuildingTypeMaterialUsages",
                 column: "SubStagePresetId");
 
-            migrationBuilder.Sql(@"
-                INSERT INTO \"BuildingTypeMaterialUsages\" (\"BuildingTypeId\", \"SubStagePresetId\", \"MaterialId\", \"Qty\")
-                SELECT DISTINCT btsp.\"BuildingTypeId\", mu.\"SubStagePresetId\", mu.\"MaterialId\", COALESCE(mu.\"Qty\", 0)
-                FROM \"BuildingTypeStagePresets\" btsp
-                INNER JOIN \"SubStagePresets\" ssp ON ssp.\"StagePresetId\" = btsp.\"StagePresetId\"
-                INNER JOIN \"MaterialUsagesPreset\" mu ON mu.\"SubStagePresetId\" = ssp.\"Id\"
-            ");
+            migrationBuilder.Sql(
+                """
+                INSERT INTO "BuildingTypeMaterialUsages" ("BuildingTypeId", "SubStagePresetId", "MaterialId", "Qty")
+                SELECT btsp."BuildingTypeId", mu."SubStagePresetId", mu."MaterialId", COALESCE(mu."Qty", 0)
+                FROM "BuildingTypeStagePresets" AS btsp
+                INNER JOIN "SubStagePresets" AS ssp ON ssp."StagePresetId" = btsp."StagePresetId"
+                INNER JOIN "MaterialUsagesPreset" AS mu ON mu."SubStagePresetId" = ssp."Id"
+                ;
+                """);
         }
 
         /// <inheritdoc />
