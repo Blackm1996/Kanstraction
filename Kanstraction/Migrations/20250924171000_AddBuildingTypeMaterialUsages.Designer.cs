@@ -117,6 +117,8 @@ namespace Kanstraction.Migrations
 
                     b.HasKey("BuildingTypeId", "SubStagePresetId", "MaterialId");
 
+                    b.HasIndex("MaterialId");
+
                     b.HasIndex("SubStagePresetId");
 
                     b.ToTable("BuildingTypeMaterialUsages");

@@ -73,6 +73,7 @@ public class AppDbContext : DbContext
 
         b.Entity<BuildingTypeMaterialUsage>().HasKey(x => new { x.BuildingTypeId, x.SubStagePresetId, x.MaterialId });
         b.Entity<BuildingTypeMaterialUsage>().HasIndex(x => x.SubStagePresetId);
+        b.Entity<BuildingTypeMaterialUsage>().HasIndex(x => x.MaterialId);
 
         b.Entity<BuildingTypeMaterialUsage>()
             .HasOne(x => x.BuildingType)

@@ -55,6 +55,11 @@ namespace Kanstraction.Migrations
                 table: "BuildingTypeMaterialUsages",
                 column: "SubStagePresetId");
 
+            migrationBuilder.CreateIndex(
+                name: "IX_BuildingTypeMaterialUsages_MaterialId",
+                table: "BuildingTypeMaterialUsages",
+                column: "MaterialId");
+
             migrationBuilder.Sql(
                 """
                 INSERT INTO "BuildingTypeMaterialUsages" ("BuildingTypeId", "SubStagePresetId", "MaterialId", "Qty")
