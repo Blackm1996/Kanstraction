@@ -353,6 +353,11 @@
             AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
             HeadersVisibility="Column" GridLinesVisibility="None"
             SelectionChanged="BtAssignedGrid_SelectionChanged"
+            RowHeight="28"
+            MinHeight="420"
+            MaxHeight="420"
+            ScrollViewer.VerticalScrollBarVisibility="Auto"
+            ScrollViewer.CanContentScroll="True"
             Style="{StaticResource MaterialDesignDataGrid}">
                                             <DataGrid.Columns>
                                                 <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="50" IsReadOnly="True"/>
@@ -416,6 +421,11 @@
                 AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
                 HeadersVisibility="Column" GridLinesVisibility="None"
                 IsReadOnly="False"
+                RowHeight="28"
+                MinHeight="420"
+                MaxHeight="420"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.CanContentScroll="True"
                 SelectionChanged="BtSubStagesPreviewGrid_SelectionChanged"
                 Style="{StaticResource MaterialDesignDataGrid}">
                                                     <DataGrid.Columns>
@@ -461,6 +471,11 @@
                 HeadersVisibility="Column"
                 GridLinesVisibility="None"
                 IsReadOnly="False"
+                RowHeight="28"
+                MinHeight="420"
+                MaxHeight="420"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.CanContentScroll="True"
                 Style="{StaticResource MaterialDesignDataGrid}">
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="{DynamicResource OperationsView_MaterialHeader}" Binding="{Binding MaterialName}" Width="*" IsReadOnly="True"/>
