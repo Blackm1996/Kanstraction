@@ -318,7 +318,7 @@
                                         <!-- header + picker -->
                                         <RowDefinition Height="10"/>
                                         <RowDefinition Height="*"/>
-                                        <!-- two-panel body -->
+                                        <!-- three-panel body -->
                                         <RowDefinition Height="Auto"/>
                                         <!-- tip -->
                                     </Grid.RowDefinitions>
@@ -337,22 +337,27 @@
                                         </StackPanel>
                                     </StackPanel>
 
-                                    <!-- Two-panel body -->
+                                    <!-- Three-panel body -->
                                     <Grid Grid.Row="2">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="10" />
-                                            <!-- wider, more visible -->
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="10" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
 
                                         <!-- LEFT: Assigned presets -->
                                         <DataGrid x:Name="BtAssignedGrid"
             Grid.Column="0"
-            Height="300"
             AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
             HeadersVisibility="Column" GridLinesVisibility="None"
             SelectionChanged="BtAssignedGrid_SelectionChanged"
+            RowHeight="44"
+            MinHeight="528"
+            MaxHeight="528"
+            ScrollViewer.VerticalScrollBarVisibility="Auto"
+            ScrollViewer.CanContentScroll="True"
             Style="{StaticResource MaterialDesignDataGrid}">
                                             <DataGrid.Columns>
                                                 <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="50" IsReadOnly="True"/>
@@ -394,7 +399,7 @@
                 ShowsPreview="True"
                 Cursor="SizeWE"/>
 
-                                        <!-- RIGHT: Sub-stages preview (read-only) with a title -->
+                                        <!-- CENTER: Sub-stages preview (read-only) with a title -->
                                         <Border Grid.Column="2" Padding="10"
           Background="{DynamicResource MaterialDesignCardBackground}"
           BorderBrush="{DynamicResource MaterialDesignDivider}"
@@ -416,11 +421,70 @@
                 AutoGenerateColumns="False" CanUserAddRows="False" CanUserSortColumns="False"
                 HeadersVisibility="Column" GridLinesVisibility="None"
                 IsReadOnly="False"
+                RowHeight="44"
+                MinHeight="528"
+                MaxHeight="528"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.CanContentScroll="True"
+                SelectionChanged="BtSubStagesPreviewGrid_SelectionChanged"
                 Style="{StaticResource MaterialDesignDataGrid}">
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="60" IsReadOnly="True"/>
                                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_SubStages}" Binding="{Binding Name}" Width="*" IsReadOnly="True"/>
                                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_Labor}" Binding="{Binding LaborCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}" Width="140"/>
+                                                    </DataGrid.Columns>
+                                                </DataGrid>
+
+                                            </Grid>
+                                        </Border>
+
+                                        <GridSplitter Grid.Column="3"
+                Width="10"
+                Background="{DynamicResource PrimaryHueMidBrush}"
+                HorizontalAlignment="Stretch"
+                ResizeBehavior="PreviousAndNext"
+                ShowsPreview="True"
+                Cursor="SizeWE"/>
+
+                                        <!-- RIGHT: Materials editor -->
+                                        <Border Grid.Column="4" Padding="10"
+          Background="{DynamicResource MaterialDesignCardBackground}"
+          BorderBrush="{DynamicResource MaterialDesignDivider}"
+          BorderThickness="1" CornerRadius="8">
+                                            <Grid>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="*" />
+                                                </Grid.RowDefinitions>
+
+                                                <TextBlock x:Name="BtMaterialsTitle"
+                Grid.Row="0"
+                Margin="0,0,0,8"
+                FontWeight="SemiBold"
+                Text="{DynamicResource AdminHubView_SelectedSubStageMaterialsTitle}"/>
+
+                                                <DataGrid x:Name="BtMaterialsGrid"
+                Grid.Row="1"
+                AutoGenerateColumns="False"
+                CanUserAddRows="False"
+                CanUserSortColumns="False"
+                HeadersVisibility="Column"
+                GridLinesVisibility="None"
+                IsReadOnly="False"
+                RowHeight="44"
+                MinHeight="528"
+                MaxHeight="528"
+                ScrollViewer.VerticalScrollBarVisibility="Auto"
+                ScrollViewer.CanContentScroll="True"
+                Style="{StaticResource MaterialDesignDataGrid}">
+                                                    <DataGrid.Columns>
+                                                        <DataGridTextColumn Header="{DynamicResource OperationsView_MaterialHeader}" Binding="{Binding MaterialName}" Width="*" IsReadOnly="True"/>
+                                                        <DataGridTextColumn Header="{DynamicResource AdminHubView_Unit}" Binding="{Binding Unit}" Width="120" IsReadOnly="True"/>
+                                                        <DataGridTextColumn Header="{DynamicResource OperationsView_Qty}" Width="140">
+                                                            <DataGridTextColumn.Binding>
+                                                                <Binding Path="Qty" UpdateSourceTrigger="PropertyChanged" StringFormat="{}{0:0.##}" TargetNullValue="" />
+                                                            </DataGridTextColumn.Binding>
+                                                        </DataGridTextColumn>
                                                     </DataGrid.Columns>
                                                 </DataGrid>
                                             </Grid>
