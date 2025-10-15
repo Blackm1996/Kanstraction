@@ -39,14 +39,31 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Margin="10,10,10,4">
-                            <TextBox x:Name="MatSearchBox"
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="MatSearchBox"
+                       Grid.Column="0"
                        materialDesign:HintAssist.Hint="{DynamicResource AdminHubView_SearchMaterialsHint}"
                        Padding="8" TextChanged="MatSearchBox_TextChanged"
                        Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+                                <Button Grid.Column="1"
+                                        Width="40"
+                                        Height="40"
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Background="#3f51b5"
+                                        Style="{StaticResource TinyIconButton}"
+                                        ToolTip="{DynamicResource AdminHubView_New}"
+                                        Click="NewMaterial_Click">
+                                    <iconPacks:PackIconFontAwesome Kind="PlusSolid" Width="14" Height="14" Foreground="White"/>
+                                </Button>
+                            </Grid>
                             <CheckBox x:Name="MatActiveOnly"
                         Content="{DynamicResource AdminHubView_ActiveOnly}" Margin="0,8,0,0"
                         IsChecked="True" Checked="MatFilterChanged" Unchecked="MatFilterChanged"/>
@@ -66,10 +83,6 @@
                         <ListView x:Name="MaterialsList" Grid.Row="1" Margin="10"
                       SelectionChanged="MaterialsList_SelectionChanged"
                       DisplayMemberPath="Name" />
-
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10,4,10,10" HorizontalAlignment="Right">
-                            <Button Content="{DynamicResource AdminHubView_New}" Click="NewMaterial_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
-                        </StackPanel>
                     </Grid>
 
                     <GridSplitter Grid.Column="1" Width="6" Background="{DynamicResource MaterialDesignDivider}"
@@ -183,16 +196,33 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <!-- Search + filter -->
                         <StackPanel Grid.Row="0" Margin="10,10,10,4">
-                            <TextBox x:Name="PresetSearchBox"
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="PresetSearchBox"
+                 Grid.Column="0"
                  materialDesign:HintAssist.Hint="{DynamicResource AdminHubView_SearchPresetsHint}"
                  Padding="8"
                  TextChanged="PresetSearchBox_TextChanged"
                  Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+                                <Button Grid.Column="1"
+                                        Width="40"
+                                        Height="40"
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Background="#3f51b5"
+                                        Style="{StaticResource TinyIconButton}"
+                                        ToolTip="{DynamicResource AdminHubView_New}"
+                                        Click="NewPreset_Click">
+                                    <iconPacks:PackIconFontAwesome Kind="PlusSolid" Width="14" Height="14" Foreground="White"/>
+                                </Button>
+                            </Grid>
                             <CheckBox x:Name="PresetActiveOnly"
                   Content="{DynamicResource AdminHubView_ActiveOnly}" Margin="0,8,0,0"
                   IsChecked="True"
@@ -203,11 +233,6 @@
                         <ListView x:Name="PresetsList" Grid.Row="1" Margin="10"
                 DisplayMemberPath="Name"
                 SelectionChanged="PresetsList_SelectionChanged" />
-
-                        <!-- Actions -->
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10,4,10,10" HorizontalAlignment="Right">
-                            <Button Content="{DynamicResource AdminHubView_New}" Click="NewPreset_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
-                        </StackPanel>
                     </Grid>
 
                     <!-- Splitter -->
@@ -234,14 +259,31 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
 
                         <StackPanel Grid.Row="0" Margin="10,10,10,4">
-                            <TextBox x:Name="BtSearchBox"
+                            <Grid Margin="0,0,0,8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+                                <TextBox x:Name="BtSearchBox"
+                 Grid.Column="0"
                  materialDesign:HintAssist.Hint="{DynamicResource AdminHubView_FilterBuildingTypes}"
                  Padding="8" TextChanged="BtSearchBox_TextChanged"
                  Style="{StaticResource MaterialDesignOutlinedTextBox}" />
+                                <Button Grid.Column="1"
+                                        Width="40"
+                                        Height="40"
+                                        Margin="8,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Background="#3f51b5"
+                                        Style="{StaticResource TinyIconButton}"
+                                        ToolTip="{DynamicResource AdminHubView_New}"
+                                        Click="NewBuildingType_Click">
+                                    <iconPacks:PackIconFontAwesome Kind="PlusSolid" Width="14" Height="14" Foreground="White"/>
+                                </Button>
+                            </Grid>
                             <CheckBox x:Name="BtActiveOnly"
                   Content="{DynamicResource AdminHubView_ActiveOnly}" Margin="0,8,0,0"
                   IsChecked="True" Checked="BtFilterChanged" Unchecked="BtFilterChanged"/>
@@ -250,10 +292,6 @@
                         <ListView x:Name="BuildingTypesList" Grid.Row="1" Margin="10"
                 SelectionChanged="BuildingTypesList_SelectionChanged"
                 DisplayMemberPath="Name" />
-
-                        <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="10,4,10,10" HorizontalAlignment="Right">
-                            <Button Content="{DynamicResource AdminHubView_New}" Click="NewBuildingType_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
-                        </StackPanel>
                     </Grid>
 
                     <GridSplitter Grid.Column="1" Width="6" Background="{DynamicResource MaterialDesignDivider}"

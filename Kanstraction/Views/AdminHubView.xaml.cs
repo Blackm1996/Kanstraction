@@ -67,13 +67,12 @@ namespace Kanstraction.Views
             // In OnLoaded after _db is set and _allPresets fetched:
             EnsureDesignerHasDb();
             HookDesignerEventsOnce();
-            RefreshPresetsList();
 
             await RefreshPresetSubCountsAsync();
 
-            // Optionally select first preset:
-            if (PresetsList.Items.Count > 0 && PresetsList.SelectedIndex < 0)
-                PresetsList.SelectedIndex = 0;
+            BeginNewMaterial();
+            await BeginNewStagePresetAsync();
+            BeginNewBuildingType();
         }
 
         private void AdminTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -119,11 +118,29 @@ namespace Kanstraction.Views
                     (!string.IsNullOrEmpty(m.Unit) && m.Unit.Contains(q, StringComparison.OrdinalIgnoreCase)));
 
             var list = data.OrderBy(m => m.Name).ToList();
+            var previouslySelectedId = (MaterialsList?.SelectedItem as Material)?.Id;
+
             MaterialsList.ItemsSource = list;
 
-            // keep selection sensible
-            if (list.Count > 0 && (MaterialsList.SelectedItem == null || !list.Contains(MaterialsList.SelectedItem)))
-                MaterialsList.SelectedIndex = 0;
+            if (previouslySelectedId.HasValue)
+            {
+                var match = list.FirstOrDefault(m => m.Id == previouslySelectedId.Value);
+                if (match != null)
+                {
+                    MaterialsList.SelectedItem = match;
+                }
+                else
+                {
+                    MaterialsList.SelectedItem = null;
+
+                    if (_editingMaterialId != null)
+                        BeginNewMaterial();
+                }
+            }
+            else if (MaterialsList.SelectedItem != null && !list.Contains(MaterialsList.SelectedItem))
+            {
+                MaterialsList.SelectedItem = null;
+            }
         }
 
         private void MatSearchBox_TextChanged(object sender, TextChangedEventArgs e) => RefreshMaterialsList();
@@ -219,18 +236,17 @@ namespace Kanstraction.Views
                 MatHistoryGrid.ItemsSource = hist;
         }
 
-        private void NewMaterial_Click(object sender, RoutedEventArgs e)
+        private void BeginNewMaterial()
         {
             _editingMaterialId = null;
             _currentMaterial = null;
             ClearMaterialEditor();
 
-            if (MatIsActive != null) MatIsActive.IsChecked = true;
-            if (MatCategory != null) MatCategory.SelectedIndex = -1;
-
-            // deselect list so user knows they're creating a new one
-            if (MaterialsList != null) MaterialsList.SelectedItem = null;
+            if (MaterialsList != null)
+                MaterialsList.SelectedItem = null;
         }
+
+        private void NewMaterial_Click(object sender, RoutedEventArgs e) => BeginNewMaterial();
 
         private async void SaveMaterial_Click(object sender, RoutedEventArgs e)
         {
@@ -624,6 +640,17 @@ namespace Kanstraction.Views
 
         // ============ STAGE PRESETS (Master list + Designer host) ============
 
+        private async Task BeginNewStagePresetAsync()
+        {
+            if (PresetsList != null)
+                PresetsList.SelectedItem = null;
+
+            EnsureDesignerHasDb();
+
+            if (PresetDesigner != null)
+                await PresetDesigner.LoadPresetAsync(null);
+        }
+
         private void EnsureDesignerHasDb()
         {
             // Safe to call multiple times; designer can ignore duplicates.
@@ -646,18 +673,32 @@ namespace Kanstraction.Views
                                        p.Name.Contains(q, StringComparison.OrdinalIgnoreCase));
 
             var list = data.OrderBy(p => p.Name).ToList();
+            var previouslySelectedId = (PresetsList?.SelectedItem as StagePreset)?.Id;
+
             PresetsList.ItemsSource = list;
 
-            if (list.Count > 0)
-            {
-                if (PresetsList.SelectedItem == null || !list.Contains(PresetsList.SelectedItem))
-                    PresetsList.SelectedIndex = 0;
-            }
-            else
+            if (list.Count == 0)
             {
                 // No items: put designer in Empty State
                 EnsureDesignerHasDb();
                 PresetDesigner?.EnterEmptyState();
+            }
+            else if (previouslySelectedId.HasValue)
+            {
+                var match = list.FirstOrDefault(p => p.Id == previouslySelectedId.Value);
+                if (match != null)
+                {
+                    PresetsList.SelectedItem = match;
+                }
+                else
+                {
+                    PresetsList.SelectedItem = null;
+                    _ = BeginNewStagePresetAsync();
+                }
+            }
+            else if (PresetsList.SelectedItem != null && !list.Contains(PresetsList.SelectedItem))
+            {
+                PresetsList.SelectedItem = null;
             }
         }
 
@@ -679,13 +720,8 @@ namespace Kanstraction.Views
         private async void NewPreset_Click(object sender, RoutedEventArgs e)
         {
             if (PresetDesigner == null) return;
-            EnsureDesignerHasDb();
 
-            // Load the designer in "new" mode (no ID)
-            await PresetDesigner.LoadPresetAsync(null);
-
-            // Clear selection in the list to communicate "creating new"
-            if (PresetsList != null) PresetsList.SelectedItem = null;
+            await BeginNewStagePresetAsync();
         }
 
         // (Optional) If your designer raises a Saved event, keep list in sync and select the saved one.
@@ -822,10 +858,29 @@ namespace Kanstraction.Views
                                        b.Name.Contains(q, StringComparison.OrdinalIgnoreCase));
 
             var list = data.OrderBy(b => b.Name).ToList();
+            var previouslySelectedId = (BuildingTypesList?.SelectedItem as BuildingType)?.Id;
+
             BuildingTypesList.ItemsSource = list;
 
-            if (list.Count > 0 && (BuildingTypesList.SelectedItem == null || !list.Contains(BuildingTypesList.SelectedItem)))
-                BuildingTypesList.SelectedIndex = 0;
+            if (previouslySelectedId.HasValue)
+            {
+                var match = list.FirstOrDefault(b => b.Id == previouslySelectedId.Value);
+                if (match != null)
+                {
+                    BuildingTypesList.SelectedItem = match;
+                }
+                else
+                {
+                    BuildingTypesList.SelectedItem = null;
+
+                    if (_editingBtId != null)
+                        BeginNewBuildingType();
+                }
+            }
+            else if (BuildingTypesList.SelectedItem != null && !list.Contains(BuildingTypesList.SelectedItem))
+            {
+                BuildingTypesList.SelectedItem = null;
+            }
         }
 
         private void BtSearchBox_TextChanged(object sender, TextChangedEventArgs e) => RefreshBuildingTypesList();
@@ -890,30 +945,48 @@ namespace Kanstraction.Views
         }
 
         // New / Duplicate / Archive
-        private void NewBuildingType_Click(object sender, RoutedEventArgs e)
+        private void BeginNewBuildingType()
         {
-            _editingBtId = null;
-            _currentBt = null;
-
-            if (BtName != null) BtName.Text = "";
-            if (BtActive != null) BtActive.IsChecked = true;
-
-            _btAssigned = new ObservableCollection<AssignedPresetVm>();
-            BtAssignedGrid.ItemsSource = _btAssigned;
-            _currentBtAssignedIds = new List<int>();
             foreach (var collection in _btSubStageLabors.Values)
             {
                 foreach (var vm in collection)
                     vm.PropertyChanged -= SubStageLaborVm_PropertyChanged;
             }
             _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
+
+            foreach (var collection in _btSubStageMaterials.Values)
+            {
+                foreach (var vm in collection)
+                    vm.PropertyChanged -= SubStageMaterialVm_PropertyChanged;
+            }
+            _btSubStageMaterials = new Dictionary<int, ObservableCollection<SubStageMaterialVm>>();
+
+            _editingBtId = null;
+            _currentBt = null;
+            _currentBtAssignedIds = new List<int>();
             _currentBtLaborMap = new Dictionary<int, decimal>();
+            _currentBtMaterialMap = new Dictionary<(int SubStagePresetId, int MaterialId), decimal>();
+
+            if (BtName != null) BtName.Text = string.Empty;
+            if (BtActive != null) BtActive.IsChecked = true;
+
+            _btAssigned = new ObservableCollection<AssignedPresetVm>();
+            BtAssignedGrid.ItemsSource = _btAssigned;
+
             if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
+            if (BtMaterialsGrid != null) BtMaterialsGrid.ItemsSource = null;
+            if (BtMaterialsTitle != null)
+                BtMaterialsTitle.Text = ResourceHelper.GetString("AdminHubView_SelectedSubStageMaterialsTitle", "Select a sub-stage to edit materials");
 
             RefreshBtPresetPicker();
-            BuildingTypesList.SelectedItem = null;
+
+            if (BuildingTypesList != null)
+                BuildingTypesList.SelectedItem = null;
+
             UpdateBuildingDirtyState();
         }
+
+        private void NewBuildingType_Click(object sender, RoutedEventArgs e) => BeginNewBuildingType();
 
         // Picker shows active presets not yet assigned
         private void RefreshBtPresetPicker()
@@ -1725,34 +1798,7 @@ namespace Kanstraction.Views
             }
             else
             {
-                // clear editor
-                if (BtName != null) BtName.Text = "";
-                if (BtActive != null) BtActive.IsChecked = true;
-                _btAssigned = new ObservableCollection<AssignedPresetVm>();
-                BtAssignedGrid.ItemsSource = _btAssigned;
-                RefreshBtPresetPicker();
-                _editingBtId = null;
-                _currentBt = null;
-                _currentBtAssignedIds = new List<int>();
-                foreach (var collection in _btSubStageLabors.Values)
-                {
-                    foreach (var vm in collection)
-                        vm.PropertyChanged -= SubStageLaborVm_PropertyChanged;
-                }
-                _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
-                foreach (var collection in _btSubStageMaterials.Values)
-                {
-                    foreach (var vm in collection)
-                        vm.PropertyChanged -= SubStageMaterialVm_PropertyChanged;
-                }
-                _btSubStageMaterials = new Dictionary<int, ObservableCollection<SubStageMaterialVm>>();
-                _currentBtLaborMap = new Dictionary<int, decimal>();
-                _currentBtMaterialMap = new Dictionary<(int SubStagePresetId, int MaterialId), decimal>();
-                if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
-                if (BtMaterialsGrid != null) BtMaterialsGrid.ItemsSource = null;
-                if (BtMaterialsTitle != null)
-                    BtMaterialsTitle.Text = ResourceHelper.GetString("AdminHubView_SelectedSubStageMaterialsTitle", "Select a sub-stage to edit materials");
-                UpdateBuildingDirtyState();
+                BeginNewBuildingType();
             }
         }
 
