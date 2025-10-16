@@ -36,8 +36,8 @@
 
     <!-- AddStageToBuildingDialog -->
     <sys:String x:Key="AddStageToBuildingDialog_Title">Ajouter une étape</sys:String>
-    <sys:String x:Key="AddStageToBuildingDialog_Header">Ajouter une étape depuis un préréglage</sys:String>
-    <sys:String x:Key="AddStageToBuildingDialog_Preset">Préréglage d'étape</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_Header">Ajouter une étape existante</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_Preset">Étape enregistrée</sys:String>
     <sys:String x:Key="AddStageToBuildingDialog_Order">Ordre</sys:String>
     <sys:String x:Key="AddStageToBuildingDialog_OrderHint">1..N</sys:String>
     <sys:String x:Key="AddStageToBuildingDialog_AddAtEnd">Ajouter à la fin</sys:String>
@@ -86,20 +86,20 @@
     <sys:String x:Key="AdminHubView_BuildingTypes">Types de bâtiment</sys:String>
     <sys:String x:Key="AdminHubView_FilterBuildingTypes">Filtrer les types de bâtiment</sys:String>
     <sys:String x:Key="AdminHubView_NewBuildingType">Nouveau type de bâtiment</sys:String>
-    <sys:String x:Key="AdminHubView_AssignedPresets">Préréglage</sys:String>
+    <sys:String x:Key="AdminHubView_AssignedPresets">Étape</sys:String>
     <sys:String x:Key="AdminHubView_SubStages">Sous-étapes</sys:String>
     <sys:String x:Key="AdminHubView_Labor">Main-d'œuvre</sys:String>
     <sys:String x:Key="AdminHubView_LaborRequired">Entrez un coût de main-d'œuvre pour chaque sous-étape avant d'enregistrer.</sys:String>
     <sys:String x:Key="AdminHubView_DefaultLabor">Main-d'œuvre du gabarit</sys:String>
     <sys:String x:Key="AdminHubView_Order">Ordre</sys:String>
     <sys:String x:Key="AdminHubView_Remove">Supprimer</sys:String>
-    <sys:String x:Key="AdminHubView_SelectedPresetTitle">Sélectionnez un préréglage pour prévisualiser ses sous-étapes</sys:String>
+    <sys:String x:Key="AdminHubView_SelectedPresetTitle">Sélectionnez une étape pour prévisualiser ses sous-étapes</sys:String>
     <sys:String x:Key="AdminHubView_SelectedSubStageMaterialsTitle">Sélectionnez un sous-chantier pour modifier les matériaux</sys:String>
     <sys:String x:Key="AdminHubView_MaterialsForSubStageFormat">Matériaux pour « {0} »</sys:String>
     <sys:String x:Key="AdminHubView_MaterialQuantityRequired">Saisissez une quantité pour chaque matériau avant d'enregistrer.</sys:String>
     <sys:String x:Key="AdminHubView_Tip">Astuce : l'ordre reflète la séquence d'exécution lors de la création d'un bâtiment de ce type.</sys:String>
-    <sys:String x:Key="AdminHubView_AssignStagePresets">Attribuer des modèles d'étape</sys:String>
-    <sys:String x:Key="AdminHubView_ChoosePresetHint">Choisissez un préréglage à ajouter</sys:String>
+    <sys:String x:Key="AdminHubView_AssignStagePresets">Attribuer des étapes enregistrées</sys:String>
+    <sys:String x:Key="AdminHubView_ChoosePresetHint">Choisissez une étape à ajouter</sys:String>
     <sys:String x:Key="AdminHubView_SaveBuildingType">Enregistrer</sys:String>
     <sys:String x:Key="AdminHubView_CancelBuildingType">Annuler</sys:String>
     <sys:String x:Key="AdminHubView_MaterialSavedMessage">Enregistré.</sys:String>
@@ -110,7 +110,7 @@
     <sys:String x:Key="AdminHubView_CopyBaseName">Copie</sys:String>
     <sys:String x:Key="AdminHubView_CopySuffix"> (Copie)</sys:String>
     <sys:String x:Key="AdminHubView_CopyDefaultFormat">{0} 2</sys:String>
-    <sys:String x:Key="AdminHubView_SelectPresetToAddMessage">Sélectionnez un préréglage d'étape à ajouter.</sys:String>
+    <sys:String x:Key="AdminHubView_SelectPresetToAddMessage">Sélectionnez une étape à ajouter.</sys:String>
     <sys:String x:Key="AdminHubView_BuildingTypeNameRequired">Le nom est requis.</sys:String>
     <sys:String x:Key="AdminHubView_BuildingTypeSavedMessage">Type de bâtiment enregistré.</sys:String>
     <sys:String x:Key="AdminHubView_SaveBuildingTypeFailedFormat">Échec de l'enregistrement :&#x0a;{0}</sys:String>
@@ -167,7 +167,7 @@
     <sys:String x:Key="OperationsView_Percent">%</sys:String>
     <sys:String x:Key="OperationsView_CurrentStage">Étape actuelle</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingTooltip">Arrêter la construction</sys:String>
-    <sys:String x:Key="OperationsView_AddStageTooltip">Ajouter une étape depuis un préréglage à ce bâtiment</sys:String>
+    <sys:String x:Key="OperationsView_AddStageTooltip">Ajouter une étape existante à ce bâtiment</sys:String>
     <sys:String x:Key="OperationsView_Stage">Étape</sys:String>
     <sys:String x:Key="OperationsView_OngoingSubStage">Sous-étape en cours</sys:String>
     <sys:String x:Key="OperationsView_AddSubStageTooltip">Ajouter une sous-étape à l'étape sélectionnée</sys:String>
@@ -232,16 +232,16 @@
     <sys:String x:Key="OperationsView_MarkPaidFailedFormat">Échec du marquage des éléments comme payés après la génération du PDF :&#x0a;{0}</sys:String>
     <sys:String x:Key="OperationsView_PaymentResolutionCompleted">Résolution de paiement terminée.</sys:String>
     <sys:String x:Key="OperationsView_PaymentResolutionCompletedTitle">Terminé</sys:String>
-    <sys:String x:Key="OperationsView_NoPresetToAddMessage">Tous les modèle d'étape actifs sont déjà dans ce bâtiment.</sys:String>
-    <sys:String x:Key="OperationsView_NoPresetTitle">Aucun préréglage</sys:String>
+    <sys:String x:Key="OperationsView_NoPresetToAddMessage">Toutes les étapes actives sont déjà dans ce bâtiment.</sys:String>
+    <sys:String x:Key="OperationsView_NoPresetTitle">Aucune étape</sys:String>
     <sys:String x:Key="OperationsView_AddStageFailedFormat">Échec de l'ajout de l'étape :&#x0a;{0}</sys:String>
 
     <!-- StagePresetDesignerView -->
     <sys:String x:Key="StagePresetDesignerView_UnsavedChanges">Modifications non enregistrées</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_NoPresetSelected">Aucun préréglage d'étape sélectionné</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_SelectPresetOrCreate">Sélectionnez un préréglage existant à gauche ou créez-en un nouveau.</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_CreateNewPreset">Créer un nouveau préréglage</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_PresetName">Nom du préréglage</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_NoPresetSelected">Aucune étape enregistrée sélectionnée</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_SelectPresetOrCreate">Sélectionnez une étape existante à gauche ou créez-en une nouvelle.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_CreateNewPreset">Créer une nouvelle étape</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_PresetName">Nom de l'étape</sys:String>
     <sys:String x:Key="StagePresetDesignerView_Summary">Résumé</sys:String>
     <sys:String x:Key="StagePresetDesignerView_TotalSubStages">Total des sous-étapes : {0}</sys:String>
     <sys:String x:Key="StagePresetDesignerView_TotalLabor">Total de la main-d'œuvre par défaut : {0:0.##}</sys:String>
@@ -250,18 +250,18 @@
     <sys:String x:Key="StagePresetDesignerView_MaterialsForSelected">Matériaux pour la sous-étape sélectionnée</sys:String>
     <sys:String x:Key="StagePresetDesignerView_Category">Catégorie</sys:String>
     <sys:String x:Key="StagePresetDesignerView_NewSubStage">Nouvelle sous-étape</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_PresetNotFound">Préréglage introuvable.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_PresetNotFound">Étape introuvable.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DeleteSubStageConfirmFormat">Supprimer la sous-étape '{0}' ?</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SelectSubStageFirst">Sélectionnez d'abord une sous-étape.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SelectMaterial">Choisissez un matériau.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_QtyMustBeNonNegative">La quantité doit être un nombre non négatif.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialAlreadyAdded">Ce matériau est déjà ajouté à la sous-étape.</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_PresetNameRequired">Le nom du préréglage est requis.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_PresetNameRequired">Le nom de l'étape est requis.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SubStageNameRequired">Chaque sous-étape doit avoir un nom.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_LaborCostNonNegative">Le coût de main-d'œuvre doit être ≥ 0.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialQuantityNonNegative">La quantité de matériau doit être ≥ 0.</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_SavedMessage">Préréglage enregistré.</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_DialogTitle">Préréglage d'étape</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_SavedMessage">Étape enregistrée.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_DialogTitle">Étape enregistrée</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SaveFailedFormat">Échec de l'enregistrement :&#x0a;{0}</sys:String>
 
     <!-- PaymentReportRenderer -->
@@ -285,7 +285,7 @@
 
     <!-- AddStageToBuildingDialog (code-behind) -->
     <sys:String x:Key="AddStageToBuildingDialog_OrderHelpFormat">Ordre autorisé : 1..{0}</sys:String>
-    <sys:String x:Key="AddStageToBuildingDialog_SelectPresetMessage">Veuillez choisir un préréglage d'étape.</sys:String>
+    <sys:String x:Key="AddStageToBuildingDialog_SelectPresetMessage">Veuillez choisir une étape.</sys:String>
     <sys:String x:Key="AddStageToBuildingDialog_InvalidOrderMessage">Indice d'ordre invalide.</sys:String>
 
     <!-- AddMaterialToSubStageDialog (code-behind) -->
@@ -298,8 +298,8 @@
     <!-- AddBuildingDialog (code-behind) -->
     <sys:String x:Key="AddBuildingDialog_CodeRequired">Entrez un code de bâtiment.</sys:String>
     <sys:String x:Key="AddBuildingDialog_TypeRequired">Sélectionnez un type de bâtiment.</sys:String>
-    <sys:String x:Key="AddBuildingDialog_NoPresetWarning">Ce type de bâtiment n'a aucun préréglage d'étape assigné. Créer quand même ?</sys:String>
-    <sys:String x:Key="AddBuildingDialog_NoPresetTitle">Aucun préréglage</sys:String>
+    <sys:String x:Key="AddBuildingDialog_NoPresetWarning">Ce type de bâtiment n'a aucune étape assignée. Créer quand même ?</sys:String>
+    <sys:String x:Key="AddBuildingDialog_NoPresetTitle">Aucune étape</sys:String>
 
     <!-- AddSubStageDialog (code-behind) -->
     <sys:String x:Key="AddSubStageDialog_OrderHelpFormat">Ordre autorisé : 1..{0}</sys:String>
