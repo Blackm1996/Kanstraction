@@ -19,8 +19,8 @@ namespace Kanstraction;
 
 public partial class App : Application
 {
-    private const string DatabaseResetSentinelFileName = "app.reset"; // Delete this file beside app.db to trigger another rebuild on next launch.
-    private const string LegacyImportSentinelFileName = "client-backup.imported";
+    private const string DatabaseResetSentinelFileName = "app2.reset"; // Delete this file beside app.db to trigger another rebuild on next launch.
+    private const string LegacyImportSentinelFileName = "client-backup2.imported";
     private const string LegacyBackupFilePath = "KanstractionBackup_20250926_185305.db"; // Expected beside Kanstraction.exe unless overridden with an absolute path.
     private const string DefaultMaterialCategoryName = "Defaut";
 
