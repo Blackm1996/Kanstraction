@@ -1279,7 +1279,10 @@ namespace Kanstraction.Views
                 if (!assignedIds.Contains(kvp.Key)) continue;
                 foreach (var vm in kvp.Value)
                 {
-                    map[vm.SubStagePresetId] = vm.LaborCost;
+                    if (vm.LaborCost.HasValue)
+                    {
+                        map[vm.SubStagePresetId] = vm.LaborCost;
+                    }
                 }
             }
 
@@ -1308,7 +1311,7 @@ namespace Kanstraction.Views
                 }
             }
 
-            return currentMap.Values.Any(v => !v.HasValue);
+            return false;
         }
 
         private Dictionary<(int SubStagePresetId, int MaterialId), decimal?> GetCurrentMaterialMap()
@@ -1326,7 +1329,10 @@ namespace Kanstraction.Views
                     {
                         foreach (var matVm in materials)
                         {
-                            map[(matVm.SubStagePresetId, matVm.MaterialId)] = matVm.Qty;
+                            if (matVm.Qty.HasValue)
+                            {
+                                map[(matVm.SubStagePresetId, matVm.MaterialId)] = matVm.Qty;
+                            }
                         }
                     }
                 }
@@ -1348,7 +1354,7 @@ namespace Kanstraction.Views
             {
                 return true;
             }
-
+            
             foreach (var kvp in _currentBtMaterialMap)
             {
                 if (!currentMap.TryGetValue(kvp.Key, out var value) || !value.HasValue || value.Value != kvp.Value)
@@ -1357,7 +1363,7 @@ namespace Kanstraction.Views
                 }
             }
 
-            return currentMap.Values.Any(v => !v.HasValue);
+            return false;
         }
 
         private void SubStageLaborVm_PropertyChanged(object? sender, PropertyChangedEventArgs e)
