@@ -833,7 +833,7 @@ namespace Kanstraction.Views
                 // We are editing a draft building type – keep the staged sub-stages/materials alive
                 foreach (var assigned in _btAssigned)
                 {
-                    await EnsureSubStageLaborsForPresetAsync(assigned.StagePresetId);
+                    await EnsureSubStageLaborsForPresetAsync(assigned.StagePresetId, forceRefresh: true);
                 }
 
                 if (BtAssignedGrid != null && _btAssigned.Count > 0)
@@ -1091,9 +1091,11 @@ namespace Kanstraction.Views
             await PopulateSubStageMaterialsAsync(subInfos, materialLookup, overwriteExisting: true);
         }
 
-        private async Task<ObservableCollection<SubStageLaborVm>> EnsureSubStageLaborsForPresetAsync(int stagePresetId)
+        private async Task<ObservableCollection<SubStageLaborVm>> EnsureSubStageLaborsForPresetAsync(
+            int stagePresetId,
+            bool forceRefresh = false)
         {
-            if (_btSubStageLabors.TryGetValue(stagePresetId, out var existing))
+            if (!forceRefresh && _btSubStageLabors.TryGetValue(stagePresetId, out var existing))
             {
                 await EnsureStageMaterialsAsync(stagePresetId);
                 return existing;
@@ -1113,6 +1115,45 @@ namespace Kanstraction.Views
                 .Select(s => new { s.Id, s.Name, s.OrderIndex })
                 .ToListAsync();
 
+            Dictionary<int, decimal?>? preservedLabors = null;
+            Dictionary<(int SubStagePresetId, int MaterialId), decimal?>? preservedMaterials = null;
+            List<int>? previousSubStageIds = null;
+
+            if (_btSubStageLabors.TryGetValue(stagePresetId, out var previousList))
+            {
+                preservedLabors = previousList.ToDictionary(x => x.SubStagePresetId, x => x.LaborCost);
+                previousSubStageIds = previousList.Select(x => x.SubStagePresetId).ToList();
+
+                preservedMaterials = previousList
+                    .SelectMany(l => _btSubStageMaterials.TryGetValue(l.SubStagePresetId, out var mats)
+                        ? mats.Select(m => ((m.SubStagePresetId, m.MaterialId), m.Qty))
+                        : Enumerable.Empty<((int, int), decimal?)>())
+                    .ToDictionary(k => k.Item1, v => v.Item2);
+
+                foreach (var vm in previousList)
+                {
+                    vm.PropertyChanged -= SubStageLaborVm_PropertyChanged;
+                }
+            }
+
+            if (previousSubStageIds != null)
+            {
+                var newSubStageIds = subs.Select(s => s.Id).ToHashSet();
+                foreach (var oldId in previousSubStageIds)
+                {
+                    if (newSubStageIds.Contains(oldId)) continue;
+
+                    if (_btSubStageMaterials.TryGetValue(oldId, out var mats))
+                    {
+                        foreach (var mat in mats)
+                        {
+                            mat.PropertyChanged -= SubStageMaterialVm_PropertyChanged;
+                        }
+                        _btSubStageMaterials.Remove(oldId);
+                    }
+                }
+            }
+
             Dictionary<int, decimal?>? existingLabors = null;
             if (_editingBtId.HasValue)
             {
@@ -1129,13 +1170,13 @@ namespace Kanstraction.Views
             foreach (var sub in subs)
             {
                 decimal? labor = null;
-                if (existingLabors != null && existingLabors.TryGetValue(sub.Id, out var stored))
+                if (preservedLabors != null && preservedLabors.TryGetValue(sub.Id, out var preserved))
+                {
+                    labor = preserved;
+                }
+                else if (existingLabors != null && existingLabors.TryGetValue(sub.Id, out var stored))
                 {
                     labor = stored;
-                }
-                else
-                {
-                    labor = null;
                 }
 
                 var vm = new SubStageLaborVm
@@ -1151,11 +1192,14 @@ namespace Kanstraction.Views
             }
 
             _btSubStageLabors[stagePresetId] = list;
-            await EnsureStageMaterialsAsync(stagePresetId);
+            await EnsureStageMaterialsAsync(stagePresetId, overwriteExisting: forceRefresh, preservedOverrides: preservedMaterials);
             return list;
         }
 
-        private async Task EnsureStageMaterialsAsync(int stagePresetId, bool overwriteExisting = false)
+        private async Task EnsureStageMaterialsAsync(
+            int stagePresetId,
+            bool overwriteExisting = false,
+            Dictionary<(int SubStagePresetId, int MaterialId), decimal?>? preservedOverrides = null)
         {
             if (!_btSubStageLabors.TryGetValue(stagePresetId, out var subs) || subs.Count == 0)
             {
@@ -1163,13 +1207,14 @@ namespace Kanstraction.Views
             }
 
             var infos = subs.Select(s => (s.StagePresetId, s.SubStagePresetId)).ToList();
-            await PopulateSubStageMaterialsAsync(infos, _currentBtMaterialMap, overwriteExisting);
+            await PopulateSubStageMaterialsAsync(infos, _currentBtMaterialMap, overwriteExisting, preservedOverrides);
         }
 
         private async Task PopulateSubStageMaterialsAsync(
             IEnumerable<(int StagePresetId, int SubStagePresetId)> subStageInfos,
             Dictionary<(int SubStagePresetId, int MaterialId), decimal?>? existingValues,
-            bool overwriteExisting)
+            bool overwriteExisting,
+            Dictionary<(int SubStagePresetId, int MaterialId), decimal?>? preservedOverrides = null)
         {
             if (_db == null) return;
 
@@ -1206,7 +1251,11 @@ namespace Kanstraction.Views
                 foreach (var row in rows)
                 {
                     decimal? qty = null;
-                    if (existingValues != null && existingValues.TryGetValue((info.SubStagePresetId, row.MaterialId), out var stored))
+                    if (preservedOverrides != null && preservedOverrides.TryGetValue((info.SubStagePresetId, row.MaterialId), out var preserved))
+                    {
+                        qty = preserved;
+                    }
+                    else if (existingValues != null && existingValues.TryGetValue((info.SubStagePresetId, row.MaterialId), out var stored))
                     {
                         qty = stored;
                     }
@@ -1280,7 +1329,11 @@ namespace Kanstraction.Views
                 if (!assignedIds.Contains(kvp.Key)) continue;
                 foreach (var vm in kvp.Value)
                 {
-                    map[vm.SubStagePresetId] = vm.LaborCost;
+                    var hasPersistedValue = _currentBtLaborMap.ContainsKey(vm.SubStagePresetId);
+                    if (hasPersistedValue || vm.LaborCost.HasValue)
+                    {
+                        map[vm.SubStagePresetId] = vm.LaborCost;
+                    }
                 }
             }
 
@@ -1327,7 +1380,12 @@ namespace Kanstraction.Views
                     {
                         foreach (var matVm in materials)
                         {
-                            map[(matVm.SubStagePresetId, matVm.MaterialId)] = matVm.Qty;
+                            var key = (matVm.SubStagePresetId, matVm.MaterialId);
+                            var hasPersistedValue = _currentBtMaterialMap.ContainsKey(key);
+                            if (hasPersistedValue || matVm.Qty.HasValue)
+                            {
+                                map[key] = matVm.Qty;
+                            }
                         }
                     }
                 }
