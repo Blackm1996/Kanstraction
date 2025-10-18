@@ -246,8 +246,6 @@
     <sys:String x:Key="StagePresetDesignerView_PresetName">Preset Name</sys:String>
     <sys:String x:Key="StagePresetDesignerView_Summary">Summary</sys:String>
     <sys:String x:Key="StagePresetDesignerView_TotalSubStages">Total sub-stages: {0}</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_TotalLabor">Total default labor: {0:0.##}</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_Labor">Labor</sys:String>
     <sys:String x:Key="StagePresetDesignerView_AddSubStage">Add Sub-stage</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialsForSelected">Materials for selected sub-stage</sys:String>
     <sys:String x:Key="StagePresetDesignerView_Category">Category</sys:String>
@@ -256,12 +254,9 @@
     <sys:String x:Key="StagePresetDesignerView_DeleteSubStageConfirmFormat">Delete sub-stage '{0}'?</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SelectSubStageFirst">Select a sub-stage first.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SelectMaterial">Choose a material.</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_QtyMustBeNonNegative">Quantity must be a non-negative number.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialAlreadyAdded">This material is already added to the sub-stage.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_PresetNameRequired">Preset name is required.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SubStageNameRequired">Each sub-stage must have a name.</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_LaborCostNonNegative">Labor cost must be ≥ 0.</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_MaterialQuantityNonNegative">Material quantity must be ≥ 0.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SavedMessage">Stage preset saved.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DialogTitle">Stage preset</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SaveFailedFormat">Saving failed:&#x0a;{0}</sys:String>

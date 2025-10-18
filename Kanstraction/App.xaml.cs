@@ -390,7 +390,7 @@ public partial class App : Application
         var results = new List<SubStagePreset>();
 
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT \"Id\", \"StagePresetId\", \"Name\", \"OrderIndex\", \"LaborCost\" FROM \"SubStagePresets\";";
+        command.CommandText = "SELECT \"Id\", \"StagePresetId\", \"Name\", \"OrderIndex\" FROM \"SubStagePresets\";";
 
         await using var reader = await command.ExecuteReaderAsync();
         while (await reader.ReadAsync())
@@ -400,10 +400,7 @@ public partial class App : Application
                 Id = Convert.ToInt32(reader.GetValue(0)),
                 StagePresetId = Convert.ToInt32(reader.GetValue(1)),
                 Name = reader.IsDBNull(2) ? string.Empty : reader.GetString(2),
-                OrderIndex = reader.IsDBNull(3) ? 0 : Convert.ToInt32(reader.GetValue(3)),
-                LaborCost = reader.IsDBNull(4)
-                    ? null
-                    : NormalizeLegacyLaborCost(Convert.ToDecimal(reader.GetValue(4), CultureInfo.InvariantCulture))
+                OrderIndex = reader.IsDBNull(3) ? 0 : Convert.ToInt32(reader.GetValue(3))
             };
 
             results.Add(preset);
@@ -417,7 +414,7 @@ public partial class App : Application
         var results = new List<MaterialUsagePreset>();
 
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT \"Id\", \"SubStagePresetId\", \"MaterialId\", \"Qty\" FROM \"MaterialUsagesPreset\";";
+        command.CommandText = "SELECT \"Id\", \"SubStagePresetId\", \"MaterialId\" FROM \"MaterialUsagesPreset\";";
 
         await using var reader = await command.ExecuteReaderAsync();
         while (await reader.ReadAsync())
@@ -426,8 +423,7 @@ public partial class App : Application
             {
                 Id = Convert.ToInt32(reader.GetValue(0)),
                 SubStagePresetId = Convert.ToInt32(reader.GetValue(1)),
-                MaterialId = Convert.ToInt32(reader.GetValue(2)),
-                Qty = reader.IsDBNull(3) ? (decimal?)null : Convert.ToDecimal(reader.GetValue(3), CultureInfo.InvariantCulture)
+                MaterialId = Convert.ToInt32(reader.GetValue(2))
             };
 
             results.Add(preset);
@@ -522,11 +518,6 @@ public partial class App : Application
             long ticks => DateTime.FromBinary(ticks),
             _ => DateTime.Today
         };
-    }
-
-    private static decimal? NormalizeLegacyLaborCost(decimal value)
-    {
-        return value == 0m ? null : value;
     }
 
     private static bool ConvertToBoolean(object value)

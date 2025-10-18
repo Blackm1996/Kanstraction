@@ -1032,7 +1032,7 @@ namespace Kanstraction.Views
             var subPresets = await _db.SubStagePresets
                 .Where(s => presetIds.Contains(s.StagePresetId))
                 .OrderBy(s => s.OrderIndex)
-                .Select(s => new { s.Id, s.StagePresetId, s.Name, s.OrderIndex, s.LaborCost })
+                .Select(s => new { s.Id, s.StagePresetId, s.Name, s.OrderIndex })
                 .ToListAsync();
 
             var laborRows = await _db.BuildingTypeSubStageLabors
@@ -1059,7 +1059,7 @@ namespace Kanstraction.Views
                         SubStagePresetId = sub.Id,
                         OrderIndex = sub.OrderIndex,
                         Name = sub.Name,
-                        LaborCost = laborLookup.TryGetValue(sub.Id, out var labor) ? labor : sub.LaborCost
+                        LaborCost = laborLookup.TryGetValue(sub.Id, out var labor) ? labor : null
                     };
                     vm.PropertyChanged += SubStageLaborVm_PropertyChanged;
                     list.Add(vm);
@@ -1090,7 +1090,7 @@ namespace Kanstraction.Views
             var subs = await _db.SubStagePresets
                 .Where(s => s.StagePresetId == stagePresetId)
                 .OrderBy(s => s.OrderIndex)
-                .Select(s => new { s.Id, s.Name, s.OrderIndex, s.LaborCost })
+                .Select(s => new { s.Id, s.Name, s.OrderIndex })
                 .ToListAsync();
 
             Dictionary<int, decimal>? existingLabors = null;
@@ -1115,7 +1115,7 @@ namespace Kanstraction.Views
                 }
                 else
                 {
-                    labor = sub.LaborCost;
+                    labor = null;
                 }
 
                 var vm = new SubStageLaborVm
@@ -1189,10 +1189,6 @@ namespace Kanstraction.Views
                     if (existingValues != null && existingValues.TryGetValue((info.SubStagePresetId, row.MaterialId), out var stored))
                     {
                         qty = stored;
-                    }
-                    else
-                    {
-                        qty = row.Qty;
                     }
 
                     var vm = new SubStageMaterialVm

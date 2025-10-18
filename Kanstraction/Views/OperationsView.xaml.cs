@@ -516,7 +516,7 @@ public partial class OperationsView : UserControl
                         Status = WorkStatus.NotStarted,
                         LaborCost = laborLookup.TryGetValue(sp.Id, out var labor)
                             ? labor
-                            : sp.LaborCost ?? 0m
+                            : 0m
                     };
                     _db.SubStages.Add(sub);
 
@@ -527,19 +527,9 @@ public partial class OperationsView : UserControl
 
                     foreach (var mup in muPresets)
                     {
-                        decimal qty;
-                        if (materialLookup.TryGetValue((sp.Id, mup.MaterialId), out var btQty))
-                        {
-                            qty = btQty;
-                        }
-                        else if (mup.Qty.HasValue)
-                        {
-                            qty = mup.Qty.Value;
-                        }
-                        else
-                        {
-                            qty = 0m;
-                        }
+                        var qty = materialLookup.TryGetValue((sp.Id, mup.MaterialId), out var btQty)
+                            ? btQty
+                            : 0m;
 
                         // Seed with today's date; you can edit later
                         var mu = new MaterialUsage
@@ -770,7 +760,7 @@ public partial class OperationsView : UserControl
                         EndDate = null,
                         LaborCost = laborLookup.TryGetValue(ssp.Id, out var labor)
                             ? labor
-                            : ssp.LaborCost ?? 0m
+                            : 0m
                     };
                     _db.SubStages.Add(newSub);
                 }
@@ -1812,7 +1802,7 @@ public partial class OperationsView : UserControl
                     Status = WorkStatus.NotStarted,
                     LaborCost = laborLookup.TryGetValue(sp.Id, out var labor)
                         ? labor
-                        : sp.LaborCost ?? 0m
+                        : 0m
                 };
                 _db.SubStages.Add(sub);
                 await _db.SaveChangesAsync(); // need sub.Id to attach usages
@@ -1825,7 +1815,7 @@ public partial class OperationsView : UserControl
                 {
                     var qty = materialUsageLookup.TryGetValue((sp.Id, mup.MaterialId), out var buildingTypeQty)
                         ? buildingTypeQty
-                        : (mup.Qty ?? 0m);
+                        : 0m;
 
                     var mu = new MaterialUsage
                     {

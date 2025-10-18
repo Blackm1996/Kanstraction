@@ -244,8 +244,6 @@
     <sys:String x:Key="StagePresetDesignerView_PresetName">Nom de l'étape</sys:String>
     <sys:String x:Key="StagePresetDesignerView_Summary">Résumé</sys:String>
     <sys:String x:Key="StagePresetDesignerView_TotalSubStages">Total des sous-étapes : {0}</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_TotalLabor">Total de la main-d'œuvre par défaut : {0:0.##}</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_Labor">Main-d'œuvre</sys:String>
     <sys:String x:Key="StagePresetDesignerView_AddSubStage">Ajouter une sous-étape</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialsForSelected">Matériaux pour la sous-étape sélectionnée</sys:String>
     <sys:String x:Key="StagePresetDesignerView_Category">Catégorie</sys:String>
@@ -254,12 +252,9 @@
     <sys:String x:Key="StagePresetDesignerView_DeleteSubStageConfirmFormat">Supprimer la sous-étape '{0}' ?</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SelectSubStageFirst">Sélectionnez d'abord une sous-étape.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SelectMaterial">Choisissez un matériau.</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_QtyMustBeNonNegative">La quantité doit être un nombre non négatif.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialAlreadyAdded">Ce matériau est déjà ajouté à la sous-étape.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_PresetNameRequired">Le nom de l'étape est requis.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SubStageNameRequired">Chaque sous-étape doit avoir un nom.</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_LaborCostNonNegative">Le coût de main-d'œuvre doit être ≥ 0.</sys:String>
-    <sys:String x:Key="StagePresetDesignerView_MaterialQuantityNonNegative">La quantité de matériau doit être ≥ 0.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SavedMessage">Étape enregistrée.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DialogTitle">Étape enregistrée</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SaveFailedFormat">Échec de l'enregistrement :&#x0a;{0}</sys:String>
