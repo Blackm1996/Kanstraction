@@ -828,6 +828,25 @@ namespace Kanstraction.Views
                 BuildingTypesList_SelectionChanged(BuildingTypesList,
                     new SelectionChangedEventArgs(ListBox.SelectionChangedEvent, new List<object>(), new List<object> { bt }));
             }
+            else if (_editingBtId == null && _btAssigned != null && _btAssigned.Count > 0)
+            {
+                // We are editing a draft building type – keep the staged sub-stages/materials alive
+                foreach (var assigned in _btAssigned)
+                {
+                    await EnsureSubStageLaborsForPresetAsync(assigned.StagePresetId);
+                }
+
+                if (BtAssignedGrid != null && _btAssigned.Count > 0)
+                {
+                    var selected = (BtAssignedGrid.SelectedItem as AssignedPresetVm) ?? _btAssigned.FirstOrDefault();
+                    if (selected != null)
+                    {
+                        BtAssignedGrid.SelectedItem = selected;
+                        BtAssignedGrid_SelectionChanged(BtAssignedGrid,
+                            new SelectionChangedEventArgs(ListBox.SelectionChangedEvent, new List<object>(), new List<object> { selected }));
+                    }
+                }
+            }
             else
             {
                 // No selection; clear preview
