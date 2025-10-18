@@ -758,8 +758,8 @@ public partial class OperationsView : UserControl
                         Status = WorkStatus.NotStarted,
                         StartDate = null,
                         EndDate = null,
-                        LaborCost = laborLookup.TryGetValue(ssp.Id, out var labor)
-                            ? labor
+                        LaborCost = laborLookup.TryGetValue(ssp.Id, out var labor) && labor.HasValue
+                            ? labor.Value
                             : 0m
                     };
                     _db.SubStages.Add(newSub);
