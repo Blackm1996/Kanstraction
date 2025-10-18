@@ -75,6 +75,25 @@ public partial class AddBuildingDialog : Window
             if (res != MessageBoxResult.Yes) return;
         }
 
+        var hasNullLabor = await _db.BuildingTypeSubStageLabors
+            .AnyAsync(x => x.BuildingTypeId == typeId && x.LaborCost == null);
+        var hasNullMaterialQty = await _db.BuildingTypeMaterialUsages
+            .AnyAsync(x => x.BuildingTypeId == typeId && x.Qty == null);
+
+        if (hasNullLabor || hasNullMaterialQty)
+        {
+            var res = MessageBox.Show(
+                ResourceHelper.GetString("AddBuildingDialog_IncompleteDefaultsWarning", "Some labor costs or material quantities for this building type are missing. Continue anyway?"),
+                ResourceHelper.GetString("AddBuildingDialog_IncompleteDefaultsTitle", "Missing defaults"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (res != MessageBoxResult.Yes)
+            {
+                return;
+            }
+        }
+
         DialogResult = true;
     }
 }

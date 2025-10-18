@@ -75,7 +75,6 @@
                             <StackPanel Grid.Column="1" Margin="16,0,0,0">
                                 <TextBlock Text="{DynamicResource StagePresetDesignerView_Summary}" FontWeight="SemiBold" Margin="0,0,0,6"/>
                                 <TextBlock x:Name="TxtTotalSubs"/>
-                                <TextBlock x:Name="TxtTotalLabor"/>
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -111,7 +110,6 @@
                                     <DataGrid.Columns>
                                         <DataGridTextColumn Header="#" Binding="{Binding OrderIndex}" Width="40" IsReadOnly="True"/>
                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_Name}" Binding="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Width="*"/>
-                                        <DataGridTextColumn Header="{DynamicResource StagePresetDesignerView_Labor}" Binding="{Binding LaborCost, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}" Width="150"/>
                                         <DataGridTemplateColumn Header="{DynamicResource AdminHubView_Order}" Width="120">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
@@ -166,8 +164,7 @@
                                               IsEditable="True"
                                               IsTextSearchEnabled="True"
                                               StaysOpenOnEdit="True"
-                                              TextSearch.TextPath="Name"
-                                              SelectionChanged="MaterialSelected">
+                                              TextSearch.TextPath="Name">
                                         <ComboBox.ItemTemplate>
                                             <DataTemplate>
                                                 <StackPanel>
@@ -179,9 +176,6 @@
                                             </DataTemplate>
                                         </ComboBox.ItemTemplate>
                                     </ComboBox>
-                                    <TextBox x:Name="TxtQty" Width="120" Margin="0,0,8,0"
-                         materialDesign:HintAssist.Hint="{DynamicResource AddMaterialToSubStageDialog_QuantityHint}" />
-                                    <TextBlock x:Name="TxtMTUnit" Width="30" Margin="8,0,8,0" VerticalAlignment="Center" FontWeight="Bold"/>
                                     <Button Content="{DynamicResource Common_Add}" Click="AddMaterial_Click" />
                                 </StackPanel>
 
@@ -193,11 +187,6 @@
                                         <DataGridTextColumn Header="{DynamicResource OperationsView_MaterialHeader}" Binding="{Binding MaterialName}" IsReadOnly="True" Width="*"/>
                                         <DataGridTextColumn Header="{DynamicResource StagePresetDesignerView_Category}" Binding="{Binding CategoryName}" IsReadOnly="True" Width="160"/>
                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_Unit}" Binding="{Binding Unit}" IsReadOnly="True" Width="80"/>
-                                        <DataGridTextColumn Header="{DynamicResource OperationsView_Qty}" Width="120">
-                                            <DataGridTextColumn.Binding>
-                                                <Binding Path="Qty" UpdateSourceTrigger="PropertyChanged" StringFormat="{}{0:0.##}" TargetNullValue="" />
-                                            </DataGridTextColumn.Binding>
-                                        </DataGridTextColumn>
                                         <DataGridTemplateColumn Header="" Width="80">
                                             <DataGridTemplateColumn.CellTemplate>
                                                 <DataTemplate>
