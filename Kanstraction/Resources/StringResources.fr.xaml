@@ -89,14 +89,12 @@
     <sys:String x:Key="AdminHubView_AssignedPresets">Étape</sys:String>
     <sys:String x:Key="AdminHubView_SubStages">Sous-étapes</sys:String>
     <sys:String x:Key="AdminHubView_Labor">Main-d'œuvre</sys:String>
-    <sys:String x:Key="AdminHubView_LaborRequired">Entrez un coût de main-d'œuvre pour chaque sous-étape avant d'enregistrer.</sys:String>
     <sys:String x:Key="AdminHubView_DefaultLabor">Main-d'œuvre du gabarit</sys:String>
     <sys:String x:Key="AdminHubView_Order">Ordre</sys:String>
     <sys:String x:Key="AdminHubView_Remove">Supprimer</sys:String>
     <sys:String x:Key="AdminHubView_SelectedPresetTitle">Sélectionnez une étape pour prévisualiser ses sous-étapes</sys:String>
     <sys:String x:Key="AdminHubView_SelectedSubStageMaterialsTitle">Sélectionnez un sous-chantier pour modifier les matériaux</sys:String>
     <sys:String x:Key="AdminHubView_MaterialsForSubStageFormat">Matériaux pour « {0} »</sys:String>
-    <sys:String x:Key="AdminHubView_MaterialQuantityRequired">Saisissez une quantité pour chaque matériau avant d'enregistrer.</sys:String>
     <sys:String x:Key="AdminHubView_Tip">Astuce : l'ordre reflète la séquence d'exécution lors de la création d'un bâtiment de ce type.</sys:String>
     <sys:String x:Key="AdminHubView_AssignStagePresets">Attribuer des étapes enregistrées</sys:String>
     <sys:String x:Key="AdminHubView_ChoosePresetHint">Choisissez une étape à ajouter</sys:String>
@@ -295,6 +293,8 @@
     <sys:String x:Key="AddBuildingDialog_TypeRequired">Sélectionnez un type de bâtiment.</sys:String>
     <sys:String x:Key="AddBuildingDialog_NoPresetWarning">Ce type de bâtiment n'a aucune étape assignée. Créer quand même ?</sys:String>
     <sys:String x:Key="AddBuildingDialog_NoPresetTitle">Aucune étape</sys:String>
+    <sys:String x:Key="AddBuildingDialog_IncompleteDefaultsTitle">Valeurs manquantes</sys:String>
+    <sys:String x:Key="AddBuildingDialog_IncompleteDefaultsWarning">Certaines valeurs de coût de main-d'œuvre ou de quantité de matériaux pour ce type de bâtiment sont manquantes. Continuer quand même ?</sys:String>
 
     <!-- AddSubStageDialog (code-behind) -->
     <sys:String x:Key="AddSubStageDialog_OrderHelpFormat">Ordre autorisé : 1..{0}</sys:String>

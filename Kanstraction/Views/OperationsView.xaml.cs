@@ -472,12 +472,12 @@ public partial class OperationsView : UserControl
                 .ToListAsync();
 
             var laborLookup = await _db.BuildingTypeSubStageLabors
-                .Where(x => x.BuildingTypeId == typeId.Value)
-                .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
+                .Where(x => x.BuildingTypeId == typeId.Value && x.LaborCost.HasValue)
+                .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost!.Value);
 
             var materialLookup = await _db.BuildingTypeMaterialUsages
-                .Where(x => x.BuildingTypeId == typeId.Value)
-                .ToDictionaryAsync(x => (x.SubStagePresetId, x.MaterialId), x => x.Qty);
+                .Where(x => x.BuildingTypeId == typeId.Value && x.Qty.HasValue)
+                .ToDictionaryAsync(x => (x.SubStagePresetId, x.MaterialId), x => x.Qty!.Value);
 
             int stageOrder = 1;
 
@@ -1785,12 +1785,12 @@ public partial class OperationsView : UserControl
             var subPresetIds = subPresets.ConvertAll(sp => sp.Id);
 
             var laborLookup = await _db.BuildingTypeSubStageLabors
-                .Where(x => x.BuildingTypeId == buildingTypeId)
-                .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
+                .Where(x => x.BuildingTypeId == buildingTypeId && subPresetIds.Contains(x.SubStagePresetId) && x.LaborCost.HasValue)
+                .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost!.Value);
 
             var materialUsageLookup = await _db.BuildingTypeMaterialUsages
-                .Where(x => x.BuildingTypeId == buildingTypeId && subPresetIds.Contains(x.SubStagePresetId))
-                .ToDictionaryAsync(x => (x.SubStagePresetId, x.MaterialId), x => x.Qty);
+                .Where(x => x.BuildingTypeId == buildingTypeId && subPresetIds.Contains(x.SubStagePresetId) && x.Qty.HasValue)
+                .ToDictionaryAsync(x => (x.SubStagePresetId, x.MaterialId), x => x.Qty!.Value);
 
             foreach (var sp in subPresets)
             {

@@ -90,14 +90,12 @@
     <sys:String x:Key="AdminHubView_AssignedPresets">Preset</sys:String>
     <sys:String x:Key="AdminHubView_SubStages">Sub-stages</sys:String>
     <sys:String x:Key="AdminHubView_Labor">Labor</sys:String>
-    <sys:String x:Key="AdminHubView_LaborRequired">Enter a labor cost for every sub-stage before saving.</sys:String>
     <sys:String x:Key="AdminHubView_DefaultLabor">Preset labor</sys:String>
     <sys:String x:Key="AdminHubView_Order">Order</sys:String>
     <sys:String x:Key="AdminHubView_Remove">Remove</sys:String>
     <sys:String x:Key="AdminHubView_SelectedPresetTitle">Select a preset to preview its sub-stages</sys:String>
     <sys:String x:Key="AdminHubView_SelectedSubStageMaterialsTitle">Select a sub-stage to edit materials</sys:String>
     <sys:String x:Key="AdminHubView_MaterialsForSubStageFormat">Materials for "{0}"</sys:String>
-    <sys:String x:Key="AdminHubView_MaterialQuantityRequired">Enter a quantity for every material before saving.</sys:String>
     <sys:String x:Key="AdminHubView_Tip">Tip: order reflects execution sequence when a building of this type is created.</sys:String>
     <sys:String x:Key="AdminHubView_AssignStagePresets">Assign Stage Presets</sys:String>
     <sys:String x:Key="AdminHubView_ChoosePresetHint">Choose a preset to add</sys:String>
@@ -297,6 +295,8 @@
     <sys:String x:Key="AddBuildingDialog_TypeRequired">Select a building type.</sys:String>
     <sys:String x:Key="AddBuildingDialog_NoPresetWarning">This building type has no stage presets assigned. Create anyway?</sys:String>
     <sys:String x:Key="AddBuildingDialog_NoPresetTitle">No preset</sys:String>
+    <sys:String x:Key="AddBuildingDialog_IncompleteDefaultsTitle">Missing defaults</sys:String>
+    <sys:String x:Key="AddBuildingDialog_IncompleteDefaultsWarning">Some labor costs or material quantities for this building type are missing. Continue anyway?</sys:String>
 
     <!-- AddSubStageDialog (code-behind) -->
     <sys:String x:Key="AddSubStageDialog_OrderHelpFormat">Allowed order: 1..{0}</sys:String>

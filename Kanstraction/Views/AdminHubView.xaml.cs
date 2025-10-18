@@ -791,8 +791,8 @@ namespace Kanstraction.Views
         private Dictionary<int, int> _presetSubCounts = new(); // StagePresetId -> count
         private Dictionary<int, ObservableCollection<SubStageLaborVm>> _btSubStageLabors = new();
         private Dictionary<int, ObservableCollection<SubStageMaterialVm>> _btSubStageMaterials = new();
-        private Dictionary<int, decimal> _currentBtLaborMap = new();
-        private Dictionary<(int SubStagePresetId, int MaterialId), decimal> _currentBtMaterialMap = new();
+        private Dictionary<int, decimal?> _currentBtLaborMap = new();
+        private Dictionary<(int SubStagePresetId, int MaterialId), decimal?> _currentBtMaterialMap = new();
         // VM for the assigned presets list
         private class AssignedPresetVm
         {
@@ -853,8 +853,8 @@ namespace Kanstraction.Views
                 if (BtSubStagesPreviewGrid != null) BtSubStagesPreviewGrid.ItemsSource = null;
                 _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
                 _btSubStageMaterials = new Dictionary<int, ObservableCollection<SubStageMaterialVm>>();
-                _currentBtLaborMap = new Dictionary<int, decimal>();
-                _currentBtMaterialMap = new Dictionary<(int SubStagePresetId, int MaterialId), decimal>();
+                _currentBtLaborMap = new Dictionary<int, decimal?>();
+                _currentBtMaterialMap = new Dictionary<(int SubStagePresetId, int MaterialId), decimal?>();
                 if (BtMaterialsGrid != null) BtMaterialsGrid.ItemsSource = null;
                 if (BtMaterialsTitle != null)
                     BtMaterialsTitle.Text = ResourceHelper.GetString("AdminHubView_SelectedSubStageMaterialsTitle", "Select a sub-stage to edit materials");
@@ -983,8 +983,8 @@ namespace Kanstraction.Views
             _editingBtId = null;
             _currentBt = null;
             _currentBtAssignedIds = new List<int>();
-            _currentBtLaborMap = new Dictionary<int, decimal>();
-            _currentBtMaterialMap = new Dictionary<(int SubStagePresetId, int MaterialId), decimal>();
+            _currentBtLaborMap = new Dictionary<int, decimal?>();
+            _currentBtMaterialMap = new Dictionary<(int SubStagePresetId, int MaterialId), decimal?>();
 
             if (BtName != null) BtName.Text = string.Empty;
             if (BtActive != null) BtActive.IsChecked = true;
@@ -1043,8 +1043,8 @@ namespace Kanstraction.Views
             var presetIds = _btAssigned.Select(a => a.StagePresetId).Distinct().ToList();
             if (_db == null || presetIds.Count == 0)
             {
-                _currentBtLaborMap = new Dictionary<int, decimal>();
-                _currentBtMaterialMap = new Dictionary<(int SubStagePresetId, int MaterialId), decimal>();
+                _currentBtLaborMap = new Dictionary<int, decimal?>();
+                _currentBtMaterialMap = new Dictionary<(int SubStagePresetId, int MaterialId), decimal?>();
                 return;
             }
 
@@ -1059,13 +1059,14 @@ namespace Kanstraction.Views
                 .ToListAsync();
 
             _currentBtLaborMap = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.LaborCost);
-            var laborLookup = laborRows.ToDictionary(x => x.SubStagePresetId, x => (decimal?)x.LaborCost);
+            var laborLookup = _currentBtLaborMap;
 
             var materialRows = await _db.BuildingTypeMaterialUsages
                 .Where(x => x.BuildingTypeId == buildingTypeId)
                 .ToListAsync();
 
             _currentBtMaterialMap = materialRows.ToDictionary(x => (x.SubStagePresetId, x.MaterialId), x => x.Qty);
+            var materialLookup = _currentBtMaterialMap;
 
             foreach (var presetId in presetIds)
             {
@@ -1087,7 +1088,7 @@ namespace Kanstraction.Views
             }
 
             var subInfos = subPresets.Select(s => (s.StagePresetId, s.Id)).ToList();
-            await PopulateSubStageMaterialsAsync(subInfos, _currentBtMaterialMap, overwriteExisting: true);
+            await PopulateSubStageMaterialsAsync(subInfos, materialLookup, overwriteExisting: true);
         }
 
         private async Task<ObservableCollection<SubStageLaborVm>> EnsureSubStageLaborsForPresetAsync(int stagePresetId)
@@ -1112,7 +1113,7 @@ namespace Kanstraction.Views
                 .Select(s => new { s.Id, s.Name, s.OrderIndex })
                 .ToListAsync();
 
-            Dictionary<int, decimal>? existingLabors = null;
+            Dictionary<int, decimal?>? existingLabors = null;
             if (_editingBtId.HasValue)
             {
                 var subIds = subs.Select(s => s.Id).ToList();
@@ -1167,7 +1168,7 @@ namespace Kanstraction.Views
 
         private async Task PopulateSubStageMaterialsAsync(
             IEnumerable<(int StagePresetId, int SubStagePresetId)> subStageInfos,
-            Dictionary<(int SubStagePresetId, int MaterialId), decimal>? existingValues,
+            Dictionary<(int SubStagePresetId, int MaterialId), decimal?>? existingValues,
             bool overwriteExisting)
         {
             if (_db == null) return;
@@ -1279,10 +1280,7 @@ namespace Kanstraction.Views
                 if (!assignedIds.Contains(kvp.Key)) continue;
                 foreach (var vm in kvp.Value)
                 {
-                    if (vm.LaborCost.HasValue)
-                    {
-                        map[vm.SubStagePresetId] = vm.LaborCost;
-                    }
+                    map[vm.SubStagePresetId] = vm.LaborCost;
                 }
             }
 
@@ -1305,7 +1303,7 @@ namespace Kanstraction.Views
 
             foreach (var kvp in _currentBtLaborMap)
             {
-                if (!currentMap.TryGetValue(kvp.Key, out var value) || !value.HasValue || value.Value != kvp.Value)
+                if (!currentMap.TryGetValue(kvp.Key, out var value) || value != kvp.Value)
                 {
                     return true;
                 }
@@ -1329,10 +1327,7 @@ namespace Kanstraction.Views
                     {
                         foreach (var matVm in materials)
                         {
-                            if (matVm.Qty.HasValue)
-                            {
-                                map[(matVm.SubStagePresetId, matVm.MaterialId)] = matVm.Qty;
-                            }
+                            map[(matVm.SubStagePresetId, matVm.MaterialId)] = matVm.Qty;
                         }
                     }
                 }
@@ -1354,10 +1349,10 @@ namespace Kanstraction.Views
             {
                 return true;
             }
-            
+
             foreach (var kvp in _currentBtMaterialMap)
             {
-                if (!currentMap.TryGetValue(kvp.Key, out var value) || !value.HasValue || value.Value != kvp.Value)
+                if (!currentMap.TryGetValue(kvp.Key, out var value) || value != kvp.Value)
                 {
                     return true;
                 }
@@ -1622,53 +1617,8 @@ namespace Kanstraction.Views
                 var assignedPresetIds = _btAssigned.Select(a => a.StagePresetId).ToList();
                 foreach (var presetId in assignedPresetIds)
                 {
-                    var labors = await EnsureSubStageLaborsForPresetAsync(presetId);
-                    foreach (var laborVm in labors)
-                    {
-                        if (!laborVm.LaborCost.HasValue)
-                        {
-                            MessageBox.Show(
-                                ResourceHelper.GetString("AdminHubView_LaborRequired", "Enter a labor cost for every sub-stage before saving."),
-                                ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
-                                MessageBoxButton.OK,
-                                MessageBoxImage.Warning);
-                            await tx.RollbackAsync();
-                            if (isCreatingNew)
-                            {
-                                ResetNewBuildingTypeDraft(createdBuildingType);
-                            }
-                            return;
-                        }
-
-                        if (!_btSubStageMaterials.TryGetValue(laborVm.SubStagePresetId, out var materials))
-                        {
-                            await EnsureStageMaterialsAsync(presetId);
-                            _btSubStageMaterials.TryGetValue(laborVm.SubStagePresetId, out materials);
-                        }
-
-                        if (materials != null)
-                        {
-                            foreach (var materialVm in materials)
-                            {
-                                if (!materialVm.Qty.HasValue)
-                                {
-                                    MessageBox.Show(
-                                        ResourceHelper.GetString("AdminHubView_MaterialQuantityRequired", "Enter a quantity for every material before saving."),
-                                        ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
-                                        MessageBoxButton.OK,
-                                        MessageBoxImage.Warning);
-                                    await tx.RollbackAsync();
-                                    if (isCreatingNew)
-                                    {
-                                        ResetNewBuildingTypeDraft(createdBuildingType);
-                                    }
-                                    return;
-                                }
-                            }
-                        }
-                    }
+                    await EnsureSubStageLaborsForPresetAsync(presetId);
                 }
-
                 var existingLabors = await _db.BuildingTypeSubStageLabors
                     .Where(x => x.BuildingTypeId == _editingBtId!.Value)
                     .ToListAsync();
@@ -1714,7 +1664,7 @@ namespace Kanstraction.Views
                     if (!_btSubStageLabors.TryGetValue(presetId, out var list)) continue;
                     foreach (var laborVm in list)
                     {
-                        var cost = laborVm.LaborCost!.Value;
+                        var cost = laborVm.LaborCost;
                         var existing = existingLabors.FirstOrDefault(x => x.SubStagePresetId == laborVm.SubStagePresetId);
                         if (existing == null)
                         {
@@ -1736,7 +1686,7 @@ namespace Kanstraction.Views
                         {
                             foreach (var materialVm in materials)
                             {
-                                var qty = materialVm.Qty!.Value;
+                                var qty = materialVm.Qty;
                                 var existingMaterial = existingMaterials.FirstOrDefault(x =>
                                     x.SubStagePresetId == laborVm.SubStagePresetId &&
                                     x.MaterialId == materialVm.MaterialId);
@@ -1767,14 +1717,14 @@ namespace Kanstraction.Views
                     .SelectMany(id => _btSubStageLabors.TryGetValue(id, out var list)
                         ? list
                         : Enumerable.Empty<SubStageLaborVm>())
-                    .ToDictionary(vm => vm.SubStagePresetId, vm => vm.LaborCost!.Value);
+                    .ToDictionary(vm => vm.SubStagePresetId, vm => vm.LaborCost);
 
                 _currentBtMaterialMap = assignedPresetIds
                     .SelectMany(id => _btSubStageLabors.TryGetValue(id, out var list)
                         ? list.SelectMany(sub => _btSubStageMaterials.TryGetValue(sub.SubStagePresetId, out var materials)
-                            ? materials.Select(mat => ((sub.SubStagePresetId, mat.MaterialId), mat.Qty!.Value))
-                            : Enumerable.Empty<((int, int), decimal)>())
-                        : Enumerable.Empty<((int, int), decimal)>())
+                            ? materials.Select(mat => ((sub.SubStagePresetId, mat.MaterialId), mat.Qty))
+                            : Enumerable.Empty<((int, int), decimal?)>())
+                        : Enumerable.Empty<((int, int), decimal?)>())
                     .ToDictionary(k => k.Item1, v => v.Item2);
 
                 await tx.CommitAsync();
