@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 ﻿using Kanstraction.Data;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
@@ -64,8 +65,13 @@ public partial class AddBuildingDialog : Window
         BuildingCode = code;
 
         // quick sanity check: the chosen type must have at least 1 preset assigned (not required, but nice)
-        var hasAnyPreset = await _db.BuildingTypeStagePresets.AnyAsync(x => x.BuildingTypeId == typeId);
-        if (!hasAnyPreset)
+        var assignedStageIds = await _db.BuildingTypeStagePresets
+            .Where(x => x.BuildingTypeId == typeId)
+            .Select(x => x.StagePresetId)
+            .Distinct()
+            .ToListAsync();
+
+        if (assignedStageIds.Count == 0)
         {
             var res = MessageBox.Show(
                 ResourceHelper.GetString("AddBuildingDialog_NoPresetWarning", "This building type has no stage presets assigned. Create anyway?"),
@@ -73,6 +79,61 @@ public partial class AddBuildingDialog : Window
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
             if (res != MessageBoxResult.Yes) return;
+        }
+
+        var requiredSubStageIds = assignedStageIds.Count == 0
+            ? new List<int>()
+            : await _db.SubStagePresets
+                .Where(s => assignedStageIds.Contains(s.StagePresetId))
+                .Select(s => s.Id)
+                .ToListAsync();
+
+        bool hasIncompleteDefaults = false;
+
+        if (requiredSubStageIds.Count > 0)
+        {
+            var laborLookup = await _db.BuildingTypeSubStageLabors
+                .Where(x => x.BuildingTypeId == typeId && requiredSubStageIds.Contains(x.SubStagePresetId))
+                .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
+
+            if (requiredSubStageIds.Any(id => !laborLookup.TryGetValue(id, out var cost) || cost == null))
+            {
+                hasIncompleteDefaults = true;
+            }
+
+            if (!hasIncompleteDefaults)
+            {
+                var requiredMaterials = await _db.MaterialUsagesPreset
+                    .Where(mu => requiredSubStageIds.Contains(mu.SubStagePresetId))
+                    .Select(mu => new { mu.SubStagePresetId, mu.MaterialId })
+                    .ToListAsync();
+
+                if (requiredMaterials.Count > 0)
+                {
+                    var materialLookup = await _db.BuildingTypeMaterialUsages
+                        .Where(x => x.BuildingTypeId == typeId && requiredSubStageIds.Contains(x.SubStagePresetId))
+                        .ToDictionaryAsync(x => (x.SubStagePresetId, x.MaterialId), x => x.Qty);
+
+                    if (requiredMaterials.Any(req => !materialLookup.TryGetValue((req.SubStagePresetId, req.MaterialId), out var qty) || qty == null))
+                    {
+                        hasIncompleteDefaults = true;
+                    }
+                }
+            }
+        }
+
+        if (hasIncompleteDefaults)
+        {
+            var res = MessageBox.Show(
+                ResourceHelper.GetString("AddBuildingDialog_IncompleteDefaultsWarning", "Some labor costs or material quantities for this building type are missing. Continue anyway?"),
+                ResourceHelper.GetString("AddBuildingDialog_IncompleteDefaultsTitle", "Missing defaults"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (res != MessageBoxResult.Yes)
+            {
+                return;
+            }
         }
 
         DialogResult = true;

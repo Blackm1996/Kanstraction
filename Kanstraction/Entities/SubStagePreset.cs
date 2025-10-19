@@ -6,6 +6,5 @@ public class SubStagePreset
     public int StagePresetId { get; set; }
     public string Name { get; set; } = "";
     public int OrderIndex { get; set; }
-    public decimal? LaborCost { get; set; }
     public StagePreset StagePreset { get; set; } = null!;
 }

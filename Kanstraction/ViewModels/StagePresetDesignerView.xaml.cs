@@ -183,7 +183,6 @@ public partial class StagePresetDesignerView : UserControl
             {
                 Id = ss.Id,
                 Name = ss.Name,
-                LaborCost = ss.LaborCost,
                 OrderIndex = ss.OrderIndex,
                 Materials = new ObservableCollection<MaterialUsageVm>()
             };
@@ -196,8 +195,7 @@ public partial class StagePresetDesignerView : UserControl
                     MaterialId = mu.MaterialId,
                     MaterialName = mu.Material?.Name ?? "",
                     CategoryName = mu.Material?.MaterialCategory?.Name ?? "",
-                    Unit = mu.Material?.Unit ?? "",
-                    Qty = mu.Qty
+                    Unit = mu.Material?.Unit ?? ""
                 });
             }
 
@@ -247,7 +245,6 @@ public partial class StagePresetDesignerView : UserControl
         var vm = new SubStageVm
         {
             Id = null,
-            LaborCost = null,
             OrderIndex = nextIndex,
             Materials = new ObservableCollection<MaterialUsageVm>()
         };
@@ -399,17 +396,6 @@ public partial class StagePresetDesignerView : UserControl
         // Go straight to "new preset" editor
         _ = LoadPresetAsync(null);
     }
-    private void MaterialSelected(object sender, RoutedEventArgs e)
-    {
-        string unit = "";
-        if (CboMaterial.SelectedIndex != -1)
-        {
-            Material selected = CboMaterial.SelectedItem as Material;
-            unit = selected.Unit;
-        }
-        TxtMTUnit.Text = unit;
-    }
-
     // -------------------- Materials actions (for selected sub-stage) --------------------
     private void AddMaterial_Click(object sender, RoutedEventArgs e)
     {
@@ -423,19 +409,6 @@ public partial class StagePresetDesignerView : UserControl
         {
             MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_SelectMaterial", "Choose a material."));
             return;
-        }
-
-        var qtyText = TxtQty.Text?.Trim();
-        decimal? qty = null;
-        if (!string.IsNullOrEmpty(qtyText))
-        {
-            if (!decimal.TryParse(qtyText, out var parsed) || parsed < 0)
-            {
-                MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_QtyMustBeNonNegative", "Quantity must be a non-negative number."));
-                return;
-            }
-
-            qty = parsed;
         }
 
         // prevent duplicates
@@ -454,13 +427,11 @@ public partial class StagePresetDesignerView : UserControl
             MaterialId = mat.Id,
             MaterialName = mat.Name,
             CategoryName = mat.MaterialCategory?.Name ?? "",
-            Unit = mat.Unit ?? "",
-            Qty = qty
+            Unit = mat.Unit ?? ""
         });
 
         // reset add row
         CboMaterial.SelectedIndex = -1;
-        TxtQty.Text = "";
 
         RefreshMaterialPickerItems();
         SetDirty();
@@ -496,9 +467,6 @@ public partial class StagePresetDesignerView : UserControl
     {
         var totalSubStagesFormat = ResourceHelper.GetString("StagePresetDesignerView_TotalSubStages", "Total sub-stages: {0}");
         TxtTotalSubs.Text = string.Format(totalSubStagesFormat, _subStages.Count);
-        var totalLabor = _subStages.Sum(s => s.LaborCost ?? 0m);
-        var totalLaborFormat = ResourceHelper.GetString("StagePresetDesignerView_TotalLabor", "Total default labor: {0:0.##}");
-        TxtTotalLabor.Text = string.Format(totalLaborFormat, totalLabor);
     }
 
     // When editing cells, mark dirty and update summary (for labor changes)
@@ -520,7 +488,6 @@ public partial class StagePresetDesignerView : UserControl
                 _subStageOriginalValue = path switch
                 {
                     nameof(SubStageVm.Name) => vm.Name,
-                    nameof(SubStageVm.LaborCost) => vm.LaborCost,
                     _ => null
                 };
 
@@ -564,7 +531,6 @@ public partial class StagePresetDesignerView : UserControl
                 object? currentValue = property switch
                 {
                     nameof(SubStageVm.Name) => vm.Name,
-                    nameof(SubStageVm.LaborCost) => vm.LaborCost,
                     _ => null
                 };
 
@@ -616,19 +582,6 @@ public partial class StagePresetDesignerView : UserControl
             {
                 MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_SubStageNameRequired", "Each sub-stage must have a name."));
                 return;
-            }
-            if (s.LaborCost.HasValue && s.LaborCost.Value < 0)
-            {
-                MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_LaborCostNonNegative", "Labor cost must be ≥ 0."));
-                return;
-            }
-            foreach (var mu in s.Materials)
-            {
-                if (mu.Qty.HasValue && mu.Qty.Value < 0)
-                {
-                    MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_MaterialQuantityNonNegative", "Material quantity must be ≥ 0."));
-                    return;
-                }
             }
         }
 
@@ -686,7 +639,6 @@ public partial class StagePresetDesignerView : UserControl
                     {
                         StagePresetId = _currentPresetId!.Value,
                         Name = vm.Name,
-                        LaborCost = vm.LaborCost,
                         OrderIndex = index + 1
                     };
                     _db.SubStagePresets.Add(s);
@@ -697,7 +649,6 @@ public partial class StagePresetDesignerView : UserControl
                 {
                     var s = existingById[vm.Id.Value];
                     s.Name = vm.Name;
-                    s.LaborCost = vm.LaborCost;
                     s.OrderIndex = index + 1;
                     await _db.SaveChangesAsync();
                 }
@@ -733,8 +684,7 @@ public partial class StagePresetDesignerView : UserControl
                         var row = new MaterialUsagePreset
                         {
                             SubStagePresetId = sid,
-                            MaterialId = muVm.MaterialId,
-                            Qty = muVm.Qty
+                            MaterialId = muVm.MaterialId
                         };
                         _db.MaterialUsagesPreset.Add(row);
                         await _db.SaveChangesAsync();
@@ -744,7 +694,6 @@ public partial class StagePresetDesignerView : UserControl
                     {
                         var row = existingForS.First(x => x.Id == muVm.Id.Value);
                         row.MaterialId = muVm.MaterialId; // normally unchanged, but keep consistent
-                        row.Qty = muVm.Qty;
                         await _db.SaveChangesAsync();
                     }
                 }
@@ -783,7 +732,6 @@ public partial class StagePresetDesignerView : UserControl
     {
         private int? _id;
         private string _name = string.Empty;
-        private decimal? _laborCost;
         private int _orderIndex;
         private ObservableCollection<MaterialUsageVm> _materials = new();
 
@@ -797,12 +745,6 @@ public partial class StagePresetDesignerView : UserControl
         {
             get => _name;
             set => SetProperty(ref _name, value ?? string.Empty);
-        }
-
-        public decimal? LaborCost
-        {
-            get => _laborCost;
-            set => SetProperty(ref _laborCost, value);
         }
 
         public int OrderIndex
@@ -844,6 +786,5 @@ public partial class StagePresetDesignerView : UserControl
         public string MaterialName { get; set; } = "";
         public string CategoryName { get; set; } = "";
         public string Unit { get; set; } = "";
-        public decimal? Qty { get; set; }
     }
 }

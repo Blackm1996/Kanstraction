@@ -133,7 +133,7 @@ namespace Kanstraction.Data
             // Local helper to add/update a StagePreset with its SubStagePresets and material usages
             void UpsertStagePreset(
                 string presetName,
-                (int order, string name, decimal labor, (string mat, decimal qty)[] uses)[] subs)
+                (int order, string name, string[] uses)[] subs)
             {
                 var preset = db.StagePresets.FirstOrDefault(p => p.Name == presetName);
                 if (preset == null)
@@ -155,26 +155,24 @@ namespace Kanstraction.Data
                         {
                             StagePresetId = preset.Id,
                             Name = s.name,
-                            OrderIndex = s.order,
-                            LaborCost = s.labor
+                            OrderIndex = s.order
                         };
                         db.SubStagePresets.Add(sub);
                         db.SaveChanges(); // need sub.Id for material usages
                     }
                     else
                     {
-                        // keep metadata updated (order/labor)
-                        if (sub.OrderIndex != s.order || sub.LaborCost != s.labor)
+                        // keep metadata updated (order)
+                        if (sub.OrderIndex != s.order)
                         {
                             sub.OrderIndex = s.order;
-                            sub.LaborCost = s.labor;
                             db.SubStagePresets.Update(sub);
                             db.SaveChanges();
                         }
                     }
 
                     // Ensure material usages for this sub-stage preset
-                    foreach (var (matName, qty) in s.uses)
+                    foreach (var matName in s.uses)
                     {
                         if (!materialsByName.TryGetValue(matName, out var mat)) continue;
 
@@ -186,14 +184,8 @@ namespace Kanstraction.Data
                             db.MaterialUsagesPreset.Add(new MaterialUsagePreset
                             {
                                 SubStagePresetId = sub.Id,
-                                MaterialId = mat.Id,
-                                Qty = qty
+                                MaterialId = mat.Id
                             });
-                        }
-                        else
-                        {
-                            if (exists.Qty != qty)
-                                exists.Qty = qty;
                         }
                     }
                     db.SaveChanges();
@@ -203,34 +195,34 @@ namespace Kanstraction.Data
             // Presets (same as your current intent, names kept consistent)
             UpsertStagePreset("Fondation", new[]
             {
-                (1, "Excavation", 800m,  new[] { ("Sable", 5m), ("Gravier", 3m) }),
-                (2, "Armature",   1200m, new[] { ("Armature", 500m) }),
-                (3, "Coulage",    1500m, new[] { ("Ciment", 60m), ("Sable", 10m), ("Gravier", 10m) })
+                (1, "Excavation",  new[] { "Sable", "Gravier" }),
+                (2, "Armature",    new[] { "Armature" }),
+                (3, "Coulage",     new[] { "Ciment", "Sable", "Gravier" })
             });
 
             UpsertStagePreset("Structure", new[]
             {
-                (1, "Colonnes", 1400m, new[] { ("Armature", 600m), ("Ciment", 40m) }),
-                (2, "Poutres",  1200m, new[] { ("Armature", 400m), ("Ciment", 30m) }),
-                (3, "Dalle",    1300m, new[] { ("Armature", 300m), ("Ciment", 35m) })
+                (1, "Colonnes", new[] { "Armature", "Ciment" }),
+                (2, "Poutres",  new[] { "Armature", "Ciment" }),
+                (3, "Dalle",    new[] { "Armature", "Ciment" })
             });
 
             UpsertStagePreset("Murs", new[]
             {
-                (1, "Maçonnerie de blocs", 900m, new[] { ("Blocs", 1000m), ("Ciment", 20m), ("Sable", 8m) }),
-                (2, "Plâtrage",            700m, new[] { ("Plâtre", 30m) })
+                (1, "Maçonnerie de blocs", new[] { "Blocs", "Ciment", "Sable" }),
+                (2, "Plâtrage",            new[] { "Plâtre" })
             });
 
             UpsertStagePreset("MEP", new[]
             {
-                (1, "Préinstallation plomberie",  800m, new[] { ("Tuyaux", 120m) }),
-                (2, "Préinstallation électrique", 900m, new[] { ("Câblage", 300m) })
+                (1, "Préinstallation plomberie",  new[] { "Tuyaux" }),
+                (2, "Préinstallation électrique", new[] { "Câblage" })
             });
 
             UpsertStagePreset("Finitions", new[]
             {
-                (1, "Apprêt",          500m, new[] { ("Peinture", 5m) }),
-                (2, "Peinture finale", 700m, new[] { ("Peinture", 10m) })
+                (1, "Apprêt",          new[] { "Peinture" }),
+                (2, "Peinture finale", new[] { "Peinture" })
             });
         }
 
