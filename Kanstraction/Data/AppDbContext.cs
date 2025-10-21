@@ -124,6 +124,10 @@ public class AppDbContext : DbContext
         // indexes
         b.Entity<MaterialCategory>().HasIndex(x => x.Name).IsUnique();
         b.Entity<Material>().HasIndex(x => x.MaterialCategoryId);
+        b.Entity<Material>().HasIndex(x => x.Name).IsUnique();
+        b.Entity<MaterialUsagePreset>().HasIndex(x => x.SubStagePresetId);
+        b.Entity<MaterialUsagePreset>().HasIndex(x => x.MaterialId);
+        b.Entity<MaterialUsagePreset>().HasIndex(x => new { x.SubStagePresetId, x.MaterialId }).IsUnique();
         b.Entity<Stage>().HasIndex(x => new { x.BuildingId, x.OrderIndex });
         b.Entity<SubStage>().HasIndex(x => new { x.StageId, x.OrderIndex });
         b.Entity<MaterialUsage>().HasIndex(x => new { x.SubStageId, x.UsageDate });
