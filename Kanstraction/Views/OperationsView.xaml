@@ -210,6 +210,97 @@
                     </DataGridTemplateColumn>
                     <DataGridTextColumn Header="{DynamicResource OperationsView_OngoingSubStage}" Binding="{Binding OngoingSubStageName}"/>
                     <DataGridTextColumn Header="{DynamicResource OperationsView_Percent}" Binding="{Binding ProgressPercent}"/>
+                    <DataGridTemplateColumn Header="" Width="70">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button Style="{StaticResource TinyIconButton}"
+                                        Background="#3f51b5"
+                                        Click="ChangeStageStatus_Click"
+                                        ToolTip="Change status">
+                                    <iconPacks:PackIconFontAwesome Kind="ArrowsRotateSolid" Width="12" Height="12" Foreground="White"/>
+                                    <Button.ContextMenu>
+                                        <ContextMenu DataContext="{Binding PlacementTarget.DataContext, RelativeSource={RelativeSource Self}}">
+                                            <MenuItem Tag="{x:Static models:WorkStatus.NotStarted}"
+                                                      Header="{Binding Tag, RelativeSource={RelativeSource Self}, Converter={StaticResource StatusToString}}"
+                                                      Click="StageStatusMenuItem_Click">
+                                                <MenuItem.Style>
+                                                    <Style TargetType="MenuItem">
+                                                        <Setter Property="IsCheckable" Value="True"/>
+                                                        <Setter Property="IsChecked" Value="False"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="{x:Static models:WorkStatus.NotStarted}">
+                                                                <Setter Property="IsChecked" Value="True"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </MenuItem.Style>
+                                            </MenuItem>
+                                            <MenuItem Tag="{x:Static models:WorkStatus.Ongoing}"
+                                                      Header="{Binding Tag, RelativeSource={RelativeSource Self}, Converter={StaticResource StatusToString}}"
+                                                      Click="StageStatusMenuItem_Click">
+                                                <MenuItem.Style>
+                                                    <Style TargetType="MenuItem">
+                                                        <Setter Property="IsCheckable" Value="True"/>
+                                                        <Setter Property="IsChecked" Value="False"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="{x:Static models:WorkStatus.Ongoing}">
+                                                                <Setter Property="IsChecked" Value="True"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </MenuItem.Style>
+                                            </MenuItem>
+                                            <MenuItem Tag="{x:Static models:WorkStatus.Finished}"
+                                                      Header="{Binding Tag, RelativeSource={RelativeSource Self}, Converter={StaticResource StatusToString}}"
+                                                      Click="StageStatusMenuItem_Click">
+                                                <MenuItem.Style>
+                                                    <Style TargetType="MenuItem">
+                                                        <Setter Property="IsCheckable" Value="True"/>
+                                                        <Setter Property="IsChecked" Value="False"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="{x:Static models:WorkStatus.Finished}">
+                                                                <Setter Property="IsChecked" Value="True"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </MenuItem.Style>
+                                            </MenuItem>
+                                            <MenuItem Tag="{x:Static models:WorkStatus.Paid}"
+                                                      Header="{Binding Tag, RelativeSource={RelativeSource Self}, Converter={StaticResource StatusToString}}"
+                                                      Click="StageStatusMenuItem_Click">
+                                                <MenuItem.Style>
+                                                    <Style TargetType="MenuItem">
+                                                        <Setter Property="IsCheckable" Value="True"/>
+                                                        <Setter Property="IsChecked" Value="False"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="{x:Static models:WorkStatus.Paid}">
+                                                                <Setter Property="IsChecked" Value="True"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </MenuItem.Style>
+                                            </MenuItem>
+                                            <MenuItem Tag="{x:Static models:WorkStatus.Stopped}"
+                                                      Header="{Binding Tag, RelativeSource={RelativeSource Self}, Converter={StaticResource StatusToString}}"
+                                                      Click="StageStatusMenuItem_Click">
+                                                <MenuItem.Style>
+                                                    <Style TargetType="MenuItem">
+                                                        <Setter Property="IsCheckable" Value="True"/>
+                                                        <Setter Property="IsChecked" Value="False"/>
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding Status}" Value="{x:Static models:WorkStatus.Stopped}">
+                                                                <Setter Property="IsChecked" Value="True"/>
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </MenuItem.Style>
+                                            </MenuItem>
+                                        </ContextMenu>
+                                    </Button.ContextMenu>
+                                </Button>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTemplateColumn Header="" Width="60">
                         <DataGridTemplateColumn.CellTemplate>
                             <DataTemplate>
