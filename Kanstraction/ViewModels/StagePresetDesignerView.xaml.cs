@@ -1,13 +1,16 @@
 ﻿using Kanstraction;
 using Kanstraction.Data;
 using Kanstraction.Entities;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
 using System.Windows.Threading;
@@ -583,6 +586,27 @@ public partial class StagePresetDesignerView : UserControl
                 MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_SubStageNameRequired", "Each sub-stage must have a name."));
                 return;
             }
+
+            var duplicateMaterial = s.Materials
+                .GroupBy(m => m.MaterialId)
+                .FirstOrDefault(g => g.Count() > 1);
+
+            if (duplicateMaterial != null)
+            {
+                var offending = duplicateMaterial.First();
+                var message = string.Format(
+                    ResourceHelper.GetString(
+                        "StagePresetDesignerView_DuplicateMaterialFormat",
+                        "\"{0}\" is listed more than once in sub-stage \"{1}\". Remove the duplicate before saving."),
+                    offending.MaterialName,
+                    s.Name);
+                MessageBox.Show(
+                    message,
+                    ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
         }
 
         using var tx = await _db.Database.BeginTransactionAsync();
@@ -709,6 +733,17 @@ public partial class StagePresetDesignerView : UserControl
                 MessageBoxImage.Information);
             Saved?.Invoke(this, _currentPresetId!.Value);
         }
+        catch (DbUpdateException dbEx) when (IsMaterialPresetUniqueViolation(dbEx))
+        {
+            await tx.RollbackAsync();
+            MessageBox.Show(
+                ResourceHelper.GetString(
+                    "StagePresetDesignerView_MaterialConflictMessage",
+                    "Another user added the same material to this sub-stage. Reload the preset and try again."),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
         catch (Exception ex)
         {
             await tx.RollbackAsync();
@@ -777,6 +812,16 @@ public partial class StagePresetDesignerView : UserControl
         {
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
+    }
+
+    private static bool IsMaterialPresetUniqueViolation(DbUpdateException ex)
+    {
+        if (ex.InnerException is SqliteException sqlite && sqlite.SqliteErrorCode == 19)
+        {
+            return sqlite.Message.IndexOf("MaterialUsagesPreset", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        return false;
     }
 
     private class MaterialUsageVm

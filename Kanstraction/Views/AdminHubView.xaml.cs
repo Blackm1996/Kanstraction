@@ -43,10 +43,17 @@ namespace Kanstraction.Views
         public static readonly DependencyProperty IsBuildingDirtyProperty =
             DependencyProperty.Register(nameof(IsBuildingDirty), typeof(bool), typeof(AdminHubView), new PropertyMetadata(false));
 
+        private readonly ObservableCollection<SimilarMaterialSuggestion> _similarMaterialSuggestions = new();
+
         public AdminHubView()
         {
             InitializeComponent();
             Loaded += OnLoaded;
+
+            if (MatSimilarItems != null)
+            {
+                MatSimilarItems.ItemsSource = _similarMaterialSuggestions;
+            }
         }
 
         public void SetDb(AppDbContext db) => _db = db;
@@ -73,6 +80,11 @@ namespace Kanstraction.Views
             BeginNewMaterial();
             await BeginNewStagePresetAsync();
             BeginNewBuildingType();
+
+            if (MatSimilarItems != null && MatSimilarItems.ItemsSource == null)
+            {
+                MatSimilarItems.ItemsSource = _similarMaterialSuggestions;
+            }
         }
 
         private void AdminTabs_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -260,6 +272,26 @@ namespace Kanstraction.Views
                 return;
             }
 
+            var normalizedName = name!.Trim();
+            var duplicateQuery = _db.Materials
+                .AsNoTracking()
+                .Where(m => EF.Functions.Collate(m.Name!, "NOCASE") == normalizedName);
+
+            if (_editingMaterialId != null)
+            {
+                duplicateQuery = duplicateQuery.Where(m => m.Id != _editingMaterialId.Value);
+            }
+
+            if (await duplicateQuery.AnyAsync())
+            {
+                MessageBox.Show(
+                    ResourceHelper.GetString("AdminHubView_MaterialNameExists", "A material with this name already exists."),
+                    ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
             if (_editingMaterialId == null)
             {
                 // --- Create ---
@@ -389,6 +421,7 @@ namespace Kanstraction.Views
             if (MatIsActive != null) MatIsActive.IsChecked = true;
             if (MatCategory != null) MatCategory.SelectedIndex = -1;
             if (MatHistoryGrid != null) MatHistoryGrid.ItemsSource = null;
+            ClearSimilarMaterialSuggestions();
             UpdateMaterialDirtyState();
         }
 
@@ -405,6 +438,7 @@ namespace Kanstraction.Views
                 else
                     MatCategory.SelectedIndex = -1;
             }
+            UpdateSimilarMaterialSuggestions();
             UpdateMaterialDirtyState();
         }
 
@@ -570,6 +604,159 @@ namespace Kanstraction.Views
                 .ToListAsync();
 
             RefreshMaterialCategoryControls();
+            UpdateSimilarMaterialSuggestions();
+        }
+
+        private void MatName_LostFocus(object sender, RoutedEventArgs e) => UpdateSimilarMaterialSuggestions();
+
+        private void UpdateSimilarMaterialSuggestions()
+        {
+            if (MatSimilarItems == null || MatSimilarPanel == null)
+            {
+                return;
+            }
+
+            if (MatSimilarItems.ItemsSource == null)
+            {
+                MatSimilarItems.ItemsSource = _similarMaterialSuggestions;
+            }
+
+            _similarMaterialSuggestions.Clear();
+
+            var input = MatName?.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(input))
+            {
+                MatSimilarPanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            if (_allMaterials == null || _allMaterials.Count == 0)
+            {
+                MatSimilarPanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var normalizedInput = input.ToUpperInvariant();
+
+            var threshold = 0.55d;
+            var candidates = _allMaterials
+                .Where(m => !string.IsNullOrWhiteSpace(m.Name))
+                .Where(m => _editingMaterialId == null || m.Id != _editingMaterialId.Value)
+                .Select(m =>
+                {
+                    var materialName = m.Name!.Trim();
+                    var normalizedCandidate = materialName.ToUpperInvariant();
+                    var score = CalculateSimilarityScore(normalizedInput, normalizedCandidate);
+                    var contains = materialName.Contains(input, StringComparison.OrdinalIgnoreCase) ||
+                                   input.Contains(materialName, StringComparison.OrdinalIgnoreCase);
+
+                    return new
+                    {
+                        Material = m,
+                        Score = score,
+                        Contains = contains
+                    };
+                })
+                .Where(x => x.Contains || x.Score >= threshold)
+                .OrderByDescending(x => x.Contains)
+                .ThenByDescending(x => x.Score)
+                .ThenBy(x => x.Material.Name)
+                .Take(3)
+                .Select(x => x.Material)
+                .ToList();
+
+            if (candidates.Count == 0)
+            {
+                MatSimilarPanel.Visibility = Visibility.Collapsed;
+                return;
+            }
+
+            var fallbackUnit = ResourceHelper.GetString("AdminHubView_SimilarMaterials_NoUnit", "No unit specified");
+
+            foreach (var material in candidates)
+            {
+                var displayUnit = string.IsNullOrWhiteSpace(material.Unit) ? fallbackUnit : material.Unit!;
+                _similarMaterialSuggestions.Add(new SimilarMaterialSuggestion(material.Name ?? string.Empty, displayUnit));
+            }
+
+            MatSimilarPanel.Visibility = Visibility.Visible;
+        }
+
+        private void ClearSimilarMaterialSuggestions()
+        {
+            _similarMaterialSuggestions.Clear();
+
+            if (MatSimilarPanel != null)
+            {
+                MatSimilarPanel.Visibility = Visibility.Collapsed;
+            }
+        }
+
+        private static double CalculateSimilarityScore(string valueA, string valueB)
+        {
+            if (string.Equals(valueA, valueB, StringComparison.OrdinalIgnoreCase))
+            {
+                return 1d;
+            }
+
+            var distance = ComputeLevenshteinDistance(valueA, valueB);
+            var maxLength = Math.Max(valueA.Length, valueB.Length);
+
+            return maxLength == 0 ? 1d : 1d - (double)distance / maxLength;
+        }
+
+        private static int ComputeLevenshteinDistance(string valueA, string valueB)
+        {
+            var lengthA = valueA.Length;
+            var lengthB = valueB.Length;
+
+            if (lengthA == 0)
+            {
+                return lengthB;
+            }
+
+            if (lengthB == 0)
+            {
+                return lengthA;
+            }
+
+            var distances = new int[lengthA + 1, lengthB + 1];
+
+            for (var i = 0; i <= lengthA; i++)
+            {
+                distances[i, 0] = i;
+            }
+
+            for (var j = 0; j <= lengthB; j++)
+            {
+                distances[0, j] = j;
+            }
+
+            for (var i = 1; i <= lengthA; i++)
+            {
+                for (var j = 1; j <= lengthB; j++)
+                {
+                    var cost = valueA[i - 1] == valueB[j - 1] ? 0 : 1;
+
+                    distances[i, j] = Math.Min(
+                        Math.Min(distances[i - 1, j] + 1, distances[i, j - 1] + 1),
+                        distances[i - 1, j - 1] + cost);
+                }
+            }
+
+            return distances[lengthA, lengthB];
+        }
+
+        private sealed class SimilarMaterialSuggestion
+        {
+            public SimilarMaterialSuggestion(string name, string unit)
+            {
+                Name = name;
+                Unit = unit;
+            }
+
+            public string Name { get; }
+            public string Unit { get; }
         }
 
         private void RefreshMaterialCategoryControls()

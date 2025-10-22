@@ -109,7 +109,7 @@
                                 <TextBlock Text="{DynamicResource AdminHubView_MaterialHeader}" FontWeight="SemiBold" Margin="0,0,0,8"/>
                                 <DockPanel Margin="0,0,0,8">
                                     <TextBlock Text="{DynamicResource AdminHubView_Name}" Width="120" VerticalAlignment="Center"/>
-                                    <TextBox x:Name="MatName" Padding="8" TextChanged="MaterialEditor_TextChanged" />
+                                    <TextBox x:Name="MatName" Padding="8" TextChanged="MaterialEditor_TextChanged" LostFocus="MatName_LostFocus" />
                                 </DockPanel>
                                 <DockPanel Margin="0,0,0,8">
                                     <TextBlock Text="{DynamicResource AdminHubView_Category}" Width="120" VerticalAlignment="Center"/>
@@ -173,6 +173,20 @@
                                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
                                     <Button Content="{DynamicResource AdminHubView_Save}" Click="SaveMaterial_Click" Margin="6,0" Style="{StaticResource MaterialDesignOutlinedButton}"/>
                                     <Button Content="{DynamicResource AdminHubView_Cancel}" Click="CancelMaterial_Click" Margin="6,0"/>
+                                </StackPanel>
+                                <StackPanel x:Name="MatSimilarPanel" Margin="0,12,0,0" Visibility="Collapsed">
+                                    <TextBlock Text="{DynamicResource AdminHubView_SimilarMaterialsHeader}" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                                    <ItemsControl x:Name="MatSimilarItems">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Orientation="Horizontal">
+                                                    <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                                                    <TextBlock Text="  •  " Margin="4,0"/>
+                                                    <TextBlock Text="{Binding Unit}"/>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
                                 </StackPanel>
                             </StackPanel>
                         </Border>

@@ -120,6 +120,9 @@
     <sys:String x:Key="AdminHubView_CategoryExistsMessage">A category with this name already exists.</sys:String>
     <sys:String x:Key="AdminHubView_CategoryRequired">Category is required.</sys:String>
     <sys:String x:Key="AdminHubView_CategoryFilterAll">All categories</sys:String>
+    <sys:String x:Key="AdminHubView_MaterialNameExists">A material with this name already exists.</sys:String>
+    <sys:String x:Key="AdminHubView_SimilarMaterialsHeader">Existing materials with a similar name</sys:String>
+    <sys:String x:Key="AdminHubView_SimilarMaterials_NoUnit">Unit not specified</sys:String>
 
     <!-- BackupHubView -->
     <sys:String x:Key="BackupHubView_Title">Backups &amp; Restore</sys:String>
@@ -258,6 +261,8 @@
     <sys:String x:Key="StagePresetDesignerView_SavedMessage">Stage preset saved.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DialogTitle">Stage preset</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SaveFailedFormat">Saving failed:&#x0a;{0}</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_DuplicateMaterialFormat">"{0}" is listed more than once in sub-stage "{1}". Remove the duplicate before saving.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_MaterialConflictMessage">Another user added the same material to this sub-stage. Reload the preset and try again.</sys:String>
 
     <!-- PaymentReportRenderer -->
     <sys:String x:Key="PaymentReportRenderer_Title">Payment Resolution Report</sys:String>
