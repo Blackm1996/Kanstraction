@@ -928,6 +928,8 @@ namespace Kanstraction.Views
             // Refresh global presets cache (left list of Stage Presets)
             _allPresets = await _db.StagePresets.AsNoTracking().OrderBy(p => p.Name).ToListAsync();
             RefreshPresetsList();  // keeps Stage Presets tab fresh
+            SelectStagePresetInList(presetId);
+            Dispatcher.BeginInvoke(new Action(() => SelectStagePresetInList(presetId)), DispatcherPriority.ContextIdle);
 
             // Also refresh substage counts used by Building Types
             await RefreshPresetSubCountsAsync();
@@ -945,6 +947,21 @@ namespace Kanstraction.Views
                     // simulate selection change to rebuild assigned list + preview
                     BuildingTypesList_SelectionChanged(BuildingTypesList,
                         new SelectionChangedEventArgs(ListBox.SelectionChangedEvent, new List<object>(), new List<object> { bt }));
+                }
+            }
+        }
+
+        private void SelectStagePresetInList(int presetId)
+        {
+            if (PresetsList == null) return;
+
+            foreach (var item in PresetsList.Items)
+            {
+                if (item is StagePreset preset && preset.Id == presetId)
+                {
+                    PresetsList.SelectedItem = item;
+                    PresetsList.ScrollIntoView(item);
+                    break;
                 }
             }
         }
@@ -1981,7 +1998,11 @@ namespace Kanstraction.Views
                 if (_editingBtId != null)
                 {
                     var row = _allBuildingTypes.FirstOrDefault(x => x.Id == _editingBtId.Value);
-                    if (row != null) BuildingTypesList.SelectedItem = row;
+                    if (row != null)
+                    {
+                        BuildingTypesList.SelectedItem = row;
+                        BuildingTypesList.ScrollIntoView(row);
+                    }
                 }
 
                 MessageBox.Show(

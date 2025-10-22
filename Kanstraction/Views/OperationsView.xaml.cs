@@ -6,6 +6,7 @@ using System.Globalization;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
@@ -193,6 +194,133 @@ public partial class OperationsView : UserControl
         }
 
         return usage.Material.PricePerUnit;
+    }
+
+    private void ChangeStageStatus_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.ContextMenu == null) return;
+
+        btn.ContextMenu.PlacementTarget = btn;
+        btn.ContextMenu.Placement = PlacementMode.Bottom;
+        btn.ContextMenu.IsOpen = true;
+    }
+
+    private async void StageStatusMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null) return;
+        if (sender is not MenuItem menuItem) return;
+        if (menuItem.Tag is not WorkStatus newStatus) return;
+
+        int stageId;
+        try
+        {
+            dynamic ctx = menuItem.DataContext;
+            stageId = (int)ctx.Id;
+        }
+        catch
+        {
+            return;
+        }
+
+        await ChangeStageStatusAsync(stageId, newStatus);
+    }
+
+    private async Task ChangeStageStatusAsync(int stageId, WorkStatus newStatus)
+    {
+        if (_db == null) return;
+
+        try
+        {
+            var stage = await _db.Stages
+                .Include(s => s.SubStages)
+                    .ThenInclude(ss => ss.MaterialUsages)
+                .Include(s => s.Building)
+                    .ThenInclude(b => b.Stages)
+                .FirstOrDefaultAsync(s => s.Id == stageId);
+
+            if (stage == null)
+                return;
+
+            if (stage.SubStages != null)
+            {
+                foreach (var sub in stage.SubStages)
+                {
+                    sub.Status = newStatus;
+
+                    switch (newStatus)
+                    {
+                        case WorkStatus.NotStarted:
+                            sub.StartDate = null;
+                            sub.EndDate = null;
+                            break;
+                        case WorkStatus.Ongoing:
+                            if (sub.StartDate == null)
+                                sub.StartDate = DateTime.Today;
+                            sub.EndDate = null;
+                            break;
+                        case WorkStatus.Finished:
+                        case WorkStatus.Paid:
+                            if (sub.StartDate == null)
+                                sub.StartDate = DateTime.Today;
+                            sub.EndDate = DateTime.Today;
+                            if (sub.MaterialUsages != null)
+                            {
+                                var freezeDate = sub.EndDate.Value.Date;
+                                foreach (var usage in sub.MaterialUsages)
+                                {
+                                    usage.UsageDate = freezeDate;
+                                }
+                            }
+                            break;
+                        case WorkStatus.Stopped:
+                            if (sub.StartDate == null)
+                                sub.StartDate = DateTime.Today;
+                            sub.EndDate = DateTime.Today;
+                            break;
+                    }
+                }
+            }
+
+            stage.Status = newStatus;
+
+            switch (newStatus)
+            {
+                case WorkStatus.NotStarted:
+                    stage.StartDate = null;
+                    stage.EndDate = null;
+                    break;
+                case WorkStatus.Ongoing:
+                    if (stage.StartDate == null)
+                        stage.StartDate = DateTime.Today;
+                    stage.EndDate = null;
+                    break;
+                case WorkStatus.Finished:
+                case WorkStatus.Paid:
+                    if (stage.StartDate == null)
+                        stage.StartDate = DateTime.Today;
+                    stage.EndDate = DateTime.Today;
+                    break;
+                case WorkStatus.Stopped:
+                    if (stage.StartDate == null)
+                        stage.StartDate = DateTime.Today;
+                    stage.EndDate = DateTime.Today;
+                    break;
+            }
+
+            UpdateBuildingStatusFromStages(stage.Building);
+            await _db.SaveChangesAsync();
+
+            await ReloadBuildingsAsync(stage.BuildingId, stage.Id);
+            await ReloadStagesAndSubStagesAsync(stage.BuildingId, stage.Id);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_ChangeStageStatusFailedFormat", "Failed to change stage status:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
     private void SubStagesGrid_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
     {

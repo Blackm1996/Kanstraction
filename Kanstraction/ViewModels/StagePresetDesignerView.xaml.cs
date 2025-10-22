@@ -33,6 +33,9 @@ public partial class StagePresetDesignerView : UserControl
     private SubStageVm? _selectedSubStage = null;
     private object? _subStageOriginalValue = null;
     private string? _subStageOriginalProperty = null;
+    private SubStageVm? _pendingNewSubStage = null;
+    private bool _pendingNewSubStageDirtySnapshot = false;
+    private SubStageVm? _pendingPreviousSubStageSelection = null;
 
     public event EventHandler<int>? Saved;
 
@@ -251,6 +254,9 @@ public partial class StagePresetDesignerView : UserControl
             OrderIndex = nextIndex,
             Materials = new ObservableCollection<MaterialUsageVm>()
         };
+        _pendingNewSubStageDirtySnapshot = IsDirty;
+        _pendingPreviousSubStageSelection = _selectedSubStage;
+        _pendingNewSubStage = vm;
         _subStages.Add(vm);
         SubStagesGrid.SelectedItem = vm;
         _selectedSubStage = vm;
@@ -507,6 +513,10 @@ public partial class StagePresetDesignerView : UserControl
     {
         if (e.EditAction == DataGridEditAction.Cancel)
         {
+            if (_pendingNewSubStage != null && ReferenceEquals(_pendingNewSubStage, e.Row.Item))
+            {
+                RemovePendingNewSubStage(_pendingNewSubStage);
+            }
             _subStageOriginalProperty = null;
             _subStageOriginalValue = null;
             return;
@@ -525,6 +535,25 @@ public partial class StagePresetDesignerView : UserControl
         // After the edit commits, update summary and dirty state
         Dispatcher.BeginInvoke(new Action(() =>
         {
+            if (!string.IsNullOrEmpty(property) &&
+                property == nameof(SubStageVm.Name) &&
+                _pendingNewSubStage != null &&
+                ReferenceEquals(vm, _pendingNewSubStage))
+            {
+                var trimmed = vm.Name?.Trim() ?? string.Empty;
+                if (string.IsNullOrEmpty(trimmed))
+                {
+                    RemovePendingNewSubStage(vm);
+                    _subStageOriginalProperty = null;
+                    _subStageOriginalValue = null;
+                    return;
+                }
+
+                _pendingNewSubStage = null;
+                _pendingPreviousSubStageSelection = null;
+                _pendingNewSubStageDirtySnapshot = false;
+            }
+
             UpdateSummary();
 
             bool changed = false;
@@ -546,6 +575,33 @@ public partial class StagePresetDesignerView : UserControl
             _subStageOriginalProperty = null;
             _subStageOriginalValue = null;
         }));
+    }
+
+    private void RemovePendingNewSubStage(SubStageVm vm)
+    {
+        _subStages.Remove(vm);
+
+        if (_pendingPreviousSubStageSelection != null && _subStages.Contains(_pendingPreviousSubStageSelection))
+        {
+            SubStagesGrid.SelectedItem = _pendingPreviousSubStageSelection;
+        }
+        else if (_subStages.Count > 0)
+        {
+            SubStagesGrid.SelectedItem = _subStages.Last();
+        }
+        else
+        {
+            SubStagesGrid.SelectedIndex = -1;
+        }
+
+        UpdateSelectedSubStageFromGrid();
+        UpdateMaterialsPanelVisibility();
+        UpdateSummary();
+        SetDirty(_pendingNewSubStageDirtySnapshot);
+
+        _pendingNewSubStage = null;
+        _pendingPreviousSubStageSelection = null;
+        _pendingNewSubStageDirtySnapshot = false;
     }
 
     private static bool ValuesEqual(object? original, object? current)
