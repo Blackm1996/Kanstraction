@@ -206,6 +206,11 @@
     <sys:String x:Key="OperationsView_StopBuildingConfirmMessage">Stop this building? All unfinished/unpaid stages and sub-stages will be marked Stopped.</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingConfirmTitle">Confirm stop</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingFailedFormat">Failed to stop building:&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_DeleteBuildingTooltip">Delete building</sys:String>
+    <sys:String x:Key="OperationsView_DeleteBuildingConfirmFormat">Delete building '{0}'? All stages and sub-stages will be removed.</sys:String>
+    <sys:String x:Key="OperationsView_DeleteBuildingTitle">Delete building</sys:String>
+    <sys:String x:Key="OperationsView_DeleteBuildingPaidMessage">This building has paid items and cannot be deleted.</sys:String>
+    <sys:String x:Key="OperationsView_DeleteBuildingFailedFormat">Failed to delete building:&#x0a;{0}</sys:String>
     <sys:String x:Key="OperationsView_SubStageAlreadyInProgress">Another sub-stage is already in progress in this building. Finish it first.</sys:String>
     <sys:String x:Key="OperationsView_RuleTitle">Rule</sys:String>
     <sys:String x:Key="OperationsView_PreviousSubStageRequired">You must finish the previous sub-stage first.</sys:String>
