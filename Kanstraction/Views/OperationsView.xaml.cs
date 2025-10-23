@@ -713,7 +713,8 @@ public partial class OperationsView : UserControl
                 TypeName = b.BuildingType?.Name ?? "",
                 Status = b.Status,                       // your converter can handle string or enum name
                 ProgressPercent = ComputeBuildingProgress(b),       // 0..100 decimal/int
-                CurrentStageName = ComputeCurrentStageName(b)       // string
+                CurrentStageName = ComputeCurrentStageName(b),      // string
+                HasPaidItems = BuildingHasPaidItems(b)
             })
             .OrderBy(x => x.Id)
             .ToList();
@@ -810,6 +811,29 @@ public partial class OperationsView : UserControl
             .FirstOrDefault(ss => ss.Status == WorkStatus.Ongoing);
 
         return ongoing?.Name ?? string.Empty;
+    }
+
+    private static bool BuildingHasPaidItems(Building b)
+    {
+        if (b.Status == WorkStatus.Paid)
+            return true;
+
+        if (b.Stages == null || b.Stages.Count == 0)
+            return false;
+
+        foreach (var stage in b.Stages)
+        {
+            if (stage.Status == WorkStatus.Paid)
+                return true;
+
+            if (stage.SubStages == null)
+                continue;
+
+            if (stage.SubStages.Any(ss => ss.Status == WorkStatus.Paid))
+                return true;
+        }
+
+        return false;
     }
 
     private static string ComputeCurrentStageName(Building b)
@@ -976,6 +1000,71 @@ public partial class OperationsView : UserControl
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }
+    }
+
+    private async void DeleteBuilding_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null || _currentProject == null) return;
+
+        if (sender is not Button btn) return;
+
+        if (btn.Tag is not int buildingId) return;
+
+        var building = await _db.Buildings
+            .Include(b => b.Stages)
+                .ThenInclude(s => s.SubStages)
+            .FirstOrDefaultAsync(b => b.Id == buildingId);
+
+        if (building == null) return;
+
+        if (BuildingHasPaidItems(building))
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_DeleteBuildingPaidMessage", "This building has paid items and cannot be deleted."),
+                ResourceHelper.GetString("OperationsView_DeleteBuildingTitle", "Delete building"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var confirm = MessageBox.Show(
+            string.Format(ResourceHelper.GetString("OperationsView_DeleteBuildingConfirmFormat", "Delete building '{0}'? All stages and sub-stages will be removed."), building.Code),
+            ResourceHelper.GetString("OperationsView_DeleteBuildingTitle", "Delete building"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        using var tx = await _db.Database.BeginTransactionAsync();
+        try
+        {
+            _db.Buildings.Remove(building);
+            await _db.SaveChangesAsync();
+            await tx.CommitAsync();
+        }
+        catch (Exception ex)
+        {
+            await tx.RollbackAsync();
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_DeleteBuildingFailedFormat", "Failed to delete building:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            return;
+        }
+
+        if (_currentBuildingId == buildingId)
+        {
+            _currentBuildingId = null;
+            _currentStageId = null;
+            _pendingStageSelection = null;
+            StagesGrid.ItemsSource = null;
+            SubStagesGrid.ItemsSource = null;
+            MaterialsGrid.ItemsSource = null;
+            Breadcrumb = _currentProject.Name;
+        }
+
+        await ReloadBuildingsAsync();
     }
 
     private async void StartSubStage_Click(object sender, RoutedEventArgs e)

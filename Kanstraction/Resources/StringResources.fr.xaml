@@ -204,6 +204,11 @@
     <sys:String x:Key="OperationsView_StopBuildingConfirmMessage">Arrêter ce bâtiment ? Toutes les étapes et sous-étapes non terminées/payées seront marquées Arrêtées.</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingConfirmTitle">Confirmer l'arrêt</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingFailedFormat">Échec de l'arrêt du bâtiment :&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_DeleteBuildingTooltip">Supprimer le bâtiment</sys:String>
+    <sys:String x:Key="OperationsView_DeleteBuildingConfirmFormat">Supprimer le bâtiment « {0} » ? Toutes les étapes et sous-étapes seront supprimées.</sys:String>
+    <sys:String x:Key="OperationsView_DeleteBuildingTitle">Supprimer le bâtiment</sys:String>
+    <sys:String x:Key="OperationsView_DeleteBuildingPaidMessage">Ce bâtiment contient des éléments payés et ne peut pas être supprimé.</sys:String>
+    <sys:String x:Key="OperationsView_DeleteBuildingFailedFormat">Échec de la suppression du bâtiment :&#x0a;{0}</sys:String>
     <sys:String x:Key="OperationsView_SubStageAlreadyInProgress">Une autre sous-étape est déjà en cours dans ce bâtiment. Terminez-la d'abord.</sys:String>
     <sys:String x:Key="OperationsView_RuleTitle">Règle</sys:String>
     <sys:String x:Key="OperationsView_PreviousSubStageRequired">Vous devez terminer la sous-étape précédente d'abord.</sys:String>

@@ -130,7 +130,7 @@
               Click="StopBuilding_Click"
               Style="{StaticResource TinyIconButton}"
               ToolTip="{DynamicResource OperationsView_StopBuildingTooltip}"
-              Background="#e53935">
+              Background="#fb8c00">
                                     <iconPacks:PackIconFontAwesome Kind="BanSolid" Width="12" Height="12" Foreground="White"/>
                                 </Button>
 
@@ -143,6 +143,25 @@
                                     </DataTrigger>
                                     <DataTrigger Binding="{Binding Status}" Value="{x:Static models:WorkStatus.Paid}">
                                         <Setter TargetName="BtnStop" Property="Visibility" Value="Collapsed"/>
+                                    </DataTrigger>
+                                </DataTemplate.Triggers>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
+                    <DataGridTemplateColumn Header="" Width="60">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <Button x:Name="BtnDelete"
+              Tag="{Binding Id}"
+              Click="DeleteBuilding_Click"
+              Style="{StaticResource TinyIconButton}"
+              ToolTip="{DynamicResource OperationsView_DeleteBuildingTooltip}">
+                                    <iconPacks:PackIconFontAwesome Kind="TrashCanRegular" Width="12" Height="12" Foreground="#e53935"/>
+                                </Button>
+
+                                <DataTemplate.Triggers>
+                                    <DataTrigger Binding="{Binding HasPaidItems}" Value="True">
+                                        <Setter TargetName="BtnDelete" Property="Visibility" Value="Collapsed"/>
                                     </DataTrigger>
                                 </DataTemplate.Triggers>
                             </DataTemplate>
