@@ -1,4 +1,4 @@
-using Kanstraction.Services;
+using Kanstraction.Application.Services;
 using Microsoft.Win32;
 using System.Globalization;
 using System.Threading.Tasks;
@@ -9,7 +9,7 @@ namespace Kanstraction.Views;
 
 public partial class BackupHubView : UserControl
 {
-    private BackupService? _backupService;
+    private IBackupService? _backupService;
     private Func<Task>? _onBeforeRestoreAsync;
     private Func<Task>? _onAfterRestoreAsync;
 
@@ -18,7 +18,7 @@ public partial class BackupHubView : UserControl
         InitializeComponent();
     }
 
-    public void Initialize(BackupService backupService, Func<Task> onBeforeRestoreAsync, Func<Task> onAfterRestoreAsync)
+    public void Initialize(IBackupService backupService, Func<Task> onBeforeRestoreAsync, Func<Task> onAfterRestoreAsync)
     {
         _backupService = backupService;
         _onBeforeRestoreAsync = onBeforeRestoreAsync;

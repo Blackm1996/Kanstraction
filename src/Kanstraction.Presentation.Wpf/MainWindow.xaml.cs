@@ -1,6 +1,6 @@
 using Kanstraction.Data;
 using Kanstraction.Entities;
-using Kanstraction.Services;
+using Kanstraction.Application.Services;
 using Kanstraction.Views;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;

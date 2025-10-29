@@ -2,7 +2,7 @@
 using Kanstraction.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Kanstraction.Services;
+namespace Kanstraction.Infrastructure.Services;
 
 public static class ProgressService
 {

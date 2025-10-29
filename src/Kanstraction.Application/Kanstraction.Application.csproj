@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Kanstraction.Domain\Kanstraction.Domain.csproj" />
+    <ProjectReference Include="..\Kanstraction.Shared\Kanstraction.Shared.csproj" />
+  </ItemGroup>
+</Project>

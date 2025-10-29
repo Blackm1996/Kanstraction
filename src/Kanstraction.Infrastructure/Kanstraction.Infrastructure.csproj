@@ -1,22 +1,16 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
-
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
-    <TargetFramework>net9.0-windows7.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <UseWPF>true</UseWPF>
-    <ApplicationIcon>AppIcon.ico</ApplicationIcon>
   </PropertyGroup>
-
   <ItemGroup>
-    <Content Include="AppIcon.ico" />
+    <ProjectReference Include="..\Kanstraction.Domain\Kanstraction.Domain.csproj" />
+    <ProjectReference Include="..\Kanstraction.Application\Kanstraction.Application.csproj" />
+    <ProjectReference Include="..\Kanstraction.Shared\Kanstraction.Shared.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="MahApps.Metro.IconPacks.FontAwesome" Version="6.1.0" />
-    <PackageReference Include="MaterialDesignColors" Version="5.2.1" />
-    <PackageReference Include="MaterialDesignThemes" Version="5.2.1" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.8">
       <PrivateAssets>all</PrivateAssets>
@@ -30,5 +24,4 @@
     <PackageReference Include="PDFsharp" Version="6.2.1" />
     <PackageReference Include="PDFsharp-MigraDoc-GDI" Version="6.2.1" />
   </ItemGroup>
-
 </Project>

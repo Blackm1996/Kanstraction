@@ -1,7 +1,8 @@
 ﻿using Kanstraction;
+using Kanstraction.Application.Reporting;
 using Kanstraction.Data;
 using Kanstraction.Entities;
-using Kanstraction.Services;
+using Kanstraction.Infrastructure.Services;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
@@ -10,6 +11,7 @@ using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kanstraction.Views;
 
@@ -1727,7 +1729,7 @@ public partial class OperationsView : UserControl
         }
 
         // 2) Build report DTO (grouped) for PDF
-        var data = new PaymentReportRenderer.ReportData
+        var data = new PaymentReportData
         {
             ProjectName = _currentProject.Name,
             GeneratedAt = DateTime.Now
@@ -1737,7 +1739,7 @@ public partial class OperationsView : UserControl
         foreach (var bgroup in byBuilding)
         {
             var b = bgroup.Key; // Building
-            var bDto = new PaymentReportRenderer.BuildingGroup { BuildingCode = b.Code };
+            var bDto = new PaymentReportBuildingGroup { BuildingCode = b.Code };
 
             var byStage = bgroup.GroupBy(ss => ss.Stage)
                                 .OrderBy(g => g.Key.OrderIndex);
@@ -1745,11 +1747,11 @@ public partial class OperationsView : UserControl
             foreach (var sgroup in byStage)
             {
                 var st = sgroup.Key; // Stage
-                var sDto = new PaymentReportRenderer.StageGroup { StageName = st.Name };
+                var sDto = new PaymentReportStageGroup { StageName = st.Name };
 
                 foreach (var ss in sgroup.OrderBy(x => x.OrderIndex))
                 {
-                    sDto.Items.Add(new PaymentReportRenderer.SubStageRow
+                    sDto.Items.Add(new PaymentReportSubStageRow
                     {
                         SubStageName = ss.Name,
                         StageName = st.Name,
@@ -1780,7 +1782,7 @@ public partial class OperationsView : UserControl
         // 4) Render PDF (temp → final inside renderer)
         try
         {
-            var renderer = new PaymentReportRenderer();
+            var renderer = App.Services.GetRequiredService<IPaymentReportRenderer>();
             renderer.Render(data, sfd.FileName);
         }
         catch (Exception ex)

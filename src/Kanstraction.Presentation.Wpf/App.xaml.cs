@@ -10,10 +10,15 @@ using System.Windows;
 using Kanstraction.Behaviors;
 using Kanstraction.Data;
 using Kanstraction.Entities;
-using Kanstraction.Services;
+using Kanstraction.Application.Reporting;
+using Kanstraction.Application.Services;
+using Kanstraction.Infrastructure.Services;
+using Kanstraction.Presentation.Localization;
+using Kanstraction.Shared.Localization;
 using Kanstraction.Views;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kanstraction;
 
@@ -22,11 +27,16 @@ public partial class App : Application
     private const string DefaultMaterialCategoryName = "Defaut";
 
 
-    public static BackupService BackupService { get; private set; } = null!;
+    public static IBackupService BackupService { get; private set; } = null!;
+    public static IServiceProvider Services { get; private set; } = null!;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
         TextBoxEditHighlighter.Register();
+
+        var serviceCollection = new ServiceCollection();
+        ConfigureServices(serviceCollection);
+        Services = serviceCollection.BuildServiceProvider();
 
         var culture = new CultureInfo("fr-FR");
         Thread.CurrentThread.CurrentCulture = culture;
@@ -55,7 +65,7 @@ public partial class App : Application
             }
 
             loadingWindow.UpdateStatus("Préparation des sauvegardes...");
-            BackupService = new BackupService();
+            BackupService = Services.GetRequiredService<IBackupService>();
             try
             {
                 await BackupService.RunStartupMaintenanceAsync();
@@ -101,6 +111,14 @@ public partial class App : Application
                 loadingWindow.Close();
             }
         }
+    }
+
+    private static void ConfigureServices(IServiceCollection services)
+    {
+        services.AddSingleton<BackupService>();
+        services.AddSingleton<IBackupService>(sp => sp.GetRequiredService<BackupService>());
+        services.AddSingleton<IPaymentReportLocalizer, ResourcePaymentReportLocalizer>();
+        services.AddTransient<IPaymentReportRenderer, PaymentReportRenderer>();
     }
 
     private static void TryDeleteFile(string path)
@@ -255,7 +273,7 @@ public partial class App : Application
     {
         try
         {
-            var backupService = new BackupService();
+            var backupService = Services.GetRequiredService<IBackupService>();
             var backupFile = backupService.GetLatestStartupBackup() ?? backupService.GetLatestHourlyBackup();
 
             if (backupFile == null || !backupFile.Exists)
