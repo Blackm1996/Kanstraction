@@ -22,7 +22,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Kanstraction;
 
-public partial class App : Application
+public partial class App : global::System.Windows.Application
 {
     private const string DefaultMaterialCategoryName = "Defaut";
 
