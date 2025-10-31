@@ -105,6 +105,7 @@
             Click="AddBuilding_Click"
                             Background="#3f51b5"
             Style="{StaticResource TinyIconButton}"
+            Margin="10,0,0,0"
             ToolTip="{DynamicResource OperationsView_AddBuildingTooltip}">
                         <iconPacks:PackIconFontAwesome Foreground="White" Kind="PlusSolid" Width="12" Height="12"/>
                     </Button>
@@ -388,6 +389,7 @@
             Style="{StaticResource TinyIconButton}"
             ToolTip="{DynamicResource OperationsView_AddSubStageTooltip}"
             Background="#3f51b5"
+            Margin="10,0,0,0"
             Visibility="{Binding SelectedItem, ElementName=StagesGrid,
                                  Converter={StaticResource NullToVisibilityConverter}}">
                         <iconPacks:PackIconFontAwesome Kind="PlusSolid" Width="12" Height="12" Foreground="White"/>
@@ -537,6 +539,7 @@
         ToolTip="{DynamicResource OperationsView_AddMaterialTooltip}"
         Background="#3f51b5"
         Click="AddMaterialToSubStage_Click"
+        Margin="10,0,0,0"
         Visibility="{Binding SelectedItem, ElementName=SubStagesGrid,
                              Converter={StaticResource NullToVisibilityConverter}}">
                         <iconPacks:PackIconFontAwesome Kind="PlusSolid" Width="12" Height="12" Foreground="White"/>
