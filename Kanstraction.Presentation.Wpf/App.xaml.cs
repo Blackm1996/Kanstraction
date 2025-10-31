@@ -1,4 +1,3 @@
-using Kanstraction.Application.Common;
 using Kanstraction.Behaviors;
 using Kanstraction.Infrastructure;
 using Kanstraction.Presentation.Wpf.ViewModels;
@@ -63,7 +62,7 @@ public partial class App : System.Windows.Application
     private static async Task InitializeDatabaseAsync(IServiceProvider services)
     {
         using var scope = services.CreateScope();
-        var initializer = scope.ServiceProvider.GetRequiredService<IApplicationInitializer>();
+        var initializer = scope.ServiceProvider.GetRequiredService<Kanstraction.Application.Common.IApplicationInitializer>();
         await initializer.InitializeAsync();
     }
 }
