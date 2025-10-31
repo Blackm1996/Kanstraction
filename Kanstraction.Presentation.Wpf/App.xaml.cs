@@ -9,7 +9,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace Kanstraction;
+namespace Kanstraction.Presentation.Wpf;
 
 public partial class App : Application
 {

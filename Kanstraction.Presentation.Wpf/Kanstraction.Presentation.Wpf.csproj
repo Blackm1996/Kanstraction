@@ -22,6 +22,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Kanstraction.Application\Kanstraction.Application.csproj" />
+    <ProjectReference Include="..\Kanstraction.Infrastructure\Kanstraction.Infrastructure.csproj" />
     <ProjectReference Include="..\Kanstraction.Domain\Kanstraction.Domain.csproj" />
   </ItemGroup>
 

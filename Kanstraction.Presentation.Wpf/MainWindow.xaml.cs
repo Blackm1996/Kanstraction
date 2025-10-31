@@ -1,7 +1,7 @@
 using Kanstraction.Presentation.Wpf.ViewModels;
 using System.Windows;
 
-namespace Kanstraction;
+namespace Kanstraction.Presentation.Wpf;
 
 public partial class MainWindow : Window
 {
