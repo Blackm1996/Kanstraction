@@ -164,6 +164,7 @@
     <sys:String x:Key="OperationsView_AddBuildingTooltip">Add building</sys:String>
     <sys:String x:Key="OperationsView_Materials">Materials</sys:String>
     <sys:String x:Key="OperationsView_AddMaterialTooltip">Add material to this sub-stage</sys:String>
+    <sys:String x:Key="OperationsView_SearchByCodeHint">Search by code</sys:String>
     <sys:String x:Key="OperationsView_Status">Status</sys:String>
     <sys:String x:Key="OperationsView_Code">Code</sys:String>
     <sys:String x:Key="OperationsView_Type">Type</sys:String>
@@ -190,6 +191,8 @@
     <sys:String x:Key="OperationsView_UsageDate">Usage Date</sys:String>
     <sys:String x:Key="OperationsView_UnitPrice">Unit Price</sys:String>
     <sys:String x:Key="OperationsView_Total">Total</sys:String>
+    <sys:String x:Key="OperationsView_TotalLaborLabel">Total labor:</sys:String>
+    <sys:String x:Key="OperationsView_TotalMaterialsLabel">Total materials cost:</sys:String>
     <sys:String x:Key="OperationsView_DeleteMaterialTooltip">Remove this material from the sub-stage</sys:String>
     <sys:String x:Key="OperationsView_ConfirmChangeTitle">Save</sys:String>
     <sys:String x:Key="OperationsView_ReturnToDefault">Cancel</sys:String>

@@ -2,6 +2,9 @@
 using Kanstraction.Data;
 using Kanstraction.Entities;
 using Kanstraction.Services;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
@@ -33,6 +36,20 @@ public partial class OperationsView : UserControl
     private MaterialUsage? _editingMaterialUsage;
     private decimal? _originalMaterialQuantity;
     private int? _pendingStageSelection;
+    private List<BuildingRow> _buildingRows = new();
+    private ICollectionView? _buildingView;
+    private string _buildingSearchText = string.Empty;
+
+    private sealed class BuildingRow
+    {
+        public int Id { get; init; }
+        public string Code { get; init; } = string.Empty;
+        public string TypeName { get; init; } = string.Empty;
+        public WorkStatus Status { get; init; }
+        public int ProgressPercent { get; init; }
+        public string CurrentStageName { get; init; } = string.Empty;
+        public bool HasPaidItems { get; init; }
+    }
 
     private static string FormatDecimal(decimal value) => value.ToString("0.##", CultureInfo.CurrentCulture);
 
@@ -56,6 +73,8 @@ public partial class OperationsView : UserControl
         MaterialsGrid.ItemsSource = null;
         _currentBuildingId = null;
         _currentStageId = null;
+        UpdateSubStageLaborTotal(null);
+        UpdateMaterialsTotal(null);
 
         // One source of truth for loading/selection of buildings
         await ReloadBuildingsAsync();  // (no specific selection; will select first if none)
@@ -77,6 +96,12 @@ public partial class OperationsView : UserControl
         Breadcrumb = UpdateBreadcrumbWithBuilding(b.Code);
     }
 
+    private void BuildingSearchBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        _buildingSearchText = (sender as TextBox)?.Text ?? string.Empty;
+        RefreshBuildingView();
+    }
+
     private async void StagesGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_db == null) return;
@@ -92,6 +117,7 @@ public partial class OperationsView : UserControl
             .ToListAsync();
 
         SubStagesGrid.ItemsSource = subStages;
+        UpdateSubStageLaborTotal(subStages);
         var firstSub = subStages.FirstOrDefault();
         if (firstSub != null)
         {
@@ -103,6 +129,7 @@ public partial class OperationsView : UserControl
         else
         {
             MaterialsGrid.ItemsSource = null;
+            UpdateMaterialsTotal(null);
         }
     }
 
@@ -113,6 +140,7 @@ public partial class OperationsView : UserControl
         if (ss == null)
         {
             MaterialsGrid.ItemsSource = null;
+            UpdateMaterialsTotal(null);
             return;
         }
 
@@ -124,6 +152,7 @@ public partial class OperationsView : UserControl
         if (_db == null)
         {
             MaterialsGrid.ItemsSource = null;
+            UpdateMaterialsTotal(null);
             return;
         }
 
@@ -144,6 +173,7 @@ public partial class OperationsView : UserControl
         }
 
         MaterialsGrid.ItemsSource = usages;
+        UpdateMaterialsTotal(usages);
     }
 
     private static decimal ComputeUnitPriceForUsage(MaterialUsage usage, bool freeze)
@@ -194,6 +224,42 @@ public partial class OperationsView : UserControl
         }
 
         return usage.Material.PricePerUnit;
+    }
+
+    private void UpdateSubStageLaborTotal(IEnumerable<SubStage>? subStages = null)
+    {
+        decimal total = 0m;
+        var source = subStages ?? SubStagesGrid.ItemsSource as IEnumerable<SubStage>;
+        if (source != null)
+        {
+            foreach (var subStage in source)
+            {
+                if (subStage != null)
+                {
+                    total += subStage.LaborCost;
+                }
+            }
+        }
+
+        SubStagesLaborTotalText.Text = FormatDecimal(total);
+    }
+
+    private void UpdateMaterialsTotal(IEnumerable<MaterialUsage>? usages = null)
+    {
+        decimal total = 0m;
+        var source = usages ?? MaterialsGrid.ItemsSource as IEnumerable<MaterialUsage>;
+        if (source != null)
+        {
+            foreach (var usage in source)
+            {
+                if (usage != null)
+                {
+                    total += usage.Qty * usage.DisplayUnitPrice;
+                }
+            }
+        }
+
+        MaterialsTotalText.Text = FormatDecimal(total);
     }
 
     private void ChangeStageStatus_Click(object sender, RoutedEventArgs e)
@@ -389,6 +455,7 @@ public partial class OperationsView : UserControl
                 _db.Entry(ss).Property(s => s.LaborCost).IsModified = false;
                 _editingSubStageForLabor = null;
                 _originalSubStageLabor = null;
+                UpdateSubStageLaborTotal();
                 return;
             }
 
@@ -409,9 +476,11 @@ public partial class OperationsView : UserControl
 
             var result = dialog.ShowDialog();
 
+            bool refreshTotal = false;
             if (result == true)
             {
                 await _db.SaveChangesAsync();
+                refreshTotal = true;
             }
             else
             {
@@ -424,10 +493,16 @@ public partial class OperationsView : UserControl
                 var entry = _db.Entry(ss);
                 entry.Property(s => s.LaborCost).CurrentValue = originalValue;
                 entry.Property(s => s.LaborCost).IsModified = false;
+                refreshTotal = true;
             }
 
             _editingSubStageForLabor = null;
             _originalSubStageLabor = null;
+
+            if (refreshTotal)
+            {
+                UpdateSubStageLaborTotal();
+            }
         }
     }
 
@@ -498,6 +573,7 @@ public partial class OperationsView : UserControl
                 _db.Entry(mu).Property(m => m.Qty).IsModified = false;
                 _editingMaterialUsage = null;
                 _originalMaterialQuantity = null;
+                UpdateMaterialsTotal();
                 return;
             }
 
@@ -518,9 +594,11 @@ public partial class OperationsView : UserControl
 
             var result = dialog.ShowDialog();
 
+            bool refreshTotal = false;
             if (result == true)
             {
                 await _db.SaveChangesAsync();
+                refreshTotal = true;
             }
             else
             {
@@ -533,10 +611,16 @@ public partial class OperationsView : UserControl
                 var entry = _db.Entry(mu);
                 entry.Property(m => m.Qty).CurrentValue = originalValue;
                 entry.Property(m => m.Qty).IsModified = false;
+                refreshTotal = true;
             }
 
             _editingMaterialUsage = null;
             _originalMaterialQuantity = null;
+
+            if (refreshTotal)
+            {
+                UpdateMaterialsTotal();
+            }
         }
     }
     private string UpdateBreadcrumbWithBuilding(string code)
@@ -693,9 +777,11 @@ public partial class OperationsView : UserControl
 
     private async Task ReloadBuildingsAsync(int? selectBuildingId = null, int? preferredStageId = null)
     {
-        if (_currentProject == null) return;
+        if (_currentProject == null || _db == null)
+        {
+            return;
+        }
 
-        // Load everything we need to compute the view fields
         var buildings = await _db.Buildings
             .Where(b => b.ProjectId == _currentProject.Id)
             .Include(b => b.BuildingType)
@@ -704,47 +790,129 @@ public partial class OperationsView : UserControl
             .AsNoTracking()
             .ToListAsync();
 
-        // Map to the SAME property names your grid binds to
-        var data = buildings
-            .Select(b => new
+        _buildingRows = buildings
+            .Select(b => new BuildingRow
             {
-                b.Id,
-                b.Code,
-                TypeName = b.BuildingType?.Name ?? "",
-                Status = b.Status,                       // your converter can handle string or enum name
-                ProgressPercent = ComputeBuildingProgress(b),       // 0..100 decimal/int
-                CurrentStageName = ComputeCurrentStageName(b),      // string
+                Id = b.Id,
+                Code = b.Code,
+                TypeName = b.BuildingType?.Name ?? string.Empty,
+                Status = b.Status,
+                ProgressPercent = ComputeBuildingProgress(b),
+                CurrentStageName = ComputeCurrentStageName(b),
                 HasPaidItems = BuildingHasPaidItems(b)
             })
             .OrderBy(x => x.Id)
             .ToList();
 
-        BuildingsGrid.ItemsSource = data;
+        _buildingView = CollectionViewSource.GetDefaultView(_buildingRows);
+        if (_buildingView != null)
+        {
+            _buildingView.Filter = BuildingFilter;
+            BuildingsGrid.ItemsSource = _buildingView;
+        }
+        else
+        {
+            BuildingsGrid.ItemsSource = _buildingRows;
+        }
 
-        // Keep (or set) selection on the newly created building if provided
+        BuildingRow? desiredSelection = null;
         if (selectBuildingId.HasValue)
         {
-            var newly = data.FirstOrDefault(x => x.Id == selectBuildingId.Value);
-            if (newly != null)
+            desiredSelection = _buildingRows.FirstOrDefault(x => x.Id == selectBuildingId.Value);
+        }
+
+        RefreshBuildingView(desiredSelection, preferredStageId);
+    }
+
+    private void RefreshBuildingView(BuildingRow? desiredSelection = null, int? preferredStageId = null)
+    {
+        if (_buildingView == null)
+        {
+            BuildingsGrid.ItemsSource = _buildingRows;
+
+            if (desiredSelection != null)
             {
                 _pendingStageSelection = preferredStageId;
-                BuildingsGrid.SelectedItem = newly;
-                BuildingsGrid.ScrollIntoView(newly);
+                BuildingsGrid.SelectedItem = desiredSelection;
+                BuildingsGrid.ScrollIntoView(desiredSelection);
                 return;
             }
-            else if (data.Count > 0 && BuildingsGrid.SelectedItem == null)
-            {
-                BuildingsGrid.SelectedIndex = 0;
-            }
-            else
+
+            if (BuildingsGrid.SelectedItem == null && _buildingRows.Count > 0)
             {
                 _pendingStageSelection = null;
+                BuildingsGrid.SelectedItem = _buildingRows[0];
+                BuildingsGrid.ScrollIntoView(_buildingRows[0]);
+                return;
             }
+
+            if (BuildingsGrid.SelectedItem == null)
+            {
+                StagesGrid.ItemsSource = null;
+                SubStagesGrid.ItemsSource = null;
+                MaterialsGrid.ItemsSource = null;
+                _currentBuildingId = null;
+                _currentStageId = null;
+                UpdateSubStageLaborTotal(null);
+                UpdateMaterialsTotal(null);
+            }
+
+            return;
         }
-        else if (data.Count > 0 && BuildingsGrid.SelectedItem == null)
+
+        _buildingView.Refresh();
+        var filtered = _buildingView.Cast<BuildingRow>().ToList();
+
+        if (desiredSelection != null)
         {
-            BuildingsGrid.SelectedIndex = 0;
+            if (filtered.Contains(desiredSelection))
+            {
+                _pendingStageSelection = preferredStageId;
+                BuildingsGrid.SelectedItem = desiredSelection;
+                BuildingsGrid.ScrollIntoView(desiredSelection);
+                return;
+            }
+
+            _pendingStageSelection = null;
         }
+
+        if (filtered.Count == 0)
+        {
+            BuildingsGrid.SelectedItem = null;
+            StagesGrid.ItemsSource = null;
+            SubStagesGrid.ItemsSource = null;
+            MaterialsGrid.ItemsSource = null;
+            _currentBuildingId = null;
+            _currentStageId = null;
+            UpdateSubStageLaborTotal(null);
+            UpdateMaterialsTotal(null);
+            return;
+        }
+
+        if (BuildingsGrid.SelectedItem is BuildingRow current && filtered.Contains(current))
+        {
+            return;
+        }
+
+        var first = filtered[0];
+        _pendingStageSelection = null;
+        BuildingsGrid.SelectedItem = first;
+        BuildingsGrid.ScrollIntoView(first);
+    }
+
+    private bool BuildingFilter(object? obj)
+    {
+        if (obj is not BuildingRow row)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_buildingSearchText))
+        {
+            return true;
+        }
+
+        return row.Code?.IndexOf(_buildingSearchText, StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
     private static decimal CompletionValue(WorkStatus status) =>
@@ -1061,6 +1229,8 @@ public partial class OperationsView : UserControl
             StagesGrid.ItemsSource = null;
             SubStagesGrid.ItemsSource = null;
             MaterialsGrid.ItemsSource = null;
+            UpdateSubStageLaborTotal(null);
+            UpdateMaterialsTotal(null);
             Breadcrumb = _currentProject.Name;
         }
 
@@ -1277,6 +1447,8 @@ public partial class OperationsView : UserControl
             SubStagesGrid.ItemsSource = null;
             MaterialsGrid.ItemsSource = null;
             _currentStageId = null;
+            UpdateSubStageLaborTotal(null);
+            UpdateMaterialsTotal(null);
             return;
         }
 
@@ -1295,6 +1467,7 @@ public partial class OperationsView : UserControl
             .ToListAsync();
 
         SubStagesGrid.ItemsSource = subs;
+        UpdateSubStageLaborTotal(subs);
 
         // Auto-select first sub-stage (if any) and load its materials
         var firstSub = subs.FirstOrDefault();
@@ -1308,6 +1481,7 @@ public partial class OperationsView : UserControl
         else
         {
             MaterialsGrid.ItemsSource = null;
+            UpdateMaterialsTotal(null);
         }
     }
 
@@ -1494,6 +1668,7 @@ public partial class OperationsView : UserControl
                 else
                 {
                     MaterialsGrid.ItemsSource = null;
+                    UpdateMaterialsTotal(null);
                 }
             }
         }
@@ -1573,6 +1748,7 @@ public partial class OperationsView : UserControl
                 .ToListAsync();
 
             SubStagesGrid.ItemsSource = subs;
+            UpdateSubStageLaborTotal(subs);
 
             var select = subs.FirstOrDefault(x => x.Id == newSub.Id);
             if (select != null)
@@ -1583,6 +1759,7 @@ public partial class OperationsView : UserControl
 
             // Optionally clear materials and wait for user to add
             MaterialsGrid.ItemsSource = null;
+            UpdateMaterialsTotal(null);
         }
         catch (Exception ex)
         {

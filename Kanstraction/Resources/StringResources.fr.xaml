@@ -162,6 +162,7 @@
     <sys:String x:Key="OperationsView_AddBuildingTooltip">Ajouter un bâtiment</sys:String>
     <sys:String x:Key="OperationsView_Materials">Matériaux</sys:String>
     <sys:String x:Key="OperationsView_AddMaterialTooltip">Ajouter un matériau à cette sous-étape</sys:String>
+    <sys:String x:Key="OperationsView_SearchByCodeHint">Rechercher par code</sys:String>
     <sys:String x:Key="OperationsView_Status">Statut</sys:String>
     <sys:String x:Key="OperationsView_Code">Code</sys:String>
     <sys:String x:Key="OperationsView_Type">Type</sys:String>
@@ -188,6 +189,8 @@
     <sys:String x:Key="OperationsView_UsageDate">Date d'utilisation</sys:String>
     <sys:String x:Key="OperationsView_UnitPrice">Prix unitaire</sys:String>
     <sys:String x:Key="OperationsView_Total">Total</sys:String>
+    <sys:String x:Key="OperationsView_TotalLaborLabel">Main-d'œuvre totale :</sys:String>
+    <sys:String x:Key="OperationsView_TotalMaterialsLabel">Coût total des matériaux :</sys:String>
     <sys:String x:Key="OperationsView_DeleteMaterialTooltip">Supprimer ce matériau de la sous-étape</sys:String>
     <sys:String x:Key="OperationsView_ConfirmChangeTitle">Enregistrer</sys:String>
     <sys:String x:Key="OperationsView_ReturnToDefault">Annuler</sys:String>

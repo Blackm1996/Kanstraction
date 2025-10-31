@@ -82,17 +82,30 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Title -->
                     <TextBlock Text="{DynamicResource OperationsView_Buildings}" FontWeight="SemiBold"
                VerticalAlignment="Center"/>
 
+                    <TextBox x:Name="BuildingSearchBox"
+                             Grid.Column="1"
+                             Width="200"
+                             Margin="10,0,0,0"
+                             Padding="8"
+                             VerticalAlignment="Center"
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             materialDesign:HintAssist.Hint="{DynamicResource OperationsView_SearchByCodeHint}"
+                             materialDesign:TextFieldAssist.HasClearButton="True"
+                             TextChanged="BuildingSearchBox_TextChanged"/>
+
                     <!-- Add Building button (small, icon-only) -->
-                    <Button Grid.Column="1"
+                    <Button Grid.Column="2"
             Click="AddBuilding_Click"
                             Background="#3f51b5"
             Style="{StaticResource TinyIconButton}"
+            Margin="10,0,0,0"
             ToolTip="{DynamicResource OperationsView_AddBuildingTooltip}">
                         <iconPacks:PackIconFontAwesome Foreground="White" Kind="PlusSolid" Width="12" Height="12"/>
                     </Button>
@@ -356,15 +369,27 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
             <TextBlock Text="{DynamicResource OperationsView_SubStages}" FontWeight="SemiBold" VerticalAlignment="Center"/>
 
-                    <Button Grid.Column="1"
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="10,0,0,0">
+                        <TextBlock Text="{DynamicResource OperationsView_TotalLaborLabel}"/>
+                        <TextBlock x:Name="SubStagesLaborTotalText"
+                                   Margin="4,0,0,0"
+                                   Text="0"/>
+                    </StackPanel>
+
+                    <Button Grid.Column="2"
             Click="AddSubStage_Click"
             Style="{StaticResource TinyIconButton}"
             ToolTip="{DynamicResource OperationsView_AddSubStageTooltip}"
             Background="#3f51b5"
+            Margin="10,0,0,0"
             Visibility="{Binding SelectedItem, ElementName=StagesGrid,
                                  Converter={StaticResource NullToVisibilityConverter}}">
                         <iconPacks:PackIconFontAwesome Kind="PlusSolid" Width="12" Height="12" Foreground="White"/>
@@ -494,15 +519,27 @@
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Text="{DynamicResource OperationsView_Materials}" FontWeight="SemiBold" VerticalAlignment="Center"/>
 
-                    <Button Grid.Column="1"
+                    <StackPanel Grid.Column="1"
+                                Orientation="Horizontal"
+                                VerticalAlignment="Center"
+                                Margin="10,0,0,0">
+                        <TextBlock Text="{DynamicResource OperationsView_TotalMaterialsLabel}"/>
+                        <TextBlock x:Name="MaterialsTotalText"
+                                   Margin="4,0,0,0"
+                                   Text="0"/>
+                    </StackPanel>
+
+                    <Button Grid.Column="2"
         Style="{StaticResource TinyIconButton}"
         ToolTip="{DynamicResource OperationsView_AddMaterialTooltip}"
         Background="#3f51b5"
         Click="AddMaterialToSubStage_Click"
+        Margin="10,0,0,0"
         Visibility="{Binding SelectedItem, ElementName=SubStagesGrid,
                              Converter={StaticResource NullToVisibilityConverter}}">
                         <iconPacks:PackIconFontAwesome Kind="PlusSolid" Width="12" Height="12" Foreground="White"/>
