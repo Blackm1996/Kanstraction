@@ -420,6 +420,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
+                    <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_PaidDate}" Binding="{Binding PaidDate, StringFormat={}{0:d}}"/>
                     <DataGridTextColumn Header="{DynamicResource OperationsView_Labor}"  IsReadOnly="False"
                       Binding="{Binding LaborCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"/>
 

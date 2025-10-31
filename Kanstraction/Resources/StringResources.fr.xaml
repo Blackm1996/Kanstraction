@@ -164,6 +164,7 @@
     <sys:String x:Key="OperationsView_AddMaterialTooltip">Ajouter un matériau à cette sous-étape</sys:String>
     <sys:String x:Key="OperationsView_SearchByCodeHint">Rechercher par code</sys:String>
     <sys:String x:Key="OperationsView_Status">Statut</sys:String>
+    <sys:String x:Key="OperationsView_PaidDate">Payé le</sys:String>
     <sys:String x:Key="OperationsView_Code">Code</sys:String>
     <sys:String x:Key="OperationsView_Type">Type</sys:String>
     <sys:String x:Key="OperationsView_Percent">%</sys:String>

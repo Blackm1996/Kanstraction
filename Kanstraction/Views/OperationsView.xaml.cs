@@ -1979,6 +1979,7 @@ public partial class OperationsView : UserControl
             {
                 ss.Status = WorkStatus.Paid;
                 // keep EndDate as is (already set when finished)
+                ss.PaidDate = DateTime.Today;
             }
 
             // Cascade: update each involved Stage and Building

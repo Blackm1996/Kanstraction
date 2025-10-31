@@ -9,6 +9,7 @@ public class SubStage
     public WorkStatus Status { get; set; } = WorkStatus.NotStarted;
     public DateTime? StartDate { get; set; }
     public DateTime? EndDate { get; set; }
+    public DateTime? PaidDate { get; set; }
     public decimal LaborCost { get; set; }
 
     public Stage Stage { get; set; } = null!;
