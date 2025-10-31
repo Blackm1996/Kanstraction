@@ -4,6 +4,7 @@ using Kanstraction.Entities;
 using Kanstraction.Services;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Globalization;
 using System.Linq;
 using System.Windows;
@@ -225,7 +226,7 @@ public partial class OperationsView : UserControl
         return usage.Material.PricePerUnit;
     }
 
-    private void UpdateSubStageLaborTotal(IEnumerable<SubStage>? subStages)
+    private void UpdateSubStageLaborTotal(IEnumerable<SubStage>? subStages = null)
     {
         decimal total = 0m;
         var source = subStages ?? SubStagesGrid.ItemsSource as IEnumerable<SubStage>;
@@ -243,7 +244,7 @@ public partial class OperationsView : UserControl
         SubStagesLaborTotalText.Text = FormatDecimal(total);
     }
 
-    private void UpdateMaterialsTotal(IEnumerable<MaterialUsage>? usages)
+    private void UpdateMaterialsTotal(IEnumerable<MaterialUsage>? usages = null)
     {
         decimal total = 0m;
         var source = usages ?? MaterialsGrid.ItemsSource as IEnumerable<MaterialUsage>;
