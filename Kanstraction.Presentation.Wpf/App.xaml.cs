@@ -1,3 +1,4 @@
+using Kanstraction.Application.Common;
 using Kanstraction.Behaviors;
 using Kanstraction.Infrastructure;
 using Kanstraction.Presentation.Wpf.ViewModels;
@@ -11,7 +12,7 @@ using System.Windows;
 
 namespace Kanstraction.Presentation.Wpf;
 
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     private IHost? _host;
 
