@@ -240,7 +240,7 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
-                    <DataGridTextColumn Header="{DynamicResource OperationsView_PaidDate}" Binding="{Binding PaidDate, StringFormat={}{0:d}}"/>
+                    <DataGridTextColumn Header="{DynamicResource OperationsView_PaidDate}" Binding="{Binding PaidDate, StringFormat={}{0:dd/MM/yyyy}}"/>
                     <DataGridTextColumn Header="{DynamicResource OperationsView_OngoingSubStage}" Binding="{Binding OngoingSubStageName}"/>
                     <DataGridTextColumn Header="{DynamicResource OperationsView_Percent}" Binding="{Binding ProgressPercent}"/>
                     <DataGridTemplateColumn Header="" Width="70">
