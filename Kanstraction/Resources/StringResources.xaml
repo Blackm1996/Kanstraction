@@ -170,6 +170,7 @@
     <sys:String x:Key="OperationsView_Type">Type</sys:String>
     <sys:String x:Key="OperationsView_Percent">%</sys:String>
     <sys:String x:Key="OperationsView_CurrentStage">Current Stage</sys:String>
+    <sys:String x:Key="OperationsView_PaidDate">Paid On</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingTooltip">Stop building</sys:String>
     <sys:String x:Key="OperationsView_AddStageTooltip">Add stage from preset to this building</sys:String>
     <sys:String x:Key="OperationsView_Stage">Stage</sys:String>
