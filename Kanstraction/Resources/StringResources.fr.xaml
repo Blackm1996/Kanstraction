@@ -168,6 +168,7 @@
     <sys:String x:Key="OperationsView_Type">Type</sys:String>
     <sys:String x:Key="OperationsView_Percent">%</sys:String>
     <sys:String x:Key="OperationsView_CurrentStage">Étape actuelle</sys:String>
+    <sys:String x:Key="OperationsView_PaidDate">Payé le</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingTooltip">Arrêter la construction</sys:String>
     <sys:String x:Key="OperationsView_AddStageTooltip">Ajouter une étape existante à ce bâtiment</sys:String>
     <sys:String x:Key="OperationsView_Stage">Étape</sys:String>

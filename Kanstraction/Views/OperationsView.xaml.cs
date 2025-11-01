@@ -1432,7 +1432,8 @@ public partial class OperationsView : UserControl
                 s.Name,
                 s.Status,
                 ProgressPercent = ComputeStageProgress(s),
-                OngoingSubStageName = ComputeCurrentSubStageName(s)
+                OngoingSubStageName = ComputeCurrentSubStageName(s),
+                PaidDate = s.Status == WorkStatus.Paid ? s.EndDate : null
             })
             .ToList();
 
