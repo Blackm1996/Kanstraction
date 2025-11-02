@@ -1846,6 +1846,185 @@ public partial class OperationsView : UserControl
         }
     }
 
+    private async void ExportMaterials_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null)
+        {
+            return;
+        }
+
+        int? subStageId = null;
+        if (SubStagesGrid.SelectedItem is SubStage selectedSubStage)
+        {
+            subStageId = selectedSubStage.Id;
+        }
+        else if (SubStagesGrid.SelectedItem != null)
+        {
+            try
+            {
+                subStageId = (int)((dynamic)SubStagesGrid.SelectedItem).Id;
+            }
+            catch
+            {
+                subStageId = null;
+            }
+        }
+
+        if (!subStageId.HasValue)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_SelectSubStageFirst", "Select a sub-stage first."),
+                ResourceHelper.GetString("OperationsView_NoSubStageTitle", "No sub-stage"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var subStage = await _db.SubStages
+            .Include(ss => ss.Stage)
+                .ThenInclude(st => st.Building)
+                    .ThenInclude(b => b.Project)
+            .FirstOrDefaultAsync(ss => ss.Id == subStageId.Value);
+
+        if (subStage == null || subStage.Stage == null)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_SelectSubStageFirst", "Select a sub-stage first."),
+                ResourceHelper.GetString("OperationsView_NoSubStageTitle", "No sub-stage"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var usages = await _db.MaterialUsages
+            .Include(mu => mu.Material)
+                .ThenInclude(m => m.PriceHistory)
+            .Include(mu => mu.Material)
+                .ThenInclude(m => m.MaterialCategory)
+            .Where(mu => mu.SubStageId == subStage.Id)
+            .OrderBy(mu => mu.Material.Name)
+            .ToListAsync();
+
+        if (usages.Count == 0)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_NoMaterialsToExport", "There are no materials to export."),
+                ResourceHelper.GetString("OperationsView_NoMaterialsTitle", "No materials"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        bool freezePrices = subStage.Status == WorkStatus.Finished || subStage.Status == WorkStatus.Paid;
+
+        var projectLabel = ResourceHelper.GetString("OperationsView_ProjectLabel", "Project");
+        var lotLabel = ResourceHelper.GetString("OperationsView_LotLabel", "Lot");
+        var stageLabel = ResourceHelper.GetString("OperationsView_StageLabel", "Stage");
+        var subStageLabel = ResourceHelper.GetString("OperationsView_SubStageLabel", "Sub-stage");
+
+        var stageName = subStage.Stage.Name ?? string.Empty;
+        var subStageName = subStage.Name ?? string.Empty;
+        var buildingCode = subStage.Stage.Building?.Code ?? string.Empty;
+        var projectName = subStage.Stage.Building?.Project?.Name ?? _currentProject?.Name ?? string.Empty;
+
+        var fileNameBase = $"{SanitizeFileName(buildingCode, lotLabel)}_{SanitizeFileName(stageName, stageLabel)}_{SanitizeFileName(subStageName, subStageLabel)}_{DateTime.Now:yyyyMMdd_HHmm}";
+
+        var sfd = new SaveFileDialog
+        {
+            Title = ResourceHelper.GetString("OperationsView_ExportMaterialsTitle", "Export materials"),
+            Filter = ResourceHelper.GetString("OperationsView_ExportMaterialsFilter", "Excel files (*.xlsx)|*.xlsx"),
+            FileName = $"{fileNameBase}.xlsx"
+        };
+
+        var owner = Window.GetWindow(this);
+        if (sfd.ShowDialog(owner) != true)
+        {
+            return;
+        }
+
+        try
+        {
+            using var workbook = new XLWorkbook();
+            var worksheetName = ResourceHelper.GetString("OperationsView_Materials", "Materials");
+            if (string.IsNullOrWhiteSpace(worksheetName))
+            {
+                worksheetName = "Materials";
+            }
+
+            var ws = workbook.AddWorksheet(worksheetName);
+
+            ws.Cell(1, 1).Value = projectLabel;
+            ws.Cell(1, 2).Value = projectName;
+            ws.Range(1, 1, 1, 2).Style.Font.Bold = true;
+
+            ws.Cell(2, 1).Value = lotLabel;
+            ws.Cell(2, 2).Value = buildingCode;
+            ws.Range(2, 1, 2, 2).Style.Font.Bold = true;
+
+            ws.Cell(3, 1).Value = stageLabel;
+            ws.Cell(3, 2).Value = stageName;
+            ws.Range(3, 1, 3, 2).Style.Font.Bold = true;
+
+            ws.Cell(4, 1).Value = subStageLabel;
+            ws.Cell(4, 2).Value = subStageName;
+            ws.Range(4, 1, 4, 2).Style.Font.Bold = true;
+
+            var materialHeader = ResourceHelper.GetString("OperationsView_MaterialHeader", "Material");
+            var categoryHeader = ResourceHelper.GetString("OperationsView_Category", "Category");
+            var qtyHeader = ResourceHelper.GetString("OperationsView_Qty", "Qty");
+            var unitHeader = ResourceHelper.GetString("OperationsView_Unit", "Unit");
+            var usageDateHeader = ResourceHelper.GetString("OperationsView_UsageDate", "Usage Date");
+            var unitPriceHeader = ResourceHelper.GetString("OperationsView_UnitPrice", "Unit Price");
+            var totalHeader = ResourceHelper.GetString("OperationsView_Total", "Total");
+
+            ws.Cell(6, 1).Value = materialHeader;
+            ws.Cell(6, 2).Value = categoryHeader;
+            ws.Cell(6, 3).Value = qtyHeader;
+            ws.Cell(6, 4).Value = unitHeader;
+            ws.Cell(6, 5).Value = usageDateHeader;
+            ws.Cell(6, 6).Value = unitPriceHeader;
+            ws.Cell(6, 7).Value = totalHeader;
+            ws.Range(6, 1, 6, 7).Style.Font.Bold = true;
+
+            int row = 7;
+            foreach (var usage in usages)
+            {
+                var unitPrice = ComputeUnitPriceForUsage(usage, freezePrices);
+                ws.Cell(row, 1).Value = usage.Material?.Name ?? string.Empty;
+                ws.Cell(row, 2).Value = usage.Material?.MaterialCategory?.Name ?? string.Empty;
+                ws.Cell(row, 3).Value = usage.Qty;
+                ws.Cell(row, 4).Value = usage.Material?.Unit ?? string.Empty;
+                if (usage.UsageDate == default)
+                {
+                    ws.Cell(row, 5).Value = string.Empty;
+                }
+                else
+                {
+                    ws.Cell(row, 5).Value = usage.UsageDate;
+                }
+                ws.Cell(row, 6).Value = unitPrice;
+                ws.Cell(row, 7).Value = usage.Qty * unitPrice;
+                row++;
+            }
+
+            ws.Column(3).Style.NumberFormat.Format = "#,##0.##";
+            ws.Column(5).Style.NumberFormat.Format = "yyyy-mm-dd";
+            ws.Column(6).Style.NumberFormat.Format = "#,##0.00";
+            ws.Column(7).Style.NumberFormat.Format = "#,##0.00";
+            ws.Columns(1, 7).AdjustToContents();
+
+            workbook.SaveAs(sfd.FileName);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_ExportMaterialsFailedFormat", "Failed to export materials:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
     private async void AddSubStage_Click(object sender, RoutedEventArgs e)
     {
         if (_db == null) return;

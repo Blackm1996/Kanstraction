@@ -533,6 +533,7 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <TextBlock Text="{DynamicResource OperationsView_Materials}" FontWeight="SemiBold" VerticalAlignment="Center"/>
@@ -548,14 +549,25 @@
                     </StackPanel>
 
                     <Button Grid.Column="2"
-        Style="{StaticResource TinyIconButton}"
-        ToolTip="{DynamicResource OperationsView_AddMaterialTooltip}"
-        Background="#3f51b5"
-        Click="AddMaterialToSubStage_Click"
-        Margin="10,0,0,0"
-        Visibility="{Binding SelectedItem, ElementName=SubStagesGrid,
-                             Converter={StaticResource NullToVisibilityConverter}}">
+                            Style="{StaticResource TinyIconButton}"
+                            ToolTip="{DynamicResource OperationsView_AddMaterialTooltip}"
+                            Background="#3f51b5"
+                            Click="AddMaterialToSubStage_Click"
+                            Margin="10,0,0,0"
+                            Visibility="{Binding SelectedItem, ElementName=SubStagesGrid,
+                                                     Converter={StaticResource NullToVisibilityConverter}}">
                         <iconPacks:PackIconFontAwesome Kind="PlusSolid" Width="12" Height="12" Foreground="White"/>
+                    </Button>
+
+                    <Button Grid.Column="3"
+                            Style="{StaticResource TinyIconButton}"
+                            ToolTip="{DynamicResource OperationsView_ExportMaterialsTooltip}"
+                            Background="#3f51b5"
+                            Click="ExportMaterials_Click"
+                            Margin="10,0,0,0"
+                            Visibility="{Binding SelectedItem, ElementName=SubStagesGrid,
+                                                     Converter={StaticResource NullToVisibilityConverter}}">
+                        <iconPacks:PackIconFontAwesome Kind="FileExcelSolid" Width="12" Height="12" Foreground="White"/>
                     </Button>
                 </Grid>
             </Border>
