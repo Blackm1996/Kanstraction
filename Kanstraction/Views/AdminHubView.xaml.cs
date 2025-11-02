@@ -996,6 +996,7 @@ namespace Kanstraction.Views
         private Dictionary<int, ObservableCollection<SubStageLaborVm>> _btSubStageLabors = new();
         private Dictionary<int, ObservableCollection<SubStageMaterialVm>> _btSubStageMaterials = new();
         private Dictionary<int, decimal?> _currentBtLaborMap = new();
+        private Dictionary<int, bool> _currentBtSubStageInclusionMap = new();
         private Dictionary<(int SubStagePresetId, int MaterialId), decimal?> _currentBtMaterialMap = new();
         // VM for the assigned presets list
         private class AssignedPresetVm
@@ -1058,6 +1059,7 @@ namespace Kanstraction.Views
                 _btSubStageLabors = new Dictionary<int, ObservableCollection<SubStageLaborVm>>();
                 _btSubStageMaterials = new Dictionary<int, ObservableCollection<SubStageMaterialVm>>();
                 _currentBtLaborMap = new Dictionary<int, decimal?>();
+                _currentBtSubStageInclusionMap = new Dictionary<int, bool>();
                 _currentBtMaterialMap = new Dictionary<(int SubStagePresetId, int MaterialId), decimal?>();
                 if (BtMaterialsGrid != null) BtMaterialsGrid.ItemsSource = null;
                 if (BtMaterialsTitle != null)
@@ -1188,6 +1190,7 @@ namespace Kanstraction.Views
             _currentBt = null;
             _currentBtAssignedIds = new List<int>();
             _currentBtLaborMap = new Dictionary<int, decimal?>();
+            _currentBtSubStageInclusionMap = new Dictionary<int, bool>();
             _currentBtMaterialMap = new Dictionary<(int SubStagePresetId, int MaterialId), decimal?>();
 
             if (BtName != null) BtName.Text = string.Empty;
@@ -1248,6 +1251,7 @@ namespace Kanstraction.Views
             if (_db == null || presetIds.Count == 0)
             {
                 _currentBtLaborMap = new Dictionary<int, decimal?>();
+                _currentBtSubStageInclusionMap = new Dictionary<int, bool>();
                 _currentBtMaterialMap = new Dictionary<(int SubStagePresetId, int MaterialId), decimal?>();
                 return;
             }
@@ -1263,7 +1267,9 @@ namespace Kanstraction.Views
                 .ToListAsync();
 
             _currentBtLaborMap = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.LaborCost);
+            _currentBtSubStageInclusionMap = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.IncludeInReport);
             var laborLookup = _currentBtLaborMap;
+            var inclusionLookup = _currentBtSubStageInclusionMap;
 
             var materialRows = await _db.BuildingTypeMaterialUsages
                 .Where(x => x.BuildingTypeId == buildingTypeId)
@@ -1275,16 +1281,27 @@ namespace Kanstraction.Views
             foreach (var presetId in presetIds)
             {
                 var list = new ObservableCollection<SubStageLaborVm>();
-                foreach (var sub in subPresets.Where(s => s.StagePresetId == presetId))
+                var stageSubs = subPresets.Where(s => s.StagePresetId == presetId).OrderBy(s => s.OrderIndex).ToList();
+                for (int i = 0; i < stageSubs.Count; i++)
                 {
+                    var sub = stageSubs[i];
+                    var isLast = i == stageSubs.Count - 1;
                     var vm = new SubStageLaborVm
                     {
                         StagePresetId = presetId,
                         SubStagePresetId = sub.Id,
                         OrderIndex = sub.OrderIndex,
                         Name = sub.Name,
-                        LaborCost = laborLookup.TryGetValue(sub.Id, out var labor) ? labor : null
+                        LaborCost = laborLookup.TryGetValue(sub.Id, out var labor) ? labor : null,
+                        DefaultIncludeInReport = inclusionLookup.TryGetValue(sub.Id, out var include)
+                            ? include
+                            : isLast,
+                        IsMandatoryInReport = isLast
                     };
+                    var includeValue = inclusionLookup.TryGetValue(sub.Id, out var includeFlag)
+                        ? includeFlag
+                        : isLast;
+                    vm.IncludeInReport = includeValue;
                     vm.PropertyChanged += SubStageLaborVm_PropertyChanged;
                     list.Add(vm);
                 }
@@ -1320,12 +1337,16 @@ namespace Kanstraction.Views
                 .ToListAsync();
 
             Dictionary<int, decimal?>? preservedLabors = null;
+            Dictionary<int, bool>? preservedInclusions = null;
+            Dictionary<int, bool>? preservedDefaults = null;
             Dictionary<(int SubStagePresetId, int MaterialId), decimal?>? preservedMaterials = null;
             List<int>? previousSubStageIds = null;
 
             if (_btSubStageLabors.TryGetValue(stagePresetId, out var previousList))
             {
                 preservedLabors = previousList.ToDictionary(x => x.SubStagePresetId, x => x.LaborCost);
+                preservedInclusions = previousList.ToDictionary(x => x.SubStagePresetId, x => x.IncludeInReport);
+                preservedDefaults = previousList.ToDictionary(x => x.SubStagePresetId, x => x.DefaultIncludeInReport);
                 previousSubStageIds = previousList.Select(x => x.SubStagePresetId).ToList();
 
                 preservedMaterials = previousList
@@ -1359,20 +1380,26 @@ namespace Kanstraction.Views
             }
 
             Dictionary<int, decimal?>? existingLabors = null;
+            Dictionary<int, bool>? existingInclusions = null;
             if (_editingBtId.HasValue)
             {
                 var subIds = subs.Select(s => s.Id).ToList();
                 if (subIds.Count > 0)
                 {
-                    existingLabors = await _db.BuildingTypeSubStageLabors
+                    var laborRows = await _db.BuildingTypeSubStageLabors
                         .Where(x => x.BuildingTypeId == _editingBtId.Value && subIds.Contains(x.SubStagePresetId))
-                        .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
+                        .ToListAsync();
+
+                    existingLabors = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.LaborCost);
+                    existingInclusions = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.IncludeInReport);
                 }
             }
 
             var list = new ObservableCollection<SubStageLaborVm>();
-            foreach (var sub in subs)
+            for (int i = 0; i < subs.Count; i++)
             {
+                var sub = subs[i];
+                var isLast = i == subs.Count - 1;
                 decimal? labor = null;
                 if (preservedLabors != null && preservedLabors.TryGetValue(sub.Id, out var preserved))
                 {
@@ -1383,14 +1410,45 @@ namespace Kanstraction.Views
                     labor = stored;
                 }
 
+                bool defaultInclude;
+                if (preservedDefaults != null && preservedDefaults.TryGetValue(sub.Id, out var preservedDefault))
+                {
+                    defaultInclude = preservedDefault;
+                }
+                else if (existingInclusions != null && existingInclusions.TryGetValue(sub.Id, out var persistedDefault))
+                {
+                    defaultInclude = persistedDefault;
+                }
+                else
+                {
+                    defaultInclude = isLast;
+                }
+
+                bool includeValue;
+                if (preservedInclusions != null && preservedInclusions.TryGetValue(sub.Id, out var preservedInclude))
+                {
+                    includeValue = preservedInclude;
+                }
+                else if (existingInclusions != null && existingInclusions.TryGetValue(sub.Id, out var storedInclude))
+                {
+                    includeValue = storedInclude;
+                }
+                else
+                {
+                    includeValue = isLast;
+                }
+
                 var vm = new SubStageLaborVm
                 {
                     StagePresetId = stagePresetId,
                     SubStagePresetId = sub.Id,
                     OrderIndex = sub.OrderIndex,
                     Name = sub.Name,
-                    LaborCost = labor
+                    LaborCost = labor,
+                    DefaultIncludeInReport = defaultInclude,
+                    IsMandatoryInReport = isLast
                 };
+                vm.IncludeInReport = includeValue;
                 vm.PropertyChanged += SubStageLaborVm_PropertyChanged;
                 list.Add(vm);
             }
@@ -1517,6 +1575,11 @@ namespace Kanstraction.Views
 
             if (!dirty)
             {
+                dirty = HaveSubStageReportSelectionsChanged();
+            }
+
+            if (!dirty)
+            {
                 dirty = HaveMaterialAssignmentsChanged();
             }
 
@@ -1559,6 +1622,53 @@ namespace Kanstraction.Views
             }
 
             foreach (var kvp in _currentBtLaborMap)
+            {
+                if (!currentMap.TryGetValue(kvp.Key, out var value) || value != kvp.Value)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private Dictionary<int, bool> GetCurrentInclusionMap()
+        {
+            var map = new Dictionary<int, bool>();
+            var assignedIds = _btAssigned.Select(a => a.StagePresetId).ToHashSet();
+
+            foreach (var kvp in _btSubStageLabors)
+            {
+                if (!assignedIds.Contains(kvp.Key)) continue;
+
+                foreach (var vm in kvp.Value)
+                {
+                    var hasPersistedValue = _currentBtSubStageInclusionMap.ContainsKey(vm.SubStagePresetId);
+                    if (hasPersistedValue || vm.IncludeInReport != vm.DefaultIncludeInReport)
+                    {
+                        map[vm.SubStagePresetId] = vm.IncludeInReport;
+                    }
+                }
+            }
+
+            return map;
+        }
+
+        private bool HaveSubStageReportSelectionsChanged()
+        {
+            var currentMap = GetCurrentInclusionMap();
+
+            if (_currentBt == null)
+            {
+                return currentMap.Count > 0;
+            }
+
+            if (currentMap.Count != _currentBtSubStageInclusionMap.Count)
+            {
+                return true;
+            }
+
+            foreach (var kvp in _currentBtSubStageInclusionMap)
             {
                 if (!currentMap.TryGetValue(kvp.Key, out var value) || value != kvp.Value)
                 {
@@ -1625,7 +1735,8 @@ namespace Kanstraction.Views
 
         private void SubStageLaborVm_PropertyChanged(object? sender, PropertyChangedEventArgs e)
         {
-            if (e.PropertyName == nameof(SubStageLaborVm.LaborCost))
+            if (e.PropertyName == nameof(SubStageLaborVm.LaborCost) ||
+                e.PropertyName == nameof(SubStageLaborVm.IncludeInReport))
             {
                 UpdateBuildingDirtyState();
             }
@@ -1934,7 +2045,8 @@ namespace Kanstraction.Views
                             {
                                 BuildingTypeId = _editingBtId.Value,
                                 SubStagePresetId = laborVm.SubStagePresetId,
-                                LaborCost = cost
+                                LaborCost = cost,
+                                IncludeInReport = laborVm.IncludeInReport
                             };
                             _db.BuildingTypeSubStageLabors.Add(entity);
                             existingLabors.Add(entity);
@@ -1942,6 +2054,7 @@ namespace Kanstraction.Views
                         else
                         {
                             existing.LaborCost = cost;
+                            existing.IncludeInReport = laborVm.IncludeInReport;
                         }
 
                         if (_btSubStageMaterials.TryGetValue(laborVm.SubStagePresetId, out var materials))
@@ -1980,6 +2093,12 @@ namespace Kanstraction.Views
                         ? list
                         : Enumerable.Empty<SubStageLaborVm>())
                     .ToDictionary(vm => vm.SubStagePresetId, vm => vm.LaborCost);
+
+                _currentBtSubStageInclusionMap = assignedPresetIds
+                    .SelectMany(id => _btSubStageLabors.TryGetValue(id, out var list)
+                        ? list
+                        : Enumerable.Empty<SubStageLaborVm>())
+                    .ToDictionary(vm => vm.SubStagePresetId, vm => vm.IncludeInReport);
 
                 _currentBtMaterialMap = assignedPresetIds
                     .SelectMany(id => _btSubStageLabors.TryGetValue(id, out var list)
@@ -2085,6 +2204,48 @@ namespace Kanstraction.Views
                     }
                 }
             }
+
+            public bool DefaultIncludeInReport { get; set; }
+
+            private bool _includeInReport;
+            public bool IncludeInReport
+            {
+                get => _includeInReport;
+                set
+                {
+                    var effective = _isMandatoryInReport ? true : value;
+                    if (_includeInReport != effective)
+                    {
+                        _includeInReport = effective;
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IncludeInReport)));
+                    }
+                    else if (effective != value)
+                    {
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IncludeInReport)));
+                    }
+                }
+            }
+
+            private bool _isMandatoryInReport;
+            public bool IsMandatoryInReport
+            {
+                get => _isMandatoryInReport;
+                set
+                {
+                    if (_isMandatoryInReport != value)
+                    {
+                        _isMandatoryInReport = value;
+                        if (_isMandatoryInReport)
+                        {
+                            IncludeInReport = true;
+                        }
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsMandatoryInReport)));
+                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanModifyInclude)));
+                    }
+                }
+            }
+
+            public bool CanModifyInclude => !_isMandatoryInReport;
 
             public event PropertyChangedEventHandler? PropertyChanged;
         }

@@ -3,6 +3,7 @@ using System;
 using Kanstraction.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Kanstraction.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250925190000_AddBuildingTypeSubStageReportFlag")]
+    partial class AddBuildingTypeSubStageReportFlag
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.8");
@@ -121,6 +123,9 @@ namespace Kanstraction.Migrations
                     b.HasIndex("MaterialId");
 
                     b.HasIndex("SubStagePresetId");
+
+                    b.HasIndex("SubStagePresetId", "MaterialId")
+                        .IsUnique();
 
                     b.ToTable("BuildingTypeMaterialUsages");
                 });
@@ -251,9 +256,6 @@ namespace Kanstraction.Migrations
                     b.HasIndex("MaterialId");
 
                     b.HasIndex("SubStagePresetId");
-
-                    b.HasIndex("SubStagePresetId", "MaterialId")
-                        .IsUnique();
 
                     b.ToTable("MaterialUsagesPreset");
                 });
