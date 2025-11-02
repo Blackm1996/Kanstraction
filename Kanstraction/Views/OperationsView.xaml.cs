@@ -6,14 +6,15 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
 using System.Windows.Data;
+using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
-
 namespace Kanstraction.Views;
 
 public partial class OperationsView : UserControl
@@ -52,6 +53,23 @@ public partial class OperationsView : UserControl
     }
 
     private static string FormatDecimal(decimal value) => value.ToString("0.##", CultureInfo.CurrentCulture);
+
+    private static string SanitizeFileName(string? input, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(fallback))
+        {
+            fallback = "Export";
+        }
+
+        if (string.IsNullOrWhiteSpace(input))
+        {
+            return fallback;
+        }
+
+        var invalid = Path.GetInvalidFileNameChars();
+        var sanitized = new string(input.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray()).Trim();
+        return string.IsNullOrWhiteSpace(sanitized) ? fallback : sanitized;
+    }
 
     public OperationsView()
     {
@@ -1677,6 +1695,147 @@ public partial class OperationsView : UserControl
         {
             MessageBox.Show(
                 string.Format(ResourceHelper.GetString("OperationsView_DeleteMaterialFailedFormat", "Failed to delete material:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
+    private async void ExportSubStages_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null)
+        {
+            return;
+        }
+
+        int? stageId = _currentStageId;
+        if (!stageId.HasValue)
+        {
+            if (StagesGrid.SelectedItem is Stage stageEntity)
+            {
+                stageId = stageEntity.Id;
+            }
+            else if (StagesGrid.SelectedItem != null)
+            {
+                try
+                {
+                    stageId = (int)((dynamic)StagesGrid.SelectedItem).Id;
+                }
+                catch
+                {
+                    stageId = null;
+                }
+            }
+        }
+
+        if (!stageId.HasValue)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_SelectStageFirst", "Select a stage first."),
+                ResourceHelper.GetString("OperationsView_NoStageTitle", "No stage"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var stage = await _db.Stages
+            .Include(s => s.Building)
+                .ThenInclude(b => b.Project)
+            .FirstOrDefaultAsync(s => s.Id == stageId.Value);
+
+        if (stage == null)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_SelectStageFirst", "Select a stage first."),
+                ResourceHelper.GetString("OperationsView_NoStageTitle", "No stage"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var subStages = await _db.SubStages
+            .Where(ss => ss.StageId == stage.Id)
+            .OrderBy(ss => ss.OrderIndex)
+            .ToListAsync();
+
+        if (subStages.Count == 0)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_NoSubStagesToExport", "There are no sub-stages to export."),
+                ResourceHelper.GetString("OperationsView_NoSubStageTitle", "No sub-stage"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var projectLabel = ResourceHelper.GetString("OperationsView_ProjectLabel", "Project");
+        var lotLabel = ResourceHelper.GetString("OperationsView_LotLabel", "Lot");
+        var stageLabel = ResourceHelper.GetString("OperationsView_StageLabel", "Stage");
+
+        var buildingCode = stage.Building?.Code ?? string.Empty;
+        var projectName = stage.Building?.Project?.Name ?? _currentProject?.Name ?? string.Empty;
+
+        var fileNameBase = $"{SanitizeFileName(buildingCode, lotLabel)}_{SanitizeFileName(stage.Name, stageLabel)}_{DateTime.Now:yyyyMMdd_HHmm}";
+        var sfd = new SaveFileDialog
+        {
+            Title = ResourceHelper.GetString("OperationsView_ExportSubStagesTitle", "Export sub-stages"),
+            Filter = ResourceHelper.GetString("OperationsView_ExportSubStagesFilter", "Excel files (*.xlsx)|*.xlsx"),
+            FileName = $"{fileNameBase}.xlsx"
+        };
+
+        var owner = Window.GetWindow(this);
+        if (sfd.ShowDialog(owner) != true)
+        {
+            return;
+        }
+
+        try
+        {
+            using var workbook = new XLWorkbook();
+            var worksheetName = ResourceHelper.GetString("OperationsView_SubStages", "Sub-stages");
+            if (string.IsNullOrWhiteSpace(worksheetName))
+            {
+                worksheetName = "Sub-stages";
+            }
+
+            var ws = workbook.AddWorksheet(worksheetName);
+
+            ws.Cell(1, 1).Value = projectLabel;
+            ws.Cell(1, 2).Value = projectName;
+            ws.Cell(1, 3).Value = lotLabel;
+            ws.Cell(1, 4).Value = buildingCode;
+            ws.Cell(1, 5).Value = stageLabel;
+            ws.Cell(1, 6).Value = stage.Name;
+            ws.Range(1, 1, 1, 6).Style.Font.Bold = true;
+
+            var nameHeader = ResourceHelper.GetString("OperationsView_Name", "Name");
+            var statusHeader = ResourceHelper.GetString("OperationsView_Status", "Status");
+            var laborHeader = ResourceHelper.GetString("OperationsView_Labor", "Labor");
+
+            ws.Cell(2, 1).Value = nameHeader;
+            ws.Cell(2, 2).Value = statusHeader;
+            ws.Cell(2, 3).Value = laborHeader;
+            ws.Range(2, 1, 2, 3).Style.Font.Bold = true;
+
+            int row = 3;
+            foreach (var ss in subStages)
+            {
+                ws.Cell(row, 1).Value = ss.Name;
+                var statusKey = $"WorkStatus_{ss.Status}";
+                ws.Cell(row, 2).Value = ResourceHelper.GetString(statusKey, ss.Status.ToString());
+                ws.Cell(row, 3).Value = ss.LaborCost;
+                row++;
+            }
+
+            ws.Column(3).Style.NumberFormat.Format = "#,##0.00";
+            ws.Columns(1, 6).AdjustToContents();
+
+            workbook.SaveAs(sfd.FileName);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_ExportFailedFormat", "Failed to export sub-stages:\n{0}"), ex.Message),
                 ResourceHelper.GetString("Common_ErrorTitle", "Error"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);

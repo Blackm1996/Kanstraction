@@ -183,6 +183,12 @@
     <sys:String x:Key="OperationsView_DeleteSubStageTooltip">Supprimer cette sous-étape de l'étape</sys:String>
     <sys:String x:Key="OperationsView_Stages">Étapes</sys:String>
     <sys:String x:Key="OperationsView_SubStages">Sous-étapes</sys:String>
+    <sys:String x:Key="OperationsView_ExportSubStagesTooltip">Exporter les sous-étapes vers Excel</sys:String>
+    <sys:String x:Key="OperationsView_ExportSubStagesTitle">Exporter les sous-étapes</sys:String>
+    <sys:String x:Key="OperationsView_ExportSubStagesFilter">Fichiers Excel (*.xlsx)|*.xlsx</sys:String>
+    <sys:String x:Key="OperationsView_ProjectLabel">Projet</sys:String>
+    <sys:String x:Key="OperationsView_LotLabel">Lot</sys:String>
+    <sys:String x:Key="OperationsView_StageLabel">Étape</sys:String>
     <sys:String x:Key="OperationsView_MaterialHeader">Matériau</sys:String>
     <sys:String x:Key="OperationsView_Category">Catégorie</sys:String>
     <sys:String x:Key="OperationsView_Qty">Qté</sys:String>
@@ -235,6 +241,10 @@
     <sys:String x:Key="OperationsView_SelectMaterialPrompt">Veuillez sélectionner un matériau.</sys:String>
     <sys:String x:Key="OperationsView_AddMaterialFailedFormat">Échec de l'ajout du matériau :&#x0a;{0}</sys:String>
     <sys:String x:Key="OperationsView_AddSubStageFailedFormat">Échec de l'ajout de la sous-étape :&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_NoSubStagesToExport">Aucune sous-étape à exporter.</sys:String>
+    <sys:String x:Key="OperationsView_SelectStageFirst">Sélectionnez d'abord une étape.</sys:String>
+    <sys:String x:Key="OperationsView_NoStageTitle">Aucune étape</sys:String>
+    <sys:String x:Key="OperationsView_ExportFailedFormat">Échec de l'exportation des sous-étapes :&#x0a;{0}</sys:String>
     <sys:String x:Key="OperationsView_NoCompletedSubStages">Aucune sous-étape terminée à résoudre.</sys:String>
     <sys:String x:Key="OperationsView_NothingToDoTitle">Rien à faire</sys:String>
     <sys:String x:Key="OperationsView_SavePaymentReportTitle">Enregistrer le rapport de résolution de paiement</sys:String>

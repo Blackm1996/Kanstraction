@@ -185,6 +185,12 @@
     <sys:String x:Key="OperationsView_DeleteSubStageTooltip">Remove this sub-stage from the stage</sys:String>
     <sys:String x:Key="OperationsView_Stages">Stages</sys:String>
     <sys:String x:Key="OperationsView_SubStages">Sub-stages</sys:String>
+    <sys:String x:Key="OperationsView_ExportSubStagesTooltip">Export sub-stages to Excel</sys:String>
+    <sys:String x:Key="OperationsView_ExportSubStagesTitle">Export sub-stages</sys:String>
+    <sys:String x:Key="OperationsView_ExportSubStagesFilter">Excel files (*.xlsx)|*.xlsx</sys:String>
+    <sys:String x:Key="OperationsView_ProjectLabel">Project</sys:String>
+    <sys:String x:Key="OperationsView_LotLabel">Lot</sys:String>
+    <sys:String x:Key="OperationsView_StageLabel">Stage</sys:String>
     <sys:String x:Key="OperationsView_MaterialHeader">Material</sys:String>
     <sys:String x:Key="OperationsView_Category">Category</sys:String>
     <sys:String x:Key="OperationsView_Qty">Qty</sys:String>
@@ -237,6 +243,10 @@
     <sys:String x:Key="OperationsView_SelectMaterialPrompt">Please select a material.</sys:String>
     <sys:String x:Key="OperationsView_AddMaterialFailedFormat">Failed to add material:&#x0a;{0}</sys:String>
     <sys:String x:Key="OperationsView_AddSubStageFailedFormat">Failed to add sub-stage:&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_NoSubStagesToExport">There are no sub-stages to export.</sys:String>
+    <sys:String x:Key="OperationsView_SelectStageFirst">Select a stage first.</sys:String>
+    <sys:String x:Key="OperationsView_NoStageTitle">No stage</sys:String>
+    <sys:String x:Key="OperationsView_ExportFailedFormat">Failed to export sub-stages:&#x0a;{0}</sys:String>
     <sys:String x:Key="OperationsView_NoCompletedSubStages">No completed sub-stages to resolve.</sys:String>
     <sys:String x:Key="OperationsView_NothingToDoTitle">Nothing to do</sys:String>
     <sys:String x:Key="OperationsView_SavePaymentReportTitle">Save payment resolution report</sys:String>
