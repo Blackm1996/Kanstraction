@@ -1802,22 +1802,26 @@ public partial class OperationsView : UserControl
 
             ws.Cell(1, 1).Value = projectLabel;
             ws.Cell(1, 2).Value = projectName;
-            ws.Cell(1, 3).Value = lotLabel;
-            ws.Cell(1, 4).Value = buildingCode;
-            ws.Cell(1, 5).Value = stageLabel;
-            ws.Cell(1, 6).Value = stage.Name;
-            ws.Range(1, 1, 1, 6).Style.Font.Bold = true;
+            ws.Range(1, 1, 1, 2).Style.Font.Bold = true;
+
+            ws.Cell(2, 1).Value = lotLabel;
+            ws.Cell(2, 2).Value = buildingCode;
+            ws.Range(2, 1, 2, 2).Style.Font.Bold = true;
+
+            ws.Cell(3, 1).Value = stageLabel;
+            ws.Cell(3, 2).Value = stage.Name;
+            ws.Range(3, 1, 3, 2).Style.Font.Bold = true;
 
             var nameHeader = ResourceHelper.GetString("OperationsView_Name", "Name");
             var statusHeader = ResourceHelper.GetString("OperationsView_Status", "Status");
             var laborHeader = ResourceHelper.GetString("OperationsView_Labor", "Labor");
 
-            ws.Cell(2, 1).Value = nameHeader;
-            ws.Cell(2, 2).Value = statusHeader;
-            ws.Cell(2, 3).Value = laborHeader;
-            ws.Range(2, 1, 2, 3).Style.Font.Bold = true;
+            ws.Cell(5, 1).Value = nameHeader;
+            ws.Cell(5, 2).Value = statusHeader;
+            ws.Cell(5, 3).Value = laborHeader;
+            ws.Range(5, 1, 5, 3).Style.Font.Bold = true;
 
-            int row = 3;
+            int row = 6;
             foreach (var ss in subStages)
             {
                 ws.Cell(row, 1).Value = ss.Name;
@@ -1828,7 +1832,7 @@ public partial class OperationsView : UserControl
             }
 
             ws.Column(3).Style.NumberFormat.Format = "#,##0.00";
-            ws.Columns(1, 6).AdjustToContents();
+            ws.Columns(1, 3).AdjustToContents();
 
             workbook.SaveAs(sfd.FileName);
         }
