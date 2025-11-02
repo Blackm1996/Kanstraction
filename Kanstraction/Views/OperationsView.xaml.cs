@@ -5,6 +5,7 @@ using Kanstraction.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -69,6 +70,29 @@ public partial class OperationsView : UserControl
         var invalid = Path.GetInvalidFileNameChars();
         var sanitized = new string(input.Select(ch => invalid.Contains(ch) ? '_' : ch).ToArray()).Trim();
         return string.IsNullOrWhiteSpace(sanitized) ? fallback : sanitized;
+    }
+
+    private static void TryOpenExportedFile(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return;
+        }
+
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = path,
+                UseShellExecute = true
+            };
+
+            Process.Start(psi);
+        }
+        catch
+        {
+            // Ignored – the export succeeded, but opening the file failed.
+        }
     }
 
     public OperationsView()
@@ -1835,6 +1859,7 @@ public partial class OperationsView : UserControl
             ws.Columns(1, 3).AdjustToContents();
 
             workbook.SaveAs(sfd.FileName);
+            TryOpenExportedFile(sfd.FileName);
         }
         catch (Exception ex)
         {
@@ -2010,6 +2035,7 @@ public partial class OperationsView : UserControl
             ws.Columns(1, 6).AdjustToContents();
 
             workbook.SaveAs(sfd.FileName);
+            TryOpenExportedFile(sfd.FileName);
         }
         catch (Exception ex)
         {
