@@ -2005,7 +2005,6 @@ public partial class OperationsView : UserControl
                 row++;
             }
 
-            ws.Column(3).Style.NumberFormat.Format = "#,##0.##";
             ws.Column(5).Style.NumberFormat.Format = "#,##0.00";
             ws.Column(6).Style.NumberFormat.Format = "#,##0.00";
             ws.Columns(1, 6).AdjustToContents();
