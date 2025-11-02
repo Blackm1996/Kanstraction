@@ -42,6 +42,18 @@ public partial class OperationsView : UserControl
     private ICollectionView? _buildingView;
     private string _buildingSearchText = string.Empty;
 
+    private static readonly XLColor InfoLabelFillColor = XLColor.FromHtml("#D9EAF7");
+    private static readonly XLColor InfoValueFillColor = XLColor.FromHtml("#F0F7FF");
+    private static readonly XLColor InfoLabelFontColor = XLColor.FromHtml("#1F4E79");
+    private static readonly XLColor SubStageHeaderFillColor = XLColor.FromHtml("#2F75B5");
+    private static readonly XLColor SubStageHeaderFontColor = XLColor.White;
+    private static readonly XLColor SubStageRowPrimaryFill = XLColor.FromHtml("#E6F0FA");
+    private static readonly XLColor SubStageRowSecondaryFill = XLColor.FromHtml("#D2E3F6");
+    private static readonly XLColor MaterialHeaderFillColor = XLColor.FromHtml("#7F7F7F");
+    private static readonly XLColor MaterialHeaderFontColor = XLColor.White;
+    private static readonly XLColor MaterialRowPrimaryFill = XLColor.FromHtml("#F2F2F2");
+    private static readonly XLColor MaterialRowSecondaryFill = XLColor.FromHtml("#E0E0E0");
+
     private sealed class BuildingRow
     {
         public int Id { get; init; }
@@ -92,6 +104,42 @@ public partial class OperationsView : UserControl
         catch
         {
             // Ignored – the export succeeded, but opening the file failed.
+        }
+    }
+
+    private static void WriteInfoRow(IXLWorksheet ws, int rowNumber, string label, string value)
+    {
+        var labelCell = ws.Cell(rowNumber, 1);
+        var valueCell = ws.Cell(rowNumber, 2);
+
+        labelCell.Value = label;
+        labelCell.Style.Font.Bold = true;
+        labelCell.Style.Font.FontColor = InfoLabelFontColor;
+        labelCell.Style.Fill.BackgroundColor = InfoLabelFillColor;
+        labelCell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        labelCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+
+        valueCell.Value = value;
+        valueCell.Style.Fill.BackgroundColor = InfoValueFillColor;
+        valueCell.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        valueCell.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+
+        ws.Row(rowNumber).Height = 22;
+    }
+
+    private static void ApplyAlternatingRowStyles(IXLWorksheet ws, int startRow, int endRow, int startColumn, int endColumn, XLColor firstColor, XLColor secondColor)
+    {
+        if (endRow < startRow)
+        {
+            return;
+        }
+
+        for (int row = startRow; row <= endRow; row++)
+        {
+            var fillColor = ((row - startRow) % 2 == 0) ? firstColor : secondColor;
+            var range = ws.Range(row, startColumn, row, endColumn);
+            range.Style.Fill.BackgroundColor = fillColor;
+            range.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
         }
     }
 
@@ -1824,17 +1872,9 @@ public partial class OperationsView : UserControl
 
             var ws = workbook.AddWorksheet(worksheetName);
 
-            ws.Cell(1, 1).Value = projectLabel;
-            ws.Cell(1, 2).Value = projectName;
-            ws.Range(1, 1, 1, 2).Style.Font.Bold = true;
-
-            ws.Cell(2, 1).Value = lotLabel;
-            ws.Cell(2, 2).Value = buildingCode;
-            ws.Range(2, 1, 2, 2).Style.Font.Bold = true;
-
-            ws.Cell(3, 1).Value = stageLabel;
-            ws.Cell(3, 2).Value = stage.Name;
-            ws.Range(3, 1, 3, 2).Style.Font.Bold = true;
+            WriteInfoRow(ws, 1, projectLabel, projectName);
+            WriteInfoRow(ws, 2, lotLabel, buildingCode);
+            WriteInfoRow(ws, 3, stageLabel, stage.Name ?? string.Empty);
 
             var nameHeader = ResourceHelper.GetString("OperationsView_Name", "Name");
             var statusHeader = ResourceHelper.GetString("OperationsView_Status", "Status");
@@ -1843,7 +1883,13 @@ public partial class OperationsView : UserControl
             ws.Cell(5, 1).Value = nameHeader;
             ws.Cell(5, 2).Value = statusHeader;
             ws.Cell(5, 3).Value = laborHeader;
-            ws.Range(5, 1, 5, 3).Style.Font.Bold = true;
+            var subStageHeader = ws.Range(5, 1, 5, 3);
+            subStageHeader.Style.Font.Bold = true;
+            subStageHeader.Style.Font.FontColor = SubStageHeaderFontColor;
+            subStageHeader.Style.Fill.BackgroundColor = SubStageHeaderFillColor;
+            subStageHeader.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            subStageHeader.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            ws.Row(5).Height = 20;
 
             int row = 6;
             foreach (var ss in subStages)
@@ -1856,6 +1902,7 @@ public partial class OperationsView : UserControl
             }
 
             ws.Column(3).Style.NumberFormat.Format = "#,##0.00";
+            ApplyAlternatingRowStyles(ws, 6, row - 1, 1, 3, SubStageRowPrimaryFill, SubStageRowSecondaryFill);
             ws.Columns(1, 3).AdjustToContents();
 
             workbook.SaveAs(sfd.FileName);
@@ -1978,21 +2025,10 @@ public partial class OperationsView : UserControl
 
             var ws = workbook.AddWorksheet(worksheetName);
 
-            ws.Cell(1, 1).Value = projectLabel;
-            ws.Cell(1, 2).Value = projectName;
-            ws.Range(1, 1, 1, 2).Style.Font.Bold = true;
-
-            ws.Cell(2, 1).Value = lotLabel;
-            ws.Cell(2, 2).Value = buildingCode;
-            ws.Range(2, 1, 2, 2).Style.Font.Bold = true;
-
-            ws.Cell(3, 1).Value = stageLabel;
-            ws.Cell(3, 2).Value = stageName;
-            ws.Range(3, 1, 3, 2).Style.Font.Bold = true;
-
-            ws.Cell(4, 1).Value = subStageLabel;
-            ws.Cell(4, 2).Value = subStageName;
-            ws.Range(4, 1, 4, 2).Style.Font.Bold = true;
+            WriteInfoRow(ws, 1, projectLabel, projectName);
+            WriteInfoRow(ws, 2, lotLabel, buildingCode);
+            WriteInfoRow(ws, 3, stageLabel, stageName);
+            WriteInfoRow(ws, 4, subStageLabel, subStageName);
 
             var materialHeader = ResourceHelper.GetString("OperationsView_MaterialHeader", "Material");
             var categoryHeader = ResourceHelper.GetString("OperationsView_Category", "Category");
@@ -2007,7 +2043,13 @@ public partial class OperationsView : UserControl
             ws.Cell(6, 4).Value = unitHeader;
             ws.Cell(6, 5).Value = unitPriceHeader;
             ws.Cell(6, 6).Value = totalHeader;
-            ws.Range(6, 1, 6, 6).Style.Font.Bold = true;
+            var materialHeaderRange = ws.Range(6, 1, 6, 6);
+            materialHeaderRange.Style.Font.Bold = true;
+            materialHeaderRange.Style.Font.FontColor = MaterialHeaderFontColor;
+            materialHeaderRange.Style.Fill.BackgroundColor = MaterialHeaderFillColor;
+            materialHeaderRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            materialHeaderRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            ws.Row(6).Height = 20;
 
             int row = 7;
             foreach (var usage in usages)
@@ -2032,6 +2074,7 @@ public partial class OperationsView : UserControl
 
             ws.Column(5).Style.NumberFormat.Format = "#,##0.00";
             ws.Column(6).Style.NumberFormat.Format = "#,##0.00";
+            ApplyAlternatingRowStyles(ws, 7, row - 1, 1, 6, MaterialRowPrimaryFill, MaterialRowSecondaryFill);
             ws.Columns(1, 6).AdjustToContents();
 
             workbook.SaveAs(sfd.FileName);
