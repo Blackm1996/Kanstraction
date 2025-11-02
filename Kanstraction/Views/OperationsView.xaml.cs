@@ -1973,7 +1973,6 @@ public partial class OperationsView : UserControl
             var categoryHeader = ResourceHelper.GetString("OperationsView_Category", "Category");
             var qtyHeader = ResourceHelper.GetString("OperationsView_Qty", "Qty");
             var unitHeader = ResourceHelper.GetString("OperationsView_Unit", "Unit");
-            var usageDateHeader = ResourceHelper.GetString("OperationsView_UsageDate", "Usage Date");
             var unitPriceHeader = ResourceHelper.GetString("OperationsView_UnitPrice", "Unit Price");
             var totalHeader = ResourceHelper.GetString("OperationsView_Total", "Total");
 
@@ -1981,10 +1980,9 @@ public partial class OperationsView : UserControl
             ws.Cell(6, 2).Value = categoryHeader;
             ws.Cell(6, 3).Value = qtyHeader;
             ws.Cell(6, 4).Value = unitHeader;
-            ws.Cell(6, 5).Value = usageDateHeader;
-            ws.Cell(6, 6).Value = unitPriceHeader;
-            ws.Cell(6, 7).Value = totalHeader;
-            ws.Range(6, 1, 6, 7).Style.Font.Bold = true;
+            ws.Cell(6, 5).Value = unitPriceHeader;
+            ws.Cell(6, 6).Value = totalHeader;
+            ws.Range(6, 1, 6, 6).Style.Font.Bold = true;
 
             int row = 7;
             foreach (var usage in usages)
@@ -1992,26 +1990,25 @@ public partial class OperationsView : UserControl
                 var unitPrice = ComputeUnitPriceForUsage(usage, freezePrices);
                 ws.Cell(row, 1).Value = usage.Material?.Name ?? string.Empty;
                 ws.Cell(row, 2).Value = usage.Material?.MaterialCategory?.Name ?? string.Empty;
-                ws.Cell(row, 3).Value = usage.Qty;
-                ws.Cell(row, 4).Value = usage.Material?.Unit ?? string.Empty;
-                if (usage.UsageDate == default)
+                var qty = usage.Qty;
+                if (qty == decimal.Truncate(qty))
                 {
-                    ws.Cell(row, 5).Value = string.Empty;
+                    ws.Cell(row, 3).Value = decimal.ToInt64(qty);
                 }
                 else
                 {
-                    ws.Cell(row, 5).Value = usage.UsageDate;
+                    ws.Cell(row, 3).Value = qty;
                 }
-                ws.Cell(row, 6).Value = unitPrice;
-                ws.Cell(row, 7).Value = usage.Qty * unitPrice;
+                ws.Cell(row, 4).Value = usage.Material?.Unit ?? string.Empty;
+                ws.Cell(row, 5).Value = unitPrice;
+                ws.Cell(row, 6).Value = usage.Qty * unitPrice;
                 row++;
             }
 
             ws.Column(3).Style.NumberFormat.Format = "#,##0.##";
-            ws.Column(5).Style.NumberFormat.Format = "yyyy-mm-dd";
+            ws.Column(5).Style.NumberFormat.Format = "#,##0.00";
             ws.Column(6).Style.NumberFormat.Format = "#,##0.00";
-            ws.Column(7).Style.NumberFormat.Format = "#,##0.00";
-            ws.Columns(1, 7).AdjustToContents();
+            ws.Columns(1, 6).AdjustToContents();
 
             workbook.SaveAs(sfd.FileName);
         }
