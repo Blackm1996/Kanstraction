@@ -1412,7 +1412,7 @@ namespace Kanstraction.Views
                     labor = stored;
                 }
 
-                bool defaultInclude;
+                bool? defaultInclude = null;
                 if (preservedDefaults != null && preservedDefaults.TryGetValue(sub.Id, out var preservedDefault))
                 {
                     defaultInclude = preservedDefault;
@@ -1421,15 +1421,19 @@ namespace Kanstraction.Views
                 {
                     defaultInclude = persistedDefault;
                 }
-                else if (!defaultInclude && preservedMandatoryFlags != null &&
-                         preservedMandatoryFlags.TryGetValue(sub.Id, out var wasMandatory) && wasMandatory)
+
+                if (defaultInclude != true && preservedMandatoryFlags != null &&
+                    preservedMandatoryFlags.TryGetValue(sub.Id, out var wasMandatory) && wasMandatory)
                 {
                     defaultInclude = true;
                 }
-                else
+
+                if (defaultInclude == null)
                 {
                     defaultInclude = isLast;
                 }
+
+                var defaultIncludeValue = defaultInclude.Value;
 
                 bool includeValue;
                 if (preservedInclusions != null && preservedInclusions.TryGetValue(sub.Id, out var preservedInclude))
@@ -1447,7 +1451,7 @@ namespace Kanstraction.Views
                 }
                 else
                 {
-                    includeValue = defaultInclude;
+                    includeValue = defaultIncludeValue;
                 }
 
                 var vm = new SubStageLaborVm
@@ -1457,7 +1461,7 @@ namespace Kanstraction.Views
                     OrderIndex = sub.OrderIndex,
                     Name = sub.Name,
                     LaborCost = labor,
-                    DefaultIncludeInReport = defaultInclude,
+                    DefaultIncludeInReport = defaultIncludeValue,
                     IsMandatoryInReport = isLast
                 };
                 vm.IncludeInReport = includeValue;
