@@ -1266,6 +1266,41 @@ namespace Kanstraction.Views
                 .Where(x => x.BuildingTypeId == buildingTypeId)
                 .ToListAsync();
 
+            var mandatorySubStageIds = subPresets
+                .GroupBy(s => s.StagePresetId)
+                .Select(g => g
+                    .OrderBy(s => s.OrderIndex)
+                    .Last().Id)
+                .ToList();
+
+            var ensuredInclusions = false;
+            foreach (var subStageId in mandatorySubStageIds)
+            {
+                var row = laborRows.FirstOrDefault(x => x.SubStagePresetId == subStageId);
+                if (row == null)
+                {
+                    row = new BuildingTypeSubStageLabor
+                    {
+                        BuildingTypeId = buildingTypeId,
+                        SubStagePresetId = subStageId,
+                        IncludeInReport = true
+                    };
+                    _db.BuildingTypeSubStageLabors.Add(row);
+                    laborRows.Add(row);
+                    ensuredInclusions = true;
+                }
+                else if (!row.IncludeInReport)
+                {
+                    row.IncludeInReport = true;
+                    ensuredInclusions = true;
+                }
+            }
+
+            if (ensuredInclusions)
+            {
+                await _db.SaveChangesAsync();
+            }
+
             _currentBtLaborMap = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.LaborCost);
             _currentBtSubStageInclusionMap = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.IncludeInReport);
             var laborLookup = _currentBtLaborMap;
@@ -1383,14 +1418,46 @@ namespace Kanstraction.Views
 
             Dictionary<int, decimal?>? existingLabors = null;
             Dictionary<int, bool>? existingInclusions = null;
+            List<BuildingTypeSubStageLabor>? laborRows = null;
             if (_editingBtId.HasValue)
             {
                 var subIds = subs.Select(s => s.Id).ToList();
                 if (subIds.Count > 0)
                 {
-                    var laborRows = await _db.BuildingTypeSubStageLabors
+                    laborRows = await _db.BuildingTypeSubStageLabors
                         .Where(x => x.BuildingTypeId == _editingBtId.Value && subIds.Contains(x.SubStagePresetId))
                         .ToListAsync();
+
+                    if (subs.Count > 0)
+                    {
+                        var mandatorySubStageId = subs[^1].Id;
+                        var ensured = false;
+                        var mandatoryRow = laborRows.FirstOrDefault(x => x.SubStagePresetId == mandatorySubStageId);
+                        if (mandatoryRow == null)
+                        {
+                            mandatoryRow = new BuildingTypeSubStageLabor
+                            {
+                                BuildingTypeId = _editingBtId.Value,
+                                SubStagePresetId = mandatorySubStageId,
+                                IncludeInReport = true
+                            };
+                            _db.BuildingTypeSubStageLabors.Add(mandatoryRow);
+                            laborRows.Add(mandatoryRow);
+                            ensured = true;
+                        }
+                        else if (!mandatoryRow.IncludeInReport)
+                        {
+                            mandatoryRow.IncludeInReport = true;
+                            ensured = true;
+                        }
+
+                        if (ensured)
+                        {
+                            await _db.SaveChangesAsync();
+                            _currentBtLaborMap[mandatorySubStageId] = mandatoryRow.LaborCost;
+                            _currentBtSubStageInclusionMap[mandatorySubStageId] = true;
+                        }
+                    }
 
                     existingLabors = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.LaborCost);
                     existingInclusions = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.IncludeInReport);
