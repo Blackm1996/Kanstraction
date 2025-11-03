@@ -1300,7 +1300,7 @@ namespace Kanstraction.Views
                     };
                     var includeValue = inclusionLookup.TryGetValue(sub.Id, out var includeFlag)
                         ? includeFlag
-                        : isLast;
+                        : (vm.DefaultIncludeInReport);
                     vm.IncludeInReport = includeValue;
                     vm.PropertyChanged += SubStageLaborVm_PropertyChanged;
                     list.Add(vm);
@@ -1339,6 +1339,7 @@ namespace Kanstraction.Views
             Dictionary<int, decimal?>? preservedLabors = null;
             Dictionary<int, bool>? preservedInclusions = null;
             Dictionary<int, bool>? preservedDefaults = null;
+            Dictionary<int, bool>? preservedMandatoryFlags = null;
             Dictionary<(int SubStagePresetId, int MaterialId), decimal?>? preservedMaterials = null;
             List<int>? previousSubStageIds = null;
 
@@ -1347,6 +1348,7 @@ namespace Kanstraction.Views
                 preservedLabors = previousList.ToDictionary(x => x.SubStagePresetId, x => x.LaborCost);
                 preservedInclusions = previousList.ToDictionary(x => x.SubStagePresetId, x => x.IncludeInReport);
                 preservedDefaults = previousList.ToDictionary(x => x.SubStagePresetId, x => x.DefaultIncludeInReport);
+                preservedMandatoryFlags = previousList.ToDictionary(x => x.SubStagePresetId, x => x.IsMandatoryInReport);
                 previousSubStageIds = previousList.Select(x => x.SubStagePresetId).ToList();
 
                 preservedMaterials = previousList
@@ -1419,6 +1421,11 @@ namespace Kanstraction.Views
                 {
                     defaultInclude = persistedDefault;
                 }
+                else if (!defaultInclude && preservedMandatoryFlags != null &&
+                         preservedMandatoryFlags.TryGetValue(sub.Id, out var wasMandatory) && wasMandatory)
+                {
+                    defaultInclude = true;
+                }
                 else
                 {
                     defaultInclude = isLast;
@@ -1433,9 +1440,14 @@ namespace Kanstraction.Views
                 {
                     includeValue = storedInclude;
                 }
+                else if (preservedMandatoryFlags != null &&
+                         preservedMandatoryFlags.TryGetValue(sub.Id, out var wasMandatoryInclude) && wasMandatoryInclude)
+                {
+                    includeValue = true;
+                }
                 else
                 {
-                    includeValue = isLast;
+                    includeValue = defaultInclude;
                 }
 
                 var vm = new SubStageLaborVm
