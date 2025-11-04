@@ -51,20 +51,33 @@
                VerticalAlignment="Center"
                FontWeight="SemiBold"/>
 
-                <!-- Right: Resolve Payment (for the currently selected project) -->
-                <Button Grid.Column="1"
-            Click="ResolvePayment_Click"
-            Margin="8,0,0,0"
-            Padding="10,6"
-            ToolTip="{DynamicResource OperationsView_ResolvePaymentTooltip}"
-            Background="#3f51b5"
-            Foreground="White"
-            Style="{StaticResource MaterialDesignRaisedButton}">
-                    <StackPanel Orientation="Horizontal">
-                        <iconPacks:PackIconFontAwesome Kind="FileInvoiceDollarSolid" Width="14" Height="14" Margin="0,0,6,0"/>
-                        <TextBlock Text="{DynamicResource OperationsView_ResolvePayment}"/>
-                    </StackPanel>
-                </Button>
+                <!-- Right: Reporting actions -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                    <Button Click="GenerateProgressReport_Click"
+                            Margin="0,0,8,0"
+                            Padding="10,6"
+                            ToolTip="{DynamicResource OperationsView_GenerateProgressReportTooltip}"
+                            Background="#2e7d32"
+                            Foreground="White"
+                            Style="{StaticResource MaterialDesignRaisedButton}">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconFontAwesome Kind="FileExcelSolid" Width="14" Height="14" Margin="0,0,6,0"/>
+                            <TextBlock Text="{DynamicResource OperationsView_GenerateProgressReport}"/>
+                        </StackPanel>
+                    </Button>
+
+                    <Button Click="ResolvePayment_Click"
+                            Padding="10,6"
+                            ToolTip="{DynamicResource OperationsView_ResolvePaymentTooltip}"
+                            Background="#3f51b5"
+                            Foreground="White"
+                            Style="{StaticResource MaterialDesignRaisedButton}">
+                        <StackPanel Orientation="Horizontal">
+                            <iconPacks:PackIconFontAwesome Kind="FileInvoiceDollarSolid" Width="14" Height="14" Margin="0,0,6,0"/>
+                            <TextBlock Text="{DynamicResource OperationsView_ResolvePayment}"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
         </Border>
 

@@ -1,0 +1,77 @@
+<Window x:Class="Kanstraction.Views.ReportDurationDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource ProgressReport_DurationDialogTitle}"
+        Width="420"
+        Height="420"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Background="{DynamicResource MaterialDesignPaper}">
+    <Grid Margin="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Text="{DynamicResource ProgressReport_PresetLabel}"
+                   FontWeight="SemiBold"/>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,8,0,0">
+            <RadioButton x:Name="PresetRadio"
+                         Content="{DynamicResource ProgressReport_PresetLabel}"
+                         IsChecked="True"
+                         Checked="PresetRadio_Checked"
+                         GroupName="Mode"/>
+            <RadioButton x:Name="CustomRadio"
+                         Content="{DynamicResource ProgressReport_CustomLabel}"
+                         Margin="16,0,0,0"
+                         Checked="CustomRadio_Checked"
+                         GroupName="Mode"/>
+        </StackPanel>
+
+        <ListBox x:Name="PresetList"
+                 Grid.Row="2"
+                 Margin="0,8,0,0"
+                 Height="140"
+                 DisplayMemberPath="Label"
+                 SelectionChanged="PresetList_SelectionChanged"/>
+
+        <Grid Grid.Row="3" Margin="0,16,0,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Grid.Row="0" Text="{DynamicResource ProgressReport_StartDate}"/>
+            <DatePicker x:Name="StartDatePicker"
+                        Grid.Row="1"
+                        Margin="0,4,0,0"/>
+
+            <TextBlock Grid.Row="2" Margin="0,12,0,0" Text="{DynamicResource ProgressReport_EndDate}"/>
+            <DatePicker x:Name="EndDatePicker"
+                        Grid.Row="3"
+                        Margin="0,4,0,0"
+                        SelectedDateChanged="EndDatePicker_SelectedDateChanged"/>
+        </Grid>
+
+        <StackPanel Grid.Row="4" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="{DynamicResource Common_Cancel}"
+                    Width="100"
+                    Margin="0,0,8,0"
+                    Click="Cancel_Click"/>
+            <Button Content="{DynamicResource Common_OK}"
+                    Width="120"
+                    Background="#3f51b5"
+                    Foreground="White"
+                    Click="Confirm_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>
