@@ -2244,7 +2244,7 @@ public partial class OperationsView : UserControl
         {
             using var workbook = new XLWorkbook();
             var existingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            var buildingHeader = ResourceHelper.GetString("ProgressReport_BuildingCodeHeader", "Building");
+            var buildingHeader = ResourceHelper.GetString("ProgressReport_BuildingCodeHeader", "Lot");
             var stoppedLabel = ResourceHelper.GetString("WorkStatus_Stopped", "Stopped");
 
             foreach (var report in reports)

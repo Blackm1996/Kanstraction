@@ -276,7 +276,7 @@
     <sys:String x:Key="ProgressReport_NoEligibleBuildingsTitle">No buildings</sys:String>
     <sys:String x:Key="ProgressReport_SaveDialogTitle">Export work progress report</sys:String>
     <sys:String x:Key="ProgressReport_SaveDialogFilter">Excel files (*.xlsx)|*.xlsx</sys:String>
-    <sys:String x:Key="ProgressReport_BuildingCodeHeader">Building</sys:String>
+    <sys:String x:Key="ProgressReport_BuildingCodeHeader">Lot</sys:String>
     <sys:String x:Key="ProgressReport_ExportFailedFormat">Failed to export the progress report:&#x0a;{0}</sys:String>
     <sys:String x:Key="OperationsView_GeneratePdfFailedFormat">Failed to generate PDF:&#x0a;{0}</sys:String>
     <sys:String x:Key="OperationsView_MarkPaidFailedFormat">Failed to mark items as paid after generating the PDF:&#x0a;{0}</sys:String>
