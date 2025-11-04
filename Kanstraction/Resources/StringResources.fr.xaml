@@ -258,6 +258,7 @@
     <sys:String x:Key="OperationsView_GenerateProgressReport">Rapport d'avancement</sys:String>
     <sys:String x:Key="OperationsView_GenerateProgressReportTooltip">Générer le rapport d'avancement des travaux.</sys:String>
     <sys:String x:Key="ProgressReport_DurationDialogTitle">Sélectionner la période</sys:String>
+    <sys:String x:Key="ProgressReport_DurationLabel">Durée</sys:String>
     <sys:String x:Key="ProgressReport_PresetLabel">Durées prédéfinies</sys:String>
     <sys:String x:Key="ProgressReport_CustomLabel">Plage personnalisée</sys:String>
     <sys:String x:Key="ProgressReport_PresetOneMonth">Dernier mois</sys:String>

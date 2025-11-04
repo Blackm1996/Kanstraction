@@ -377,7 +377,8 @@ public partial class OperationsView : UserControl
         headerRange.Style.Fill.BackgroundColor = ProgressHeaderFillColor;
         headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         headerRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
-        ws.Row(1).Height = 20;
+        headerRange.Style.Alignment.WrapText = true;
+        ws.Row(1).Height = 26;
         ws.SheetView.FreezeRows(1);
 
         int row = 2;
@@ -412,9 +413,17 @@ public partial class OperationsView : UserControl
         if (row > 2)
         {
             ApplyAlternatingRowStyles(ws, 2, row - 1, 1, totalColumns, ProgressRowPrimaryFill, ProgressRowSecondaryFill);
+            ws.Rows(2, row - 1).Height = 22;
         }
 
-        ws.Columns(1, totalColumns).AdjustToContents();
+        ws.Column(1).Width = Math.Max(ws.Column(1).Width, 18);
+        ws.Column(1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        for (int col = 2; col <= totalColumns; col++)
+        {
+            ws.Column(col).Width = Math.Max(ws.Column(col).Width, 24);
+            ws.Column(col).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Column(col).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        }
     }
 
     public OperationsView()

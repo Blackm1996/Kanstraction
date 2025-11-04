@@ -9,14 +9,15 @@ namespace Kanstraction.Views;
 
 public partial class ReportDurationDialog : Window
 {
-    private sealed class DurationPreset
+    private sealed class DurationOption
     {
-        public int Months { get; init; }
+        public int? Months { get; init; }
         public string Label { get; init; } = string.Empty;
+        public bool IsCustom => Months == null;
     }
 
-    private readonly List<DurationPreset> _presets;
-    private bool _isInitialized;
+    private readonly List<DurationOption> _options;
+    private bool _isInitializing;
     private bool _isApplyingPreset;
 
     public DateTime StartDate { get; private set; }
@@ -26,23 +27,25 @@ public partial class ReportDurationDialog : Window
     {
         InitializeComponent();
 
-        _presets = new List<DurationPreset>
+        _options = new List<DurationOption>
         {
             new() { Months = 1, Label = ResourceHelper.GetString("ProgressReport_PresetOneMonth", "Last 1 month") },
             new() { Months = 3, Label = ResourceHelper.GetString("ProgressReport_PresetThreeMonths", "Last 3 months") },
             new() { Months = 6, Label = ResourceHelper.GetString("ProgressReport_PresetSixMonths", "Last 6 months") },
-            new() { Months = 12, Label = ResourceHelper.GetString("ProgressReport_PresetTwelveMonths", "Last 12 months") }
+            new() { Months = 12, Label = ResourceHelper.GetString("ProgressReport_PresetTwelveMonths", "Last 12 months") },
+            new() { Months = null, Label = ResourceHelper.GetString("ProgressReport_CustomLabel", "Custom range") }
         };
 
-        PresetList.ItemsSource = _presets;
-        PresetList.SelectedItem = _presets.First(p => p.Months == 6);
+        _isInitializing = true;
+        DurationCombo.ItemsSource = _options;
+        var defaultOption = _options.First(o => o.Months == 6);
+        DurationCombo.SelectedItem = defaultOption;
 
         var today = DateTime.Today;
         EndDatePicker.SelectedDate = today;
-        StartDatePicker.SelectedDate = CalculateStartFromPreset(today, 6);
-
-        UpdateMode(isPreset: true);
-        _isInitialized = true;
+        StartDatePicker.SelectedDate = CalculateStartFromPreset(today, defaultOption.Months!.Value);
+        ApplySelection(defaultOption);
+        _isInitializing = false;
     }
 
     private static DateTime CalculateStartFromPreset(DateTime endDate, int months)
@@ -57,64 +60,51 @@ public partial class ReportDurationDialog : Window
         return start;
     }
 
-    private void UpdateMode(bool isPreset)
+    private void ApplySelection(DurationOption option)
     {
-        if (PresetList == null || StartDatePicker == null || EndDatePicker == null)
+        if (StartDatePicker == null || EndDatePicker == null)
         {
             return;
         }
 
-        PresetList.IsEnabled = isPreset;
-        StartDatePicker.IsEnabled = !isPreset;
+        StartDatePicker.IsEnabled = option.IsCustom;
 
-        if (isPreset)
+        if (!option.IsCustom)
         {
-            ApplySelectedPreset();
+            var end = (EndDatePicker.SelectedDate ?? DateTime.Today).Date;
+            _isApplyingPreset = true;
+            StartDatePicker.SelectedDate = CalculateStartFromPreset(end, option.Months!.Value);
+            _isApplyingPreset = false;
         }
-    }
-
-    private void ApplySelectedPreset()
-    {
-        if (!_isInitialized || PresetList.SelectedItem is not DurationPreset preset)
+        else if (StartDatePicker.SelectedDate == null)
         {
-            return;
-        }
-
-        if (EndDatePicker.SelectedDate == null)
-        {
-            EndDatePicker.SelectedDate = DateTime.Today;
-        }
-
-        var end = EndDatePicker.SelectedDate ?? DateTime.Today;
-
-        _isApplyingPreset = true;
-        StartDatePicker.SelectedDate = CalculateStartFromPreset(end, preset.Months);
-        _isApplyingPreset = false;
-    }
-
-    private void PresetRadio_Checked(object sender, RoutedEventArgs e)
-    {
-        UpdateMode(isPreset: true);
-    }
-
-    private void CustomRadio_Checked(object sender, RoutedEventArgs e)
-    {
-        UpdateMode(isPreset: false);
-    }
-
-    private void PresetList_SelectionChanged(object sender, SelectionChangedEventArgs e)
-    {
-        if (PresetRadio.IsChecked == true)
-        {
-            ApplySelectedPreset();
+            StartDatePicker.SelectedDate = (EndDatePicker.SelectedDate ?? DateTime.Today).Date;
         }
     }
 
     private void EndDatePicker_SelectedDateChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (PresetRadio.IsChecked == true && !_isApplyingPreset)
+        if (_isApplyingPreset)
         {
-            ApplySelectedPreset();
+            return;
+        }
+
+        if (DurationCombo.SelectedItem is DurationOption option && !option.IsCustom)
+        {
+            ApplySelection(option);
+        }
+    }
+
+    private void DurationCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isInitializing)
+        {
+            return;
+        }
+
+        if (DurationCombo.SelectedItem is DurationOption option)
+        {
+            ApplySelection(option);
         }
     }
 
@@ -123,10 +113,11 @@ public partial class ReportDurationDialog : Window
         var end = (EndDatePicker.SelectedDate ?? DateTime.Today).Date;
         DateTime start;
 
-        if (PresetRadio.IsChecked == true)
+        var option = DurationCombo.SelectedItem as DurationOption ?? _options.First();
+
+        if (!option.IsCustom)
         {
-            var preset = PresetList.SelectedItem as DurationPreset ?? _presets.First();
-            start = CalculateStartFromPreset(end, preset.Months);
+            start = CalculateStartFromPreset(end, option.Months!.Value);
         }
         else
         {

@@ -260,6 +260,7 @@
     <sys:String x:Key="OperationsView_GenerateProgressReport">Progress report</sys:String>
     <sys:String x:Key="OperationsView_GenerateProgressReportTooltip">Generate the work progress report.</sys:String>
     <sys:String x:Key="ProgressReport_DurationDialogTitle">Select duration</sys:String>
+    <sys:String x:Key="ProgressReport_DurationLabel">Duration</sys:String>
     <sys:String x:Key="ProgressReport_PresetLabel">Presets</sys:String>
     <sys:String x:Key="ProgressReport_CustomLabel">Custom range</sys:String>
     <sys:String x:Key="ProgressReport_PresetOneMonth">Last 1 month</sys:String>
