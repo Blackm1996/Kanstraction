@@ -41,6 +41,7 @@
             <DatePicker x:Name="EndDatePicker"
                         Grid.Column="1"
                         Margin="12,0,0,0"
+                        IsEnabled="False"
                         SelectedDateChanged="EndDatePicker_SelectedDateChanged"/>
         </Grid>
 

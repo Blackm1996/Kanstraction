@@ -424,6 +424,11 @@ public partial class OperationsView : UserControl
             ws.Column(col).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
             ws.Column(col).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
         }
+
+        int lastRow = Math.Max(1, row - 1);
+        var borderedRange = ws.Range(1, 1, lastRow, totalColumns);
+        borderedRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        borderedRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
     }
 
     public OperationsView()

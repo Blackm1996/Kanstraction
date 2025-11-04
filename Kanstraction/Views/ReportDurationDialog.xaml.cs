@@ -68,11 +68,13 @@ public partial class ReportDurationDialog : Window
         }
 
         StartDatePicker.IsEnabled = option.IsCustom;
+        EndDatePicker.IsEnabled = option.IsCustom;
 
         if (!option.IsCustom)
         {
-            var end = (EndDatePicker.SelectedDate ?? DateTime.Today).Date;
+            var end = DateTime.Today;
             _isApplyingPreset = true;
+            EndDatePicker.SelectedDate = end;
             StartDatePicker.SelectedDate = CalculateStartFromPreset(end, option.Months!.Value);
             _isApplyingPreset = false;
         }
@@ -110,7 +112,15 @@ public partial class ReportDurationDialog : Window
 
     private void Confirm_Click(object sender, RoutedEventArgs e)
     {
-        var end = (EndDatePicker.SelectedDate ?? DateTime.Today).Date;
+        var endPickerDate = EndDatePicker.SelectedDate ?? DateTime.Today;
+        if (!EndDatePicker.IsEnabled)
+        {
+            // Ensure the end date reflects today's date when presets are used so the
+            // range always ends at the latest available day.
+            EndDatePicker.SelectedDate = endPickerDate = DateTime.Today;
+        }
+
+        var end = endPickerDate.Date;
         DateTime start;
 
         var option = DurationCombo.SelectedItem as DurationOption ?? _options.First();
