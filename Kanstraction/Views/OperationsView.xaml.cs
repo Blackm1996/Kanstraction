@@ -2198,7 +2198,8 @@ public partial class OperationsView : UserControl
                 anyBuildingIncluded = true;
             }
 
-            report.Buildings = filtered;
+            report.Buildings.Clear();
+            report.Buildings.AddRange(filtered);
             reports.Add(report);
         }
 
