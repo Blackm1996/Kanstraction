@@ -310,6 +310,7 @@
     <sys:String x:Key="StagePresetDesignerView_SaveFailedFormat">Saving failed:&#x0a;{0}</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DuplicateMaterialFormat">"{0}" is listed more than once in sub-stage "{1}". Remove the duplicate before saving.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialConflictMessage">Another user added the same material to this sub-stage. Reload the preset and try again.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_DuplicatePresetName">A stage preset with this name already exists.</sys:String>
 
     <!-- PaymentReportRenderer -->
     <sys:String x:Key="PaymentReportRenderer_Title">Payment Resolution Report</sys:String>

@@ -308,6 +308,7 @@
     <sys:String x:Key="StagePresetDesignerView_SaveFailedFormat">Échec de l'enregistrement :&#x0a;{0}</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DuplicateMaterialFormat">"{0}" apparaît plus d'une fois dans la sous-étape "{1}". Supprimez le doublon avant d'enregistrer.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialConflictMessage">Un autre utilisateur a ajouté le même matériau à cette sous-étape. Rechargez l'étape et réessayez.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_DuplicatePresetName">Une étape enregistrée porte déjà ce nom.</sys:String>
 
     <!-- PaymentReportRenderer -->
     <sys:String x:Key="PaymentReportRenderer_Title">Rapport de résolution de paiement</sys:String>
