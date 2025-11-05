@@ -53,6 +53,10 @@ public partial class OperationsView : UserControl
     private static readonly XLColor MaterialHeaderFontColor = XLColor.White;
     private static readonly XLColor MaterialRowPrimaryFill = XLColor.FromHtml("#F2F2F2");
     private static readonly XLColor MaterialRowSecondaryFill = XLColor.FromHtml("#E0E0E0");
+    private static readonly XLColor ProgressHeaderFillColor = XLColor.FromHtml("#C65911");
+    private static readonly XLColor ProgressHeaderFontColor = XLColor.White;
+    private static readonly XLColor ProgressRowPrimaryFill = XLColor.FromHtml("#FCE4D6");
+    private static readonly XLColor ProgressRowSecondaryFill = XLColor.FromHtml("#F8CBAD");
 
     private sealed class BuildingRow
     {
@@ -63,6 +67,31 @@ public partial class OperationsView : UserControl
         public int ProgressPercent { get; init; }
         public string CurrentStageName { get; init; } = string.Empty;
         public bool HasPaidItems { get; init; }
+    }
+
+    private sealed class StageAssignmentInfo
+    {
+        public int StagePresetId { get; init; }
+        public string StageName { get; init; } = string.Empty;
+        public int Position { get; init; }
+    }
+
+    private sealed class ReportColumn
+    {
+        public int StagePresetId { get; init; }
+        public string StageName { get; init; } = string.Empty;
+        public int StagePosition { get; init; }
+        public int SubStagePresetId { get; init; }
+        public string SubStageName { get; init; } = string.Empty;
+        public int SubStageOrderIndex { get; init; }
+        public int SubStagePosition { get; init; }
+    }
+
+    private sealed class ProgressReportData
+    {
+        public string TypeName { get; init; } = string.Empty;
+        public List<ReportColumn> Columns { get; init; } = new();
+        public List<Building> Buildings { get; init; } = new();
     }
 
     private static string FormatDecimal(decimal value) => value.ToString("0.##", CultureInfo.CurrentCulture);
@@ -141,6 +170,265 @@ public partial class OperationsView : UserControl
             range.Style.Fill.BackgroundColor = fillColor;
             range.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
         }
+    }
+
+    private static string SanitizeWorksheetName(string? input, HashSet<string> existingNames)
+    {
+        var invalidChars = new HashSet<char>(new[] { '[', ']', '*', '?', '/', '\\', ':' });
+        var baseName = string.IsNullOrWhiteSpace(input) ? "Sheet" : input.Trim();
+        baseName = new string(baseName.Select(ch => invalidChars.Contains(ch) ? '_' : ch).ToArray());
+        if (string.IsNullOrWhiteSpace(baseName))
+        {
+            baseName = "Sheet";
+        }
+
+        if (baseName.Length > 31)
+        {
+            baseName = baseName[..31];
+        }
+
+        var candidate = baseName;
+        int counter = 1;
+        while (existingNames.Contains(candidate))
+        {
+            var suffix = $"_{counter++}";
+            var trimmedBase = baseName;
+            if (trimmedBase.Length + suffix.Length > 31)
+            {
+                trimmedBase = trimmedBase[..(31 - suffix.Length)];
+            }
+
+            candidate = trimmedBase + suffix;
+        }
+
+        existingNames.Add(candidate);
+        return candidate;
+    }
+
+    private static DateTime? GetBuildingLastActivityDate(Building building)
+    {
+        DateTime? last = null;
+
+        if (building.Stages == null)
+        {
+            return last;
+        }
+
+        foreach (var stage in building.Stages)
+        {
+            if (stage.EndDate.HasValue)
+            {
+                if (!last.HasValue || stage.EndDate.Value > last.Value)
+                {
+                    last = stage.EndDate.Value;
+                }
+            }
+
+            if (stage.SubStages == null)
+            {
+                continue;
+            }
+
+            foreach (var subStage in stage.SubStages)
+            {
+                if (subStage.EndDate.HasValue)
+                {
+                    if (!last.HasValue || subStage.EndDate.Value > last.Value)
+                    {
+                        last = subStage.EndDate.Value;
+                    }
+                }
+            }
+        }
+
+        return last;
+    }
+
+    private static DateTime? GetBuildingFirstActivityDate(Building building)
+    {
+        DateTime? first = null;
+
+        if (building.Stages == null)
+        {
+            return first;
+        }
+
+        foreach (var stage in building.Stages)
+        {
+            if (stage.StartDate.HasValue)
+            {
+                if (!first.HasValue || stage.StartDate.Value < first.Value)
+                {
+                    first = stage.StartDate.Value;
+                }
+            }
+
+            if (stage.SubStages == null)
+            {
+                continue;
+            }
+
+            foreach (var subStage in stage.SubStages)
+            {
+                if (subStage.StartDate.HasValue)
+                {
+                    if (!first.HasValue || subStage.StartDate.Value < first.Value)
+                    {
+                        first = subStage.StartDate.Value;
+                    }
+                }
+            }
+        }
+
+        return first;
+    }
+
+    private static bool ShouldSkipBuilding(Building building, DateTime startDate, DateTime endDate)
+    {
+        var firstActivity = GetBuildingFirstActivityDate(building);
+        if (firstActivity.HasValue && firstActivity.Value.Date > endDate.Date)
+        {
+            return true;
+        }
+
+        if (building.Status != WorkStatus.Paid && building.Status != WorkStatus.Stopped)
+        {
+            return false;
+        }
+
+        var lastActivity = GetBuildingLastActivityDate(building);
+        if (!lastActivity.HasValue)
+        {
+            return false;
+        }
+
+        return lastActivity.Value.Date < startDate.Date;
+    }
+
+    private static Stage? FindStageForReport(Building building, ReportColumn column)
+    {
+        if (building.Stages == null)
+        {
+            return null;
+        }
+
+        var stages = building.Stages.OrderBy(s => s.OrderIndex).ToList();
+
+        var stage = stages.FirstOrDefault(s => s.OrderIndex == column.StagePosition);
+        if (stage != null)
+        {
+            return stage;
+        }
+
+        if (column.StagePosition > 0 && column.StagePosition <= stages.Count)
+        {
+            stage = stages[column.StagePosition - 1];
+            if (stage != null)
+            {
+                return stage;
+            }
+        }
+
+        stage = stages.FirstOrDefault(s => string.Equals(s.Name, column.StageName, StringComparison.OrdinalIgnoreCase));
+        return stage;
+    }
+
+    private static SubStage? FindSubStageForReport(Stage? stage, ReportColumn column)
+    {
+        if (stage?.SubStages == null)
+        {
+            return null;
+        }
+
+        var subStages = stage.SubStages.OrderBy(ss => ss.OrderIndex).ToList();
+
+        var subStage = subStages.FirstOrDefault(ss => ss.OrderIndex == column.SubStageOrderIndex);
+        if (subStage != null)
+        {
+            return subStage;
+        }
+
+        if (column.SubStagePosition > 0 && column.SubStagePosition <= subStages.Count)
+        {
+            subStage = subStages[column.SubStagePosition - 1];
+            if (subStage != null)
+            {
+                return subStage;
+            }
+        }
+
+        subStage = subStages.FirstOrDefault(ss => string.Equals(ss.Name, column.SubStageName, StringComparison.OrdinalIgnoreCase));
+        return subStage;
+    }
+
+    private static void WriteProgressWorksheet(IXLWorksheet ws, ProgressReportData report, string buildingHeader, string stoppedLabel)
+    {
+        int totalColumns = Math.Max(1, report.Columns.Count + 1);
+
+        ws.Cell(1, 1).Value = buildingHeader;
+        for (int i = 0; i < report.Columns.Count; i++)
+        {
+            ws.Cell(1, i + 2).Value = report.Columns[i].SubStageName;
+        }
+
+        var headerRange = ws.Range(1, 1, 1, totalColumns);
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Font.FontColor = ProgressHeaderFontColor;
+        headerRange.Style.Fill.BackgroundColor = ProgressHeaderFillColor;
+        headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        headerRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        headerRange.Style.Alignment.WrapText = true;
+        ws.Row(1).Height = 26;
+        ws.SheetView.FreezeRows(1);
+
+        int row = 2;
+        foreach (var building in report.Buildings)
+        {
+            ws.Cell(row, 1).Value = building.Code;
+
+            for (int colIndex = 0; colIndex < report.Columns.Count; colIndex++)
+            {
+                var column = report.Columns[colIndex];
+                var stage = FindStageForReport(building, column);
+                var subStage = FindSubStageForReport(stage, column);
+
+                if (subStage == null)
+                {
+                    continue;
+                }
+
+                if (subStage.Status == WorkStatus.Paid)
+                {
+                    ws.Cell(row, colIndex + 2).Value = "100%";
+                }
+                else if (subStage.Status == WorkStatus.Stopped)
+                {
+                    ws.Cell(row, colIndex + 2).Value = $"100% ({stoppedLabel})";
+                }
+            }
+
+            row++;
+        }
+
+        if (row > 2)
+        {
+            ApplyAlternatingRowStyles(ws, 2, row - 1, 1, totalColumns, ProgressRowPrimaryFill, ProgressRowSecondaryFill);
+            ws.Rows(2, row - 1).Height = 22;
+        }
+
+        ws.Column(1).Width = Math.Max(ws.Column(1).Width, 18);
+        ws.Column(1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        for (int col = 2; col <= totalColumns; col++)
+        {
+            ws.Column(col).Width = Math.Max(ws.Column(col).Width, 24);
+            ws.Column(col).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Column(col).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        }
+
+        int lastRow = Math.Max(1, row - 1);
+        var borderedRange = ws.Range(1, 1, lastRow, totalColumns);
+        borderedRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        borderedRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
     }
 
     public OperationsView()
@@ -1773,6 +2061,212 @@ public partial class OperationsView : UserControl
         }
     }
 
+    private async Task GenerateProgressReportAsync(DateTime startDate, DateTime endDate)
+    {
+        if (_db == null || _currentProject == null)
+        {
+            return;
+        }
+
+        var buildingTypeIds = await _db.Buildings
+            .Where(b => b.ProjectId == _currentProject.Id && b.BuildingTypeId != null)
+            .Select(b => b.BuildingTypeId!.Value)
+            .Distinct()
+            .ToListAsync();
+
+        if (buildingTypeIds.Count == 0)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("ProgressReport_NoBuildingTypesMessage", "This project has no buildings with a building type. Nothing to export."),
+                ResourceHelper.GetString("ProgressReport_NoBuildingTypesTitle", "No building types"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var buildingTypes = await _db.BuildingTypes
+            .Where(bt => buildingTypeIds.Contains(bt.Id))
+            .Select(bt => new { bt.Id, bt.Name })
+            .OrderBy(bt => bt.Name)
+            .ToListAsync();
+
+        var assignments = await _db.BuildingTypeStagePresets
+            .Where(x => buildingTypeIds.Contains(x.BuildingTypeId))
+            .Select(x => new
+            {
+                x.BuildingTypeId,
+                x.StagePresetId,
+                x.OrderIndex,
+                StageName = x.StagePreset.Name
+            })
+            .ToListAsync();
+
+        var stagePresetIds = assignments.Select(x => x.StagePresetId).Distinct().ToList();
+
+        var subStagePresets = await _db.SubStagePresets
+            .Where(ss => stagePresetIds.Contains(ss.StagePresetId))
+            .Select(ss => new
+            {
+                ss.Id,
+                ss.StagePresetId,
+                ss.Name,
+                ss.OrderIndex
+            })
+            .ToListAsync();
+
+        var includeRows = await _db.BuildingTypeSubStageLabors
+            .Where(x => buildingTypeIds.Contains(x.BuildingTypeId))
+            .Select(x => new { x.BuildingTypeId, x.SubStagePresetId, x.IncludeInReport })
+            .ToListAsync();
+
+        var includeLookup = includeRows.ToDictionary(x => (x.BuildingTypeId, x.SubStagePresetId), x => x.IncludeInReport);
+
+        var lastSubStageIds = subStagePresets
+            .GroupBy(x => x.StagePresetId)
+            .ToDictionary(g => g.Key, g => g.OrderBy(s => s.OrderIndex).LastOrDefault()?.Id);
+
+        var stageAssignmentsByType = assignments
+            .GroupBy(x => x.BuildingTypeId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderBy(x => x.OrderIndex)
+                      .Select((x, index) => new StageAssignmentInfo
+                      {
+                          StagePresetId = x.StagePresetId,
+                          StageName = x.StageName ?? string.Empty,
+                          Position = index + 1
+                      })
+                      .ToList());
+
+        var buildings = await _db.Buildings
+            .Where(b => b.ProjectId == _currentProject.Id && b.BuildingTypeId != null)
+            .Include(b => b.Stages)
+                .ThenInclude(s => s.SubStages)
+            .AsNoTracking()
+            .ToListAsync();
+
+        var reports = new List<ProgressReportData>();
+        bool anyBuildingIncluded = false;
+
+        foreach (var type in buildingTypes)
+        {
+            var report = new ProgressReportData
+            {
+                TypeName = type.Name ?? string.Empty
+            };
+
+            if (stageAssignmentsByType.TryGetValue(type.Id, out var stageInfos))
+            {
+                foreach (var stageInfo in stageInfos)
+                {
+                    var subPresetsForStage = subStagePresets
+                        .Where(ss => ss.StagePresetId == stageInfo.StagePresetId)
+                        .OrderBy(ss => ss.OrderIndex)
+                        .Select((ss, index) => new { Preset = ss, Position = index + 1 })
+                        .ToList();
+
+                    foreach (var entry in subPresetsForStage)
+                    {
+                        var preset = entry.Preset;
+                        bool include = includeLookup.TryGetValue((type.Id, preset.Id), out var includeFlag)
+                            ? includeFlag
+                            : (lastSubStageIds.TryGetValue(stageInfo.StagePresetId, out var lastId) && lastId == preset.Id);
+
+                        if (!include)
+                        {
+                            continue;
+                        }
+
+                        report.Columns.Add(new ReportColumn
+                        {
+                            StagePresetId = stageInfo.StagePresetId,
+                            StageName = stageInfo.StageName,
+                            StagePosition = stageInfo.Position,
+                            SubStagePresetId = preset.Id,
+                            SubStageName = preset.Name,
+                            SubStageOrderIndex = preset.OrderIndex,
+                            SubStagePosition = entry.Position
+                        });
+                    }
+                }
+            }
+
+            var buildingsForType = buildings
+                .Where(b => b.BuildingTypeId == type.Id)
+                .OrderBy(b => b.Code, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            var filtered = new List<Building>();
+            foreach (var building in buildingsForType)
+            {
+                if (ShouldSkipBuilding(building, startDate, endDate))
+                {
+                    continue;
+                }
+
+                filtered.Add(building);
+            }
+
+            if (filtered.Count > 0)
+            {
+                anyBuildingIncluded = true;
+            }
+
+            report.Buildings.Clear();
+            report.Buildings.AddRange(filtered);
+            reports.Add(report);
+        }
+
+        if (!anyBuildingIncluded)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("ProgressReport_NoEligibleBuildingsMessage", "No buildings match the selected duration."),
+                ResourceHelper.GetString("ProgressReport_NoEligibleBuildingsTitle", "No buildings"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var sfd = new SaveFileDialog
+        {
+            Title = ResourceHelper.GetString("ProgressReport_SaveDialogTitle", "Export work progress report"),
+            Filter = ResourceHelper.GetString("ProgressReport_SaveDialogFilter", "Excel files (*.xlsx)|*.xlsx"),
+            FileName = $"RAPPORT AVANCEMENT DE TRAVAUX {DateTime.Now:yyyyMMdd}.xlsx"
+        };
+
+        var owner = Window.GetWindow(this);
+        if (sfd.ShowDialog(owner) != true)
+        {
+            return;
+        }
+
+        try
+        {
+            using var workbook = new XLWorkbook();
+            var existingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var buildingHeader = ResourceHelper.GetString("ProgressReport_BuildingCodeHeader", "Lot");
+            var stoppedLabel = ResourceHelper.GetString("WorkStatus_Stopped", "Stopped");
+
+            foreach (var report in reports)
+            {
+                var sheetName = SanitizeWorksheetName(report.TypeName, existingNames);
+                var ws = workbook.Worksheets.Add(sheetName);
+                WriteProgressWorksheet(ws, report, buildingHeader, stoppedLabel);
+            }
+
+            workbook.SaveAs(sfd.FileName);
+            TryOpenExportedFile(sfd.FileName);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("ProgressReport_ExportFailedFormat", "Failed to export the progress report:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
     private async void ExportSubStages_Click(object sender, RoutedEventArgs e)
     {
         if (_db == null)
@@ -2276,6 +2770,31 @@ public partial class OperationsView : UserControl
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }
+    }
+
+    private async void GenerateProgressReport_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null || _currentProject == null)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_SelectProjectFirst", "Select a project first."),
+                ResourceHelper.GetString("OperationsView_NoProjectTitle", "No project"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var dialog = new ReportDurationDialog
+        {
+            Owner = Window.GetWindow(this)
+        };
+
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        await GenerateProgressReportAsync(dialog.StartDate, dialog.EndDate);
     }
 
     private async void ResolvePayment_Click(object sender, RoutedEventArgs e)

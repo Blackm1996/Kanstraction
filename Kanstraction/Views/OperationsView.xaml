@@ -19,6 +19,8 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <!-- toolbar -->
+            <RowDefinition Height="Auto"/>
             <!-- breadcrumb -->
             <RowDefinition Height="*"/>
             <!-- top: 3 columns -->
@@ -35,41 +37,51 @@
             <ColumnDefinition Width="1.2*"/>
         </Grid.ColumnDefinitions>
 
-        <!-- Breadcrumb strip -->
+        <!-- Top action bar -->
         <Border Grid.Row="0" Padding="8"
         Background="{DynamicResource MaterialDesignPaper}"
         BorderBrush="{DynamicResource MaterialDesignDivider}"
         BorderThickness="0,0,0,1">
-            <Grid>
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
-                </Grid.ColumnDefinitions>
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                <Button Click="GenerateProgressReport_Click"
+                        Margin="0,0,8,0"
+                        Padding="10,6"
+                        ToolTip="{DynamicResource OperationsView_GenerateProgressReportTooltip}"
+                        Background="#2e7d32"
+                        Foreground="White"
+                        Style="{StaticResource MaterialDesignRaisedButton}">
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconFontAwesome Kind="FileExcelSolid" Width="14" Height="14" Margin="0,0,6,0"/>
+                        <TextBlock Text="{DynamicResource OperationsView_GenerateProgressReport}"/>
+                    </StackPanel>
+                </Button>
 
-                <!-- Left: breadcrumb text (unchanged binding) -->
-                <TextBlock Text="{Binding Breadcrumb, RelativeSource={RelativeSource AncestorType=UserControl}}"
-               VerticalAlignment="Center"
-               FontWeight="SemiBold"/>
-
-                <!-- Right: Resolve Payment (for the currently selected project) -->
-                <Button Grid.Column="1"
-            Click="ResolvePayment_Click"
-            Margin="8,0,0,0"
-            Padding="10,6"
-            ToolTip="{DynamicResource OperationsView_ResolvePaymentTooltip}"
-            Background="#3f51b5"
-            Foreground="White"
-            Style="{StaticResource MaterialDesignRaisedButton}">
+                <Button Click="ResolvePayment_Click"
+                        Padding="10,6"
+                        ToolTip="{DynamicResource OperationsView_ResolvePaymentTooltip}"
+                        Background="#3f51b5"
+                        Foreground="White"
+                        Style="{StaticResource MaterialDesignRaisedButton}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconFontAwesome Kind="FileInvoiceDollarSolid" Width="14" Height="14" Margin="0,0,6,0"/>
                         <TextBlock Text="{DynamicResource OperationsView_ResolvePayment}"/>
                     </StackPanel>
                 </Button>
-            </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- Breadcrumb strip -->
+        <Border Grid.Row="1" Padding="8"
+        Background="{DynamicResource MaterialDesignPaper}"
+        BorderBrush="{DynamicResource MaterialDesignDivider}"
+        BorderThickness="0,0,0,1">
+            <TextBlock Text="{Binding Breadcrumb, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                       VerticalAlignment="Center"
+                       FontWeight="SemiBold"/>
         </Border>
 
         <!-- BUILDINGS -->
-        <Grid Grid.Row="1" Grid.Column="0">
+        <Grid Grid.Row="2" Grid.Column="0">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -185,13 +197,13 @@
         </Grid>
 
         <!-- Vertical splitter between Buildings and Stages -->
-        <GridSplitter Grid.Row="1" Grid.Column="1"
+        <GridSplitter Grid.Row="2" Grid.Column="1"
                   Width="6" HorizontalAlignment="Stretch"
                   Background="{DynamicResource MaterialDesignDivider}"
                   ResizeBehavior="PreviousAndNext" ShowsPreview="True"/>
 
         <!-- STAGES -->
-        <Grid Grid.Row="1" Grid.Column="2">
+        <Grid Grid.Row="2" Grid.Column="2">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -351,13 +363,13 @@
         </Grid>
 
         <!-- Vertical splitter between Stages and Sub-stages -->
-        <GridSplitter Grid.Row="1" Grid.Column="3"
+        <GridSplitter Grid.Row="2" Grid.Column="3"
                   Width="6" HorizontalAlignment="Stretch"
                   Background="{DynamicResource MaterialDesignDivider}"
                   ResizeBehavior="PreviousAndNext" ShowsPreview="True"/>
 
         <!-- SUB-STAGES -->
-        <Grid Grid.Row="1" Grid.Column="4">
+        <Grid Grid.Row="2" Grid.Column="4">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
@@ -513,13 +525,13 @@
         </Grid>
 
         <!-- Horizontal splitter -->
-        <GridSplitter Grid.Row="2" Grid.ColumnSpan="5"
+        <GridSplitter Grid.Row="3" Grid.ColumnSpan="5"
                   Height="6" HorizontalAlignment="Stretch" VerticalAlignment="Center"
                   Background="{DynamicResource MaterialDesignDivider}"
                   ResizeDirection="Rows" ResizeBehavior="PreviousAndNext" ShowsPreview="True"/>
 
         <!-- MATERIALS -->
-        <Grid Grid.Row="3" Grid.ColumnSpan="5">
+        <Grid Grid.Row="4" Grid.ColumnSpan="5">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
