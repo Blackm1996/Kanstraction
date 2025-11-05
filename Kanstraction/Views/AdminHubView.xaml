@@ -152,8 +152,23 @@
                                     <TextBox x:Name="MatPrice" Padding="8" TextChanged="MaterialEditor_TextChanged" />
                                 </DockPanel>
 
-                                <CheckBox x:Name="MatIsActive" Content="{DynamicResource AdminHubView_Active}" Margin="0,0,0,8" IsChecked="True"
-                               Checked="MaterialEditor_CheckChanged" Unchecked="MaterialEditor_CheckChanged"/>
+                                <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                                    <Button x:Name="MatDeactivateButton"
+                                            Content="{DynamicResource AdminHubView_Deactivate}"
+                                            Click="MatDeactivateButton_Click"
+                                            Margin="0,0,8,0"
+                                            MinWidth="120"
+                                            Background="#E53935"
+                                            Foreground="White"
+                                            Visibility="Collapsed"/>
+                                    <Button x:Name="MatReactivateButton"
+                                            Content="{DynamicResource AdminHubView_Reactivate}"
+                                            Click="MatReactivateButton_Click"
+                                            MinWidth="120"
+                                            Background="#43A047"
+                                            Foreground="White"
+                                            Visibility="Collapsed"/>
+                                </StackPanel>
 
                                 <Separator Margin="0,8,0,8"/>
 
@@ -351,9 +366,22 @@
                          Foreground="{DynamicResource MaterialDesignBodyLight}" FontSize="12"/>
                                     </StackPanel>
 
-                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right">
-                                        <CheckBox x:Name="BtActive" Content="{DynamicResource AdminHubView_Active}" IsChecked="True"
-                                   Checked="BuildingEditor_CheckChanged" Unchecked="BuildingEditor_CheckChanged"/>
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Right" Orientation="Horizontal">
+                                        <Button x:Name="BtDeactivateButton"
+                                                Content="{DynamicResource AdminHubView_Deactivate}"
+                                                Click="BtDeactivateButton_Click"
+                                                Margin="0,0,8,0"
+                                                MinWidth="120"
+                                                Background="#E53935"
+                                                Foreground="White"
+                                                Visibility="Collapsed"/>
+                                        <Button x:Name="BtReactivateButton"
+                                                Content="{DynamicResource AdminHubView_Reactivate}"
+                                                Click="BtReactivateButton_Click"
+                                                MinWidth="120"
+                                                Background="#43A047"
+                                                Foreground="White"
+                                                Visibility="Collapsed"/>
                                     </StackPanel>
                                 </Grid>
                             </Border>

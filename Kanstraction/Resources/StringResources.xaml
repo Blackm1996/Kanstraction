@@ -76,6 +76,8 @@
     <sys:String x:Key="AdminHubView_Unit">Unit</sys:String>
     <sys:String x:Key="AdminHubView_PricePerUnit">Price / Unit</sys:String>
     <sys:String x:Key="AdminHubView_Active">Active</sys:String>
+    <sys:String x:Key="AdminHubView_Deactivate">Deactivate</sys:String>
+    <sys:String x:Key="AdminHubView_Reactivate">Reactivate</sys:String>
     <sys:String x:Key="AdminHubView_PriceHistory">Price History</sys:String>
     <sys:String x:Key="AdminHubView_Start">Start</sys:String>
     <sys:String x:Key="AdminHubView_End">End</sys:String>
