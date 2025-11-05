@@ -634,6 +634,28 @@ public partial class StagePresetDesignerView : UserControl
             return;
         }
 
+        var normalizedName = name.ToUpperInvariant();
+        var duplicateQuery = _db.StagePresets
+            .AsNoTracking()
+            .Where(p => p.Name != null && p.Name.ToUpper() == normalizedName);
+
+        if (_currentPresetId.HasValue)
+        {
+            duplicateQuery = duplicateQuery.Where(p => p.Id != _currentPresetId.Value);
+        }
+
+        if (await duplicateQuery.AnyAsync())
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString(
+                    "StagePresetDesignerView_DuplicatePresetName",
+                    "A stage preset with this name already exists."),
+                ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
         // validate sub-stages
         foreach (var s in _subStages)
         {
