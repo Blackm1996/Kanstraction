@@ -361,27 +361,44 @@ public partial class OperationsView : UserControl
         return subStage;
     }
 
-    private static void WriteProgressWorksheet(IXLWorksheet ws, ProgressReportData report, string buildingHeader, string stoppedLabel)
+    private static void WriteProgressWorksheet(IXLWorksheet ws, ProgressReportData report, string buildingHeader, string stoppedLabel, string projectName)
     {
-        int totalColumns = Math.Max(1, report.Columns.Count + 1);
+        int totalColumns = Math.Max(4, report.Columns.Count + 1);
 
-        ws.Cell(1, 1).Value = buildingHeader;
-        for (int i = 0; i < report.Columns.Count; i++)
+        if (!string.IsNullOrWhiteSpace(projectName))
         {
-            ws.Cell(1, i + 2).Value = report.Columns[i].SubStageName;
+            int projectStartColumn = Math.Min(3, totalColumns);
+            int projectEndColumn = Math.Min(4, totalColumns);
+            if (projectStartColumn <= projectEndColumn)
+            {
+                var projectRange = ws.Range(1, projectStartColumn, 1, projectEndColumn);
+                projectRange.Merge();
+                projectRange.Value = projectName;
+                projectRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                projectRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                projectRange.Style.Font.Bold = true;
+            }
         }
 
-        var headerRange = ws.Range(1, 1, 1, totalColumns);
+        ws.Row(1).Height = 22;
+
+        ws.Cell(2, 1).Value = buildingHeader;
+        for (int i = 0; i < report.Columns.Count; i++)
+        {
+            ws.Cell(2, i + 2).Value = report.Columns[i].SubStageName;
+        }
+
+        var headerRange = ws.Range(2, 1, 2, totalColumns);
         headerRange.Style.Font.Bold = true;
         headerRange.Style.Font.FontColor = ProgressHeaderFontColor;
         headerRange.Style.Fill.BackgroundColor = ProgressHeaderFillColor;
         headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
         headerRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
         headerRange.Style.Alignment.WrapText = true;
-        ws.Row(1).Height = 26;
-        ws.SheetView.FreezeRows(1);
+        ws.Row(2).Height = 26;
+        ws.SheetView.FreezeRows(2);
 
-        int row = 2;
+        int row = 3;
         foreach (var building in report.Buildings)
         {
             ws.Cell(row, 1).Value = building.Code;
@@ -410,10 +427,10 @@ public partial class OperationsView : UserControl
             row++;
         }
 
-        if (row > 2)
+        if (row > 3)
         {
-            ApplyAlternatingRowStyles(ws, 2, row - 1, 1, totalColumns, ProgressRowPrimaryFill, ProgressRowSecondaryFill);
-            ws.Rows(2, row - 1).Height = 22;
+            ApplyAlternatingRowStyles(ws, 3, row - 1, 1, totalColumns, ProgressRowPrimaryFill, ProgressRowSecondaryFill);
+            ws.Rows(3, row - 1).Height = 22;
         }
 
         ws.Column(1).Width = Math.Max(ws.Column(1).Width, 18);
@@ -425,7 +442,7 @@ public partial class OperationsView : UserControl
             ws.Column(col).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
         }
 
-        int lastRow = Math.Max(1, row - 1);
+        int lastRow = Math.Max(2, row - 1);
         var borderedRange = ws.Range(1, 1, lastRow, totalColumns);
         borderedRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
         borderedRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
@@ -2227,11 +2244,14 @@ public partial class OperationsView : UserControl
             return;
         }
 
+        var sanitizedProjectName = SanitizeFileName(_currentProject?.Name, "Projet");
+        var formattedDate = DateTime.Now.ToString("dd-MM-yyyy", CultureInfo.InvariantCulture);
+
         var sfd = new SaveFileDialog
         {
             Title = ResourceHelper.GetString("ProgressReport_SaveDialogTitle", "Export work progress report"),
             Filter = ResourceHelper.GetString("ProgressReport_SaveDialogFilter", "Excel files (*.xlsx)|*.xlsx"),
-            FileName = $"RAPPORT AVANCEMENT DE TRAVAUX {DateTime.Now:yyyyMMdd}.xlsx"
+            FileName = $"RAPPORT AVANCEMENT DE TRAVAUX {sanitizedProjectName} {formattedDate}.xlsx"
         };
 
         var owner = Window.GetWindow(this);
@@ -2247,11 +2267,13 @@ public partial class OperationsView : UserControl
             var buildingHeader = ResourceHelper.GetString("ProgressReport_BuildingCodeHeader", "Lot");
             var stoppedLabel = ResourceHelper.GetString("WorkStatus_Stopped", "Stopped");
 
+            var projectName = _currentProject?.Name ?? string.Empty;
+
             foreach (var report in reports)
             {
                 var sheetName = SanitizeWorksheetName(report.TypeName, existingNames);
                 var ws = workbook.Worksheets.Add(sheetName);
-                WriteProgressWorksheet(ws, report, buildingHeader, stoppedLabel);
+                WriteProgressWorksheet(ws, report, buildingHeader, stoppedLabel, projectName);
             }
 
             workbook.SaveAs(sfd.FileName);
