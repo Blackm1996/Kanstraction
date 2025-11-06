@@ -437,6 +437,30 @@ namespace Kanstraction.Views
                 return;
             }
 
+            var materialName = MatName?.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(materialName))
+            {
+                materialName = _currentMaterial?.Name?.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(materialName))
+            {
+                materialName = ResourceHelper.GetString("AdminHubView_UnnamedMaterialLabel", "this material");
+            }
+
+            if (MessageBox.Show(
+                    string.Format(
+                        ResourceHelper.GetString(
+                            "AdminHubView_DeleteMaterialConfirmFormat",
+                            "Delete material '{0}'? This will deactivate it."),
+                        materialName),
+                    ResourceHelper.GetString("Common_ConfirmTitle", "Confirm"),
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
             SetMaterialIsActive(false);
             var saved = await SaveMaterialAsync(keepSelection: false);
             if (saved)
@@ -452,6 +476,30 @@ namespace Kanstraction.Views
         private async void MatReactivateButton_Click(object sender, RoutedEventArgs e)
         {
             if (!_editingMaterialId.HasValue)
+            {
+                return;
+            }
+
+            var materialName = MatName?.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(materialName))
+            {
+                materialName = _currentMaterial?.Name?.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(materialName))
+            {
+                materialName = ResourceHelper.GetString("AdminHubView_UnnamedMaterialLabel", "this material");
+            }
+
+            if (MessageBox.Show(
+                    string.Format(
+                        ResourceHelper.GetString(
+                            "AdminHubView_ReactivateMaterialConfirmFormat",
+                            "Reactivate material '{0}'?"),
+                        materialName),
+                    ResourceHelper.GetString("Common_ConfirmTitle", "Confirm"),
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
             {
                 return;
             }
@@ -2372,6 +2420,30 @@ namespace Kanstraction.Views
                 return;
             }
 
+            var buildingTypeName = BtName?.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(buildingTypeName))
+            {
+                buildingTypeName = _currentBt?.Name?.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(buildingTypeName))
+            {
+                buildingTypeName = ResourceHelper.GetString("AdminHubView_UnnamedBuildingTypeLabel", "this building type");
+            }
+
+            if (MessageBox.Show(
+                    string.Format(
+                        ResourceHelper.GetString(
+                            "AdminHubView_DeleteBuildingTypeConfirmFormat",
+                            "Delete building type '{0}'? This will deactivate it."),
+                        buildingTypeName),
+                    ResourceHelper.GetString("Common_ConfirmTitle", "Confirm"),
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
             SetBuildingIsActive(false);
             var saved = await SaveBuildingTypeAsync(keepSelection: false);
             if (saved)
@@ -2387,6 +2459,30 @@ namespace Kanstraction.Views
         private async void BtReactivateButton_Click(object sender, RoutedEventArgs e)
         {
             if (!_editingBtId.HasValue)
+            {
+                return;
+            }
+
+            var buildingTypeName = BtName?.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(buildingTypeName))
+            {
+                buildingTypeName = _currentBt?.Name?.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(buildingTypeName))
+            {
+                buildingTypeName = ResourceHelper.GetString("AdminHubView_UnnamedBuildingTypeLabel", "this building type");
+            }
+
+            if (MessageBox.Show(
+                    string.Format(
+                        ResourceHelper.GetString(
+                            "AdminHubView_ReactivateBuildingTypeConfirmFormat",
+                            "Reactivate building type '{0}'?"),
+                        buildingTypeName),
+                    ResourceHelper.GetString("Common_ConfirmTitle", "Confirm"),
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
             {
                 return;
             }

@@ -891,6 +891,30 @@ public partial class StagePresetDesignerView : UserControl
             return;
         }
 
+        var presetName = TxtPresetName?.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(presetName))
+        {
+            presetName = _loadedPreset?.Name?.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(presetName))
+        {
+            presetName = ResourceHelper.GetString("StagePresetDesignerView_UnnamedPresetLabel", "this stage preset");
+        }
+
+        if (MessageBox.Show(
+                string.Format(
+                    ResourceHelper.GetString(
+                        "StagePresetDesignerView_DeletePresetConfirmFormat",
+                        "Delete stage preset '{0}'? This will deactivate it."),
+                    presetName),
+                ResourceHelper.GetString("Common_ConfirmTitle", "Confirm"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
         SetPresetActive(false);
         var saved = await SavePresetAsync(resetAfterSave: true, showSuccessMessage: true);
         if (!saved)
@@ -902,6 +926,30 @@ public partial class StagePresetDesignerView : UserControl
     private async void ReactivatePreset_Click(object sender, RoutedEventArgs e)
     {
         if (!_currentPresetId.HasValue)
+        {
+            return;
+        }
+
+        var presetName = TxtPresetName?.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(presetName))
+        {
+            presetName = _loadedPreset?.Name?.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(presetName))
+        {
+            presetName = ResourceHelper.GetString("StagePresetDesignerView_UnnamedPresetLabel", "this stage preset");
+        }
+
+        if (MessageBox.Show(
+                string.Format(
+                    ResourceHelper.GetString(
+                        "StagePresetDesignerView_ReactivatePresetConfirmFormat",
+                        "Reactivate stage preset '{0}'?"),
+                    presetName),
+                ResourceHelper.GetString("Common_ConfirmTitle", "Confirm"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question) != MessageBoxResult.Yes)
         {
             return;
         }
