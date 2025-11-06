@@ -115,12 +115,12 @@
                                     <TextBlock Text="{DynamicResource AdminHubView_Category}" Width="120" VerticalAlignment="Center"/>
                                     <Grid Margin="0">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
                                             <ColumnDefinition Width="Auto"/>
                                         </Grid.ColumnDefinitions>
                                         <ComboBox x:Name="MatCategory"
                                                   Grid.Column="0"
-                                                  MinWidth="220"
+                                                  Width="320"
                                                   Padding="8"
                                                   Style="{StaticResource MaterialDesignOutlinedComboBox}"
                                                   materialDesign:HintAssist.Hint="{DynamicResource Common_Required}"
