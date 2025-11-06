@@ -69,7 +69,23 @@
                                     <TextBox x:Name="TxtPresetName" Padding="8" TextChanged="TxtPresetName_TextChanged"
                          materialDesign:HintAssist.Hint="{DynamicResource Common_Required}"/>
                                 </DockPanel>
-                                <CheckBox x:Name="ChkActive" Content="{DynamicResource AdminHubView_Active}" Checked="ChkActive_Changed" Unchecked="ChkActive_Changed" />
+                                <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <Button x:Name="BtnDeactivatePreset"
+                                            Content="{DynamicResource AdminHubView_Deactivate}"
+                                            Click="DeactivatePreset_Click"
+                                            Margin="0,0,8,0"
+                                            MinWidth="120"
+                                            Background="#E53935"
+                                            Foreground="White"
+                                            Visibility="Collapsed"/>
+                                    <Button x:Name="BtnReactivatePreset"
+                                            Content="{DynamicResource AdminHubView_Reactivate}"
+                                            Click="ReactivatePreset_Click"
+                                            MinWidth="120"
+                                            Background="#43A047"
+                                            Foreground="White"
+                                            Visibility="Collapsed"/>
+                                </StackPanel>
                             </StackPanel>
 
                             <StackPanel Grid.Column="1" Margin="16,0,0,0">

@@ -36,6 +36,9 @@ public partial class StagePresetDesignerView : UserControl
     private SubStageVm? _pendingNewSubStage = null;
     private bool _pendingNewSubStageDirtySnapshot = false;
     private SubStageVm? _pendingPreviousSubStageSelection = null;
+    private bool _presetIsActive = true;
+
+    public bool ShouldResetAfterSave { get; private set; }
 
     public event EventHandler<int>? Saved;
 
@@ -77,6 +80,33 @@ public partial class StagePresetDesignerView : UserControl
     {
         MaterialsPanel.Visibility = (_selectedSubStage != null) ? Visibility.Visible : Visibility.Collapsed;
     }
+
+    private void SetPresetActive(bool isActive, bool updateDirtyState = true)
+    {
+        _presetIsActive = isActive;
+        UpdateActivationButtons();
+        if (updateDirtyState)
+        {
+            SetDirty();
+        }
+    }
+
+    private void UpdateActivationButtons()
+    {
+        if (BtnDeactivatePreset != null)
+        {
+            BtnDeactivatePreset.Visibility = _currentPresetId.HasValue && _presetIsActive
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+
+        if (BtnReactivatePreset != null)
+        {
+            BtnReactivatePreset.Visibility = _currentPresetId.HasValue && !_presetIsActive
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+    }
     public void EnterEmptyState()
     {
         _currentPresetId = null;
@@ -86,7 +116,7 @@ public partial class StagePresetDesignerView : UserControl
         MaterialsGrid.ItemsSource = new ObservableCollection<MaterialUsageVm>();
         CboMaterial.ItemsSource = null;
         TxtPresetName.Text = "";
-        ChkActive.IsChecked = true; // default for when user later clicks "Create New"
+        SetPresetActive(true, updateDirtyState: false); // default for when user later clicks "Create New"
         UpdateSummary();
         SetDirty(false);
         ShowEmptyState();
@@ -142,7 +172,7 @@ public partial class StagePresetDesignerView : UserControl
                 .ToListAsync();
 
             TxtPresetName.Text = "";
-            ChkActive.IsChecked = true;
+            SetPresetActive(true, updateDirtyState: false);
             _subStages.Clear();
             _selectedSubStage = null;
             MaterialsGrid.ItemsSource = new ObservableCollection<MaterialUsageVm>();
@@ -171,7 +201,7 @@ public partial class StagePresetDesignerView : UserControl
         _loadedPreset = preset;
 
         TxtPresetName.Text = preset.Name;
-        ChkActive.IsChecked = preset.IsActive;
+        SetPresetActive(preset.IsActive, updateDirtyState: false);
 
         // Load sub-stages ordered by OrderIndex, and their materials
         var subIds = preset.SubStages.Select(s => s.Id).ToList();
@@ -242,7 +272,6 @@ public partial class StagePresetDesignerView : UserControl
 
     // -------------------- General field handlers --------------------
     private void TxtPresetName_TextChanged(object sender, TextChangedEventArgs e) => SetDirty();
-    private void ChkActive_Changed(object sender, RoutedEventArgs e) => SetDirty();
 
     // -------------------- Sub-stages actions --------------------
     private void AddSubStage_Click(object sender, RoutedEventArgs e)
@@ -625,13 +654,18 @@ public partial class StagePresetDesignerView : UserControl
     // -------------------- Save / Cancel --------------------
     private async void Save_Click(object sender, RoutedEventArgs e)
     {
-        if (_db == null) return;
+        await SavePresetAsync(resetAfterSave: false, showSuccessMessage: true);
+    }
+
+    private async Task<bool> SavePresetAsync(bool resetAfterSave, bool showSuccessMessage)
+    {
+        if (_db == null) return false;
 
         var name = TxtPresetName.Text?.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
             MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_PresetNameRequired", "Preset name is required."));
-            return;
+            return false;
         }
 
         var normalizedName = name.ToUpperInvariant();
@@ -653,16 +687,15 @@ public partial class StagePresetDesignerView : UserControl
                 ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
-            return;
+            return false;
         }
 
-        // validate sub-stages
         foreach (var s in _subStages)
         {
             if (string.IsNullOrWhiteSpace(s.Name))
             {
                 MessageBox.Show(ResourceHelper.GetString("StagePresetDesignerView_SubStageNameRequired", "Each sub-stage must have a name."));
-                return;
+                return false;
             }
 
             var duplicateMaterial = s.Materials
@@ -683,7 +716,7 @@ public partial class StagePresetDesignerView : UserControl
                     ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
-                return;
+                return false;
             }
         }
 
@@ -697,7 +730,7 @@ public partial class StagePresetDesignerView : UserControl
                 preset = new StagePreset
                 {
                     Name = name,
-                    IsActive = ChkActive.IsChecked == true
+                    IsActive = _presetIsActive
                 };
                 _db.StagePresets.Add(preset);
                 await _db.SaveChangesAsync();
@@ -707,19 +740,16 @@ public partial class StagePresetDesignerView : UserControl
             {
                 preset = await _db.StagePresets.FirstAsync(p => p.Id == _currentPresetId.Value);
                 preset.Name = name;
-                preset.IsActive = ChkActive.IsChecked == true;
+                preset.IsActive = _presetIsActive;
                 await _db.SaveChangesAsync();
             }
 
-            // Sync sub-stages:
-            // 1) Load existing for this preset
             var existingSubs = await _db.SubStagePresets
                 .Where(s => s.StagePresetId == _currentPresetId!.Value)
                 .ToListAsync();
 
             var existingById = existingSubs.ToDictionary(s => s.Id);
 
-            // 2) Delete removed sub-stages (with their materials)
             var currentIds = _subStages.Where(s => s.Id.HasValue).Select(s => s.Id!.Value).ToHashSet();
             var toDelete = existingSubs.Where(s => !currentIds.Contains(s.Id)).Select(s => s.Id).ToList();
             if (toDelete.Count > 0)
@@ -732,7 +762,6 @@ public partial class StagePresetDesignerView : UserControl
                 await _db.SaveChangesAsync();
             }
 
-            // 3) Upsert current sub-stages, also build a map VM -> Id
             foreach (var (vm, index) in _subStages.Select((s, i) => (s, i)))
             {
                 if (vm.Id == null)
@@ -745,7 +774,7 @@ public partial class StagePresetDesignerView : UserControl
                     };
                     _db.SubStagePresets.Add(s);
                     await _db.SaveChangesAsync();
-                    vm.Id = s.Id; // remember for material sync
+                    vm.Id = s.Id;
                 }
                 else
                 {
@@ -756,7 +785,6 @@ public partial class StagePresetDesignerView : UserControl
                 }
             }
 
-            // 4) Sync materials per sub-stage
             var allSubIds = _subStages.Where(s => s.Id.HasValue).Select(s => s.Id!.Value).ToList();
             var existingUsages = await _db.MaterialUsagesPreset
                 .Where(mu => allSubIds.Contains(mu.SubStagePresetId))
@@ -769,7 +797,6 @@ public partial class StagePresetDesignerView : UserControl
 
                 var existingForS = existingUsages.Where(mu => mu.SubStagePresetId == sid).ToList();
 
-                // delete removed
                 var currentKeys = sVm.Materials.Select(m => (m.Id, m.MaterialId)).ToList();
                 var toRemove = existingForS.Where(mu => !currentKeys.Any(k => (k.Id.HasValue && k.Id.Value == mu.Id) || (!k.Id.HasValue && k.MaterialId == mu.MaterialId))).ToList();
                 if (toRemove.Count > 0)
@@ -778,7 +805,6 @@ public partial class StagePresetDesignerView : UserControl
                     await _db.SaveChangesAsync();
                 }
 
-                // upsert current rows
                 foreach (var muVm in sVm.Materials)
                 {
                     if (muVm.Id == null)
@@ -795,21 +821,40 @@ public partial class StagePresetDesignerView : UserControl
                     else
                     {
                         var row = existingForS.First(x => x.Id == muVm.Id.Value);
-                        row.MaterialId = muVm.MaterialId; // normally unchanged, but keep consistent
+                        row.MaterialId = muVm.MaterialId;
                         await _db.SaveChangesAsync();
                     }
                 }
             }
 
+            _loadedPreset = preset;
+
             await tx.CommitAsync();
 
             SetDirty(false);
-            MessageBox.Show(
-                ResourceHelper.GetString("StagePresetDesignerView_SavedMessage", "Stage preset saved."),
-                ResourceHelper.GetString("StagePresetDesignerView_DialogTitle", "Stage preset"),
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            ShouldResetAfterSave = resetAfterSave;
+
+            if (showSuccessMessage)
+            {
+                MessageBox.Show(
+                    ResourceHelper.GetString("StagePresetDesignerView_SavedMessage", "Stage preset saved."),
+                    ResourceHelper.GetString("StagePresetDesignerView_DialogTitle", "Stage preset"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+
             Saved?.Invoke(this, _currentPresetId!.Value);
+
+            if (resetAfterSave)
+            {
+                await LoadPresetAsync(null);
+            }
+            else
+            {
+                SetPresetActive(_presetIsActive, updateDirtyState: false);
+            }
+
+            return true;
         }
         catch (DbUpdateException dbEx) when (IsMaterialPresetUniqueViolation(dbEx))
         {
@@ -821,6 +866,7 @@ public partial class StagePresetDesignerView : UserControl
                 ResourceHelper.GetString("Common_ErrorTitle", "Error"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
+            return false;
         }
         catch (Exception ex)
         {
@@ -830,6 +876,89 @@ public partial class StagePresetDesignerView : UserControl
                 ResourceHelper.GetString("Common_ErrorTitle", "Error"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
+            return false;
+        }
+        finally
+        {
+            ShouldResetAfterSave = false;
+        }
+    }
+
+    private async void DeactivatePreset_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_currentPresetId.HasValue)
+        {
+            return;
+        }
+
+        var presetName = TxtPresetName?.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(presetName))
+        {
+            presetName = _loadedPreset?.Name?.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(presetName))
+        {
+            presetName = ResourceHelper.GetString("StagePresetDesignerView_UnnamedPresetLabel", "this stage preset");
+        }
+
+        if (MessageBox.Show(
+                string.Format(
+                    ResourceHelper.GetString(
+                        "StagePresetDesignerView_DeletePresetConfirmFormat",
+                        "Delete stage preset '{0}'? This will deactivate it."),
+                    presetName),
+                ResourceHelper.GetString("Common_ConfirmTitle", "Confirm"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        SetPresetActive(false);
+        var saved = await SavePresetAsync(resetAfterSave: true, showSuccessMessage: true);
+        if (!saved)
+        {
+            SetPresetActive(_loadedPreset?.IsActive ?? true, updateDirtyState: false);
+        }
+    }
+
+    private async void ReactivatePreset_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_currentPresetId.HasValue)
+        {
+            return;
+        }
+
+        var presetName = TxtPresetName?.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(presetName))
+        {
+            presetName = _loadedPreset?.Name?.Trim();
+        }
+
+        if (string.IsNullOrWhiteSpace(presetName))
+        {
+            presetName = ResourceHelper.GetString("StagePresetDesignerView_UnnamedPresetLabel", "this stage preset");
+        }
+
+        if (MessageBox.Show(
+                string.Format(
+                    ResourceHelper.GetString(
+                        "StagePresetDesignerView_ReactivatePresetConfirmFormat",
+                        "Reactivate stage preset '{0}'?"),
+                    presetName),
+                ResourceHelper.GetString("Common_ConfirmTitle", "Confirm"),
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question) != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        SetPresetActive(true);
+        var saved = await SavePresetAsync(resetAfterSave: false, showSuccessMessage: true);
+        if (!saved)
+        {
+            SetPresetActive(_loadedPreset?.IsActive ?? false, updateDirtyState: false);
         }
     }
 

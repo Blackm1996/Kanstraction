@@ -76,6 +76,14 @@
     <sys:String x:Key="AdminHubView_Unit">Unité</sys:String>
     <sys:String x:Key="AdminHubView_PricePerUnit">Prix / Unité</sys:String>
     <sys:String x:Key="AdminHubView_Active">Actif</sys:String>
+    <sys:String x:Key="AdminHubView_Deactivate">Supprimer</sys:String>
+    <sys:String x:Key="AdminHubView_Reactivate">Réactiver</sys:String>
+    <sys:String x:Key="AdminHubView_DeleteMaterialConfirmFormat">Supprimer le matériau « {0} » ? Il sera désactivé.</sys:String>
+    <sys:String x:Key="AdminHubView_ReactivateMaterialConfirmFormat">Réactiver le matériau « {0} » ?</sys:String>
+    <sys:String x:Key="AdminHubView_DeleteBuildingTypeConfirmFormat">Supprimer le type de bâtiment « {0} » ? Il sera désactivé.</sys:String>
+    <sys:String x:Key="AdminHubView_ReactivateBuildingTypeConfirmFormat">Réactiver le type de bâtiment « {0} » ?</sys:String>
+    <sys:String x:Key="AdminHubView_UnnamedMaterialLabel">ce matériau</sys:String>
+    <sys:String x:Key="AdminHubView_UnnamedBuildingTypeLabel">ce type de bâtiment</sys:String>
     <sys:String x:Key="AdminHubView_PriceHistory">Historique des prix</sys:String>
     <sys:String x:Key="AdminHubView_Start">Début</sys:String>
     <sys:String x:Key="AdminHubView_End">Fin</sys:String>
@@ -306,6 +314,9 @@
     <sys:String x:Key="StagePresetDesignerView_SavedMessage">Étape enregistrée.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DialogTitle">Étape enregistrée</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SaveFailedFormat">Échec de l'enregistrement :&#x0a;{0}</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_DeletePresetConfirmFormat">Supprimer le stage preset « {0} » ? Il sera désactivé.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_ReactivatePresetConfirmFormat">Réactiver le stage preset « {0} » ?</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_UnnamedPresetLabel">ce stage preset</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DuplicateMaterialFormat">"{0}" apparaît plus d'une fois dans la sous-étape "{1}". Supprimez le doublon avant d'enregistrer.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialConflictMessage">Un autre utilisateur a ajouté le même matériau à cette sous-étape. Rechargez l'étape et réessayez.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DuplicatePresetName">Une étape enregistrée porte déjà ce nom.</sys:String>

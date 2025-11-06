@@ -109,6 +109,7 @@ namespace Kanstraction.Views
 
         private int? _editingMaterialId = null;   // null => creating new
         private Material? _currentMaterial = null;
+        private bool _materialIsActive = true;
 
         // Fill the list (called on load / search / filter)
         private void RefreshMaterialsList()
@@ -161,6 +162,33 @@ namespace Kanstraction.Views
         private void MaterialEditor_TextChanged(object sender, TextChangedEventArgs e) => UpdateMaterialDirtyState();
         private void MaterialEditor_CheckChanged(object sender, RoutedEventArgs e) => UpdateMaterialDirtyState();
         private void MatCategory_SelectionChanged(object sender, SelectionChangedEventArgs e) => UpdateMaterialDirtyState();
+
+        private void SetMaterialIsActive(bool isActive, bool updateDirtyState = true)
+        {
+            _materialIsActive = isActive;
+            UpdateMaterialActivationControls();
+            if (updateDirtyState)
+            {
+                UpdateMaterialDirtyState();
+            }
+        }
+
+        private void UpdateMaterialActivationControls()
+        {
+            if (MatDeactivateButton != null)
+            {
+                MatDeactivateButton.Visibility = _editingMaterialId.HasValue && _materialIsActive
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
+
+            if (MatReactivateButton != null)
+            {
+                MatReactivateButton.Visibility = _editingMaterialId.HasValue && !_materialIsActive
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
+        }
 
         private async void AddCategory_Click(object sender, RoutedEventArgs e)
         {
@@ -262,14 +290,19 @@ namespace Kanstraction.Views
 
         private async void SaveMaterial_Click(object sender, RoutedEventArgs e)
         {
-            if (_db == null) return;
+            await SaveMaterialAsync();
+        }
+
+        private async Task<bool> SaveMaterialAsync(bool keepSelection = true, bool showSuccessMessage = true)
+        {
+            if (_db == null) return false;
 
             if (!TryReadMaterialFromEditor(out var name, out var unit, out var price, out var effSince, out var isActive, out var categoryId, out var validationError))
             {
                 MessageBox.Show(validationError,
                     ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
                     MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
+                return false;
             }
 
             var normalizedName = name!.Trim();
@@ -289,7 +322,7 @@ namespace Kanstraction.Views
                     ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
-                return;
+                return false;
             }
 
             if (_editingMaterialId == null)
@@ -374,17 +407,109 @@ namespace Kanstraction.Views
             await ReloadMaterialsCacheAsync();
             RefreshMaterialsList();
 
-            if (savedMaterialId != null)
+            if (keepSelection && savedMaterialId != null)
             {
                 SelectMaterialInList(savedMaterialId.Value);
                 Dispatcher.BeginInvoke(new Action(() => SelectMaterialInList(savedMaterialId.Value)), DispatcherPriority.ContextIdle);
             }
 
-            MessageBox.Show(
-                ResourceHelper.GetString("AdminHubView_MaterialSavedMessage", "Saved."),
-                ResourceHelper.GetString("AdminHubView_MaterialDialogTitle", "Material"),
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            if (showSuccessMessage)
+            {
+                MessageBox.Show(
+                    ResourceHelper.GetString("AdminHubView_MaterialSavedMessage", "Saved."),
+                    ResourceHelper.GetString("AdminHubView_MaterialDialogTitle", "Material"),
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Information);
+            }
+
+            _currentMaterial = savedMaterialId != null
+                ? _allMaterials.FirstOrDefault(m => m.Id == savedMaterialId.Value)
+                : null;
+
+            UpdateMaterialActivationControls();
+            return true;
+        }
+
+        private async void MatDeactivateButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_editingMaterialId.HasValue)
+            {
+                return;
+            }
+
+            var materialName = MatName?.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(materialName))
+            {
+                materialName = _currentMaterial?.Name?.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(materialName))
+            {
+                materialName = ResourceHelper.GetString("AdminHubView_UnnamedMaterialLabel", "this material");
+            }
+
+            if (MessageBox.Show(
+                    string.Format(
+                        ResourceHelper.GetString(
+                            "AdminHubView_DeleteMaterialConfirmFormat",
+                            "Delete material '{0}'? This will deactivate it."),
+                        materialName),
+                    ResourceHelper.GetString("Common_ConfirmTitle", "Confirm"),
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            SetMaterialIsActive(false);
+            var saved = await SaveMaterialAsync(keepSelection: false);
+            if (saved)
+            {
+                BeginNewMaterial();
+            }
+            else
+            {
+                SetMaterialIsActive(_currentMaterial?.IsActive ?? true);
+            }
+        }
+
+        private async void MatReactivateButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_editingMaterialId.HasValue)
+            {
+                return;
+            }
+
+            var materialName = MatName?.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(materialName))
+            {
+                materialName = _currentMaterial?.Name?.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(materialName))
+            {
+                materialName = ResourceHelper.GetString("AdminHubView_UnnamedMaterialLabel", "this material");
+            }
+
+            if (MessageBox.Show(
+                    string.Format(
+                        ResourceHelper.GetString(
+                            "AdminHubView_ReactivateMaterialConfirmFormat",
+                            "Reactivate material '{0}'?"),
+                        materialName),
+                    ResourceHelper.GetString("Common_ConfirmTitle", "Confirm"),
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            SetMaterialIsActive(true);
+            var saved = await SaveMaterialAsync();
+            if (!saved)
+            {
+                SetMaterialIsActive(_currentMaterial?.IsActive ?? false);
+            }
         }
 
         private void SelectMaterialInList(int materialId)
@@ -418,7 +543,7 @@ namespace Kanstraction.Views
             if (MatName != null) MatName.Text = "";
             if (MatUnit != null) MatUnit.Text = "";
             if (MatPrice != null) MatPrice.Text = "";
-            if (MatIsActive != null) MatIsActive.IsChecked = true;
+            SetMaterialIsActive(true, updateDirtyState: false);
             if (MatCategory != null) MatCategory.SelectedIndex = -1;
             if (MatHistoryGrid != null) MatHistoryGrid.ItemsSource = null;
             ClearSimilarMaterialSuggestions();
@@ -430,7 +555,7 @@ namespace Kanstraction.Views
             if (MatName != null) MatName.Text = m.Name ?? "";
             if (MatUnit != null) MatUnit.Text = m.Unit ?? "";
             if (MatPrice != null) MatPrice.Text = m.PricePerUnit.ToString(CultureInfo.InvariantCulture);
-            if (MatIsActive != null) MatIsActive.IsChecked = (m.IsActive);
+            SetMaterialIsActive(m.IsActive, updateDirtyState: false);
             if (MatCategory != null)
             {
                 if (_allMaterialCategories.Any(c => c.Id == m.MaterialCategoryId))
@@ -447,7 +572,7 @@ namespace Kanstraction.Views
         {
             name = MatName?.Text?.Trim();
             unit = MatUnit?.Text?.Trim();
-            isActive = MatIsActive?.IsChecked == true;
+            isActive = _materialIsActive;
             categoryId = 0;
 
             error = "";
@@ -486,7 +611,7 @@ namespace Kanstraction.Views
 
         private void UpdateMaterialDirtyState()
         {
-            if (MatName == null || MatUnit == null || MatPrice == null || MatIsActive == null)
+            if (MatName == null || MatUnit == null || MatPrice == null)
             {
                 IsMaterialDirty = false;
                 return;
@@ -495,7 +620,7 @@ namespace Kanstraction.Views
             var name = MatName.Text?.Trim() ?? string.Empty;
             var unit = MatUnit.Text?.Trim() ?? string.Empty;
             var priceText = MatPrice.Text?.Trim() ?? string.Empty;
-            var isActive = MatIsActive.IsChecked == true;
+            var isActive = _materialIsActive;
             int? selectedCategoryId = MatCategory?.SelectedValue switch
             {
                 int value => value,
@@ -925,11 +1050,23 @@ namespace Kanstraction.Views
         {
             if (_db == null) return;
 
+            var resetAfterSave = PresetDesigner?.ShouldResetAfterSave == true;
+
             // Refresh global presets cache (left list of Stage Presets)
             _allPresets = await _db.StagePresets.AsNoTracking().OrderBy(p => p.Name).ToListAsync();
             RefreshPresetsList();  // keeps Stage Presets tab fresh
-            SelectStagePresetInList(presetId);
-            Dispatcher.BeginInvoke(new Action(() => SelectStagePresetInList(presetId)), DispatcherPriority.ContextIdle);
+            if (resetAfterSave)
+            {
+                if (PresetsList != null)
+                {
+                    PresetsList.SelectedItem = null;
+                }
+            }
+            else
+            {
+                SelectStagePresetInList(presetId);
+                Dispatcher.BeginInvoke(new Action(() => SelectStagePresetInList(presetId)), DispatcherPriority.ContextIdle);
+            }
 
             // Also refresh substage counts used by Building Types
             await RefreshPresetSubCountsAsync();
@@ -948,6 +1085,11 @@ namespace Kanstraction.Views
                     BuildingTypesList_SelectionChanged(BuildingTypesList,
                         new SelectionChangedEventArgs(ListBox.SelectionChangedEvent, new List<object>(), new List<object> { bt }));
                 }
+            }
+
+            if (resetAfterSave)
+            {
+                await BeginNewStagePresetAsync();
             }
         }
 
@@ -990,6 +1132,7 @@ namespace Kanstraction.Views
         // -------------------- BUILDING TYPES --------------------
         private int? _editingBtId = null;
         private BuildingType? _currentBt = null;
+        private bool _buildingIsActive = true;
         private ObservableCollection<AssignedPresetVm> _btAssigned = new();
         private List<int> _currentBtAssignedIds = new();
         private Dictionary<int, int> _presetSubCounts = new(); // StagePresetId -> count
@@ -1112,7 +1255,33 @@ namespace Kanstraction.Views
         private void BtFilterChanged(object sender, RoutedEventArgs e) => RefreshBuildingTypesList();
 
         private void BuildingEditor_TextChanged(object sender, TextChangedEventArgs e) => UpdateBuildingDirtyState();
-        private void BuildingEditor_CheckChanged(object sender, RoutedEventArgs e) => UpdateBuildingDirtyState();
+
+        private void SetBuildingIsActive(bool isActive, bool updateDirtyState = true)
+        {
+            _buildingIsActive = isActive;
+            UpdateBuildingActivationControls();
+            if (updateDirtyState)
+            {
+                UpdateBuildingDirtyState();
+            }
+        }
+
+        private void UpdateBuildingActivationControls()
+        {
+            if (BtDeactivateButton != null)
+            {
+                BtDeactivateButton.Visibility = _editingBtId.HasValue && _buildingIsActive
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
+
+            if (BtReactivateButton != null)
+            {
+                BtReactivateButton.Visibility = _editingBtId.HasValue && !_buildingIsActive
+                    ? Visibility.Visible
+                    : Visibility.Collapsed;
+            }
+        }
 
         private async void BuildingTypesList_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -1124,7 +1293,7 @@ namespace Kanstraction.Views
             _currentBt = await _db.BuildingTypes.FirstAsync(x => x.Id == bt.Id);
 
             if (BtName != null) BtName.Text = bt.Name ?? string.Empty;
-            if (BtActive != null) BtActive.IsChecked = bt.IsActive;
+            SetBuildingIsActive(bt.IsActive, updateDirtyState: false);
 
             // Load assigned presets with sub-stage count
             var assigned = await _db.BuildingTypeStagePresets
@@ -1194,7 +1363,7 @@ namespace Kanstraction.Views
             _currentBtMaterialMap = new Dictionary<(int SubStagePresetId, int MaterialId), decimal?>();
 
             if (BtName != null) BtName.Text = string.Empty;
-            if (BtActive != null) BtActive.IsChecked = true;
+            SetBuildingIsActive(true, updateDirtyState: false);
 
             _btAssigned = new ObservableCollection<AssignedPresetVm>();
             BtAssignedGrid.ItemsSource = _btAssigned;
@@ -1624,14 +1793,14 @@ namespace Kanstraction.Views
 
         private void UpdateBuildingDirtyState()
         {
-            if (BtName == null || BtActive == null)
+            if (BtName == null)
             {
                 IsBuildingDirty = false;
                 return;
             }
 
             var name = BtName.Text?.Trim() ?? string.Empty;
-            var isActive = BtActive.IsChecked == true;
+            var isActive = _buildingIsActive;
             var assignedIds = _btAssigned?.Select(a => a.StagePresetId).ToList() ?? new List<int>();
 
             bool dirty;
@@ -1987,15 +2156,20 @@ namespace Kanstraction.Views
         // Save / Cancel
         private async void SaveBuildingType_Click(object sender, RoutedEventArgs e)
         {
-            if (_db == null) return;
+            await SaveBuildingTypeAsync();
+        }
+
+        private async Task<bool> SaveBuildingTypeAsync(bool keepSelection = true, bool showSuccessMessage = true)
+        {
+            if (_db == null) return false;
 
             var name = BtName?.Text?.Trim();
             if (string.IsNullOrWhiteSpace(name))
             {
                 MessageBox.Show(ResourceHelper.GetString("AdminHubView_BuildingTypeNameRequired", "Name is required."));
-                return;
+                return false;
             }
-            var isActive = BtActive?.IsChecked == true;
+            var isActive = _buildingIsActive;
 
             using var tx = await _db.Database.BeginTransactionAsync();
 
@@ -2197,7 +2371,11 @@ namespace Kanstraction.Views
                 _allBuildingTypes = await _db.BuildingTypes.AsNoTracking().OrderBy(b => b.Name).ToListAsync();
                 RefreshBuildingTypesList();
 
-                if (_editingBtId != null)
+                _currentBt = _editingBtId != null
+                    ? _allBuildingTypes.FirstOrDefault(b => b.Id == _editingBtId.Value)
+                    : null;
+
+                if (keepSelection && _editingBtId != null)
                 {
                     var row = _allBuildingTypes.FirstOrDefault(x => x.Id == _editingBtId.Value);
                     if (row != null)
@@ -2207,11 +2385,17 @@ namespace Kanstraction.Views
                     }
                 }
 
-                MessageBox.Show(
-                    ResourceHelper.GetString("AdminHubView_BuildingTypeSavedMessage", "Building type saved."),
-                    ResourceHelper.GetString("Common_SuccessTitle", "Success"),
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
+                if (showSuccessMessage)
+                {
+                    MessageBox.Show(
+                        ResourceHelper.GetString("AdminHubView_BuildingTypeSavedMessage", "Building type saved."),
+                        ResourceHelper.GetString("Common_SuccessTitle", "Success"),
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Information);
+                }
+
+                UpdateBuildingActivationControls();
+                return true;
             }
             catch (Exception ex)
             {
@@ -2225,6 +2409,89 @@ namespace Kanstraction.Views
                     ResourceHelper.GetString("Common_ErrorTitle", "Error"),
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
+                return false;
+            }
+        }
+
+        private async void BtDeactivateButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_editingBtId.HasValue)
+            {
+                return;
+            }
+
+            var buildingTypeName = BtName?.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(buildingTypeName))
+            {
+                buildingTypeName = _currentBt?.Name?.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(buildingTypeName))
+            {
+                buildingTypeName = ResourceHelper.GetString("AdminHubView_UnnamedBuildingTypeLabel", "this building type");
+            }
+
+            if (MessageBox.Show(
+                    string.Format(
+                        ResourceHelper.GetString(
+                            "AdminHubView_DeleteBuildingTypeConfirmFormat",
+                            "Delete building type '{0}'? This will deactivate it."),
+                        buildingTypeName),
+                    ResourceHelper.GetString("Common_ConfirmTitle", "Confirm"),
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            SetBuildingIsActive(false);
+            var saved = await SaveBuildingTypeAsync(keepSelection: false);
+            if (saved)
+            {
+                BeginNewBuildingType();
+            }
+            else
+            {
+                SetBuildingIsActive(_currentBt?.IsActive ?? true, updateDirtyState: false);
+            }
+        }
+
+        private async void BtReactivateButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (!_editingBtId.HasValue)
+            {
+                return;
+            }
+
+            var buildingTypeName = BtName?.Text?.Trim();
+            if (string.IsNullOrWhiteSpace(buildingTypeName))
+            {
+                buildingTypeName = _currentBt?.Name?.Trim();
+            }
+
+            if (string.IsNullOrWhiteSpace(buildingTypeName))
+            {
+                buildingTypeName = ResourceHelper.GetString("AdminHubView_UnnamedBuildingTypeLabel", "this building type");
+            }
+
+            if (MessageBox.Show(
+                    string.Format(
+                        ResourceHelper.GetString(
+                            "AdminHubView_ReactivateBuildingTypeConfirmFormat",
+                            "Reactivate building type '{0}'?"),
+                        buildingTypeName),
+                    ResourceHelper.GetString("Common_ConfirmTitle", "Confirm"),
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question) != MessageBoxResult.Yes)
+            {
+                return;
+            }
+
+            SetBuildingIsActive(true);
+            var saved = await SaveBuildingTypeAsync();
+            if (!saved)
+            {
+                SetBuildingIsActive(_currentBt?.IsActive ?? false, updateDirtyState: false);
             }
         }
 

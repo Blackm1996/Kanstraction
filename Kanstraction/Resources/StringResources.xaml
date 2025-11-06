@@ -76,6 +76,14 @@
     <sys:String x:Key="AdminHubView_Unit">Unit</sys:String>
     <sys:String x:Key="AdminHubView_PricePerUnit">Price / Unit</sys:String>
     <sys:String x:Key="AdminHubView_Active">Active</sys:String>
+    <sys:String x:Key="AdminHubView_Deactivate">Delete</sys:String>
+    <sys:String x:Key="AdminHubView_Reactivate">Reactivate</sys:String>
+    <sys:String x:Key="AdminHubView_DeleteMaterialConfirmFormat">Delete material '{0}'? This will deactivate it.</sys:String>
+    <sys:String x:Key="AdminHubView_ReactivateMaterialConfirmFormat">Reactivate material '{0}'?</sys:String>
+    <sys:String x:Key="AdminHubView_DeleteBuildingTypeConfirmFormat">Delete building type '{0}'? This will deactivate it.</sys:String>
+    <sys:String x:Key="AdminHubView_ReactivateBuildingTypeConfirmFormat">Reactivate building type '{0}'?</sys:String>
+    <sys:String x:Key="AdminHubView_UnnamedMaterialLabel">this material</sys:String>
+    <sys:String x:Key="AdminHubView_UnnamedBuildingTypeLabel">this building type</sys:String>
     <sys:String x:Key="AdminHubView_PriceHistory">Price History</sys:String>
     <sys:String x:Key="AdminHubView_Start">Start</sys:String>
     <sys:String x:Key="AdminHubView_End">End</sys:String>
@@ -308,6 +316,9 @@
     <sys:String x:Key="StagePresetDesignerView_SavedMessage">Stage preset saved.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DialogTitle">Stage preset</sys:String>
     <sys:String x:Key="StagePresetDesignerView_SaveFailedFormat">Saving failed:&#x0a;{0}</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_DeletePresetConfirmFormat">Delete stage preset '{0}'? This will deactivate it.</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_ReactivatePresetConfirmFormat">Reactivate stage preset '{0}'?</sys:String>
+    <sys:String x:Key="StagePresetDesignerView_UnnamedPresetLabel">this stage preset</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DuplicateMaterialFormat">"{0}" is listed more than once in sub-stage "{1}". Remove the duplicate before saving.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_MaterialConflictMessage">Another user added the same material to this sub-stage. Reload the preset and try again.</sys:String>
     <sys:String x:Key="StagePresetDesignerView_DuplicatePresetName">A stage preset with this name already exists.</sys:String>
