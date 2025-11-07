@@ -1435,41 +1435,6 @@ namespace Kanstraction.Views
                 .Where(x => x.BuildingTypeId == buildingTypeId)
                 .ToListAsync();
 
-            var mandatorySubStageIds = subPresets
-                .GroupBy(s => s.StagePresetId)
-                .Select(g => g
-                    .OrderBy(s => s.OrderIndex)
-                    .Last().Id)
-                .ToList();
-
-            var ensuredInclusions = false;
-            foreach (var subStageId in mandatorySubStageIds)
-            {
-                var row = laborRows.FirstOrDefault(x => x.SubStagePresetId == subStageId);
-                if (row == null)
-                {
-                    row = new BuildingTypeSubStageLabor
-                    {
-                        BuildingTypeId = buildingTypeId,
-                        SubStagePresetId = subStageId,
-                        IncludeInReport = true
-                    };
-                    _db.BuildingTypeSubStageLabors.Add(row);
-                    laborRows.Add(row);
-                    ensuredInclusions = true;
-                }
-                else if (!row.IncludeInReport)
-                {
-                    row.IncludeInReport = true;
-                    ensuredInclusions = true;
-                }
-            }
-
-            if (ensuredInclusions)
-            {
-                await _db.SaveChangesAsync();
-            }
-
             _currentBtLaborMap = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.LaborCost);
             _currentBtSubStageInclusionMap = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.IncludeInReport);
             var laborLookup = _currentBtLaborMap;
@@ -1489,7 +1454,6 @@ namespace Kanstraction.Views
                 for (int i = 0; i < stageSubs.Count; i++)
                 {
                     var sub = stageSubs[i];
-                    var isLast = i == stageSubs.Count - 1;
                     var vm = new SubStageLaborVm
                     {
                         StagePresetId = presetId,
@@ -1499,8 +1463,7 @@ namespace Kanstraction.Views
                         LaborCost = laborLookup.TryGetValue(sub.Id, out var labor) ? labor : null,
                         DefaultIncludeInReport = inclusionLookup.TryGetValue(sub.Id, out var include)
                             ? include
-                            : isLast,
-                        IsMandatoryInReport = isLast
+                            : false
                     };
                     var includeValue = inclusionLookup.TryGetValue(sub.Id, out var includeFlag)
                         ? includeFlag
@@ -1543,7 +1506,6 @@ namespace Kanstraction.Views
             Dictionary<int, decimal?>? preservedLabors = null;
             Dictionary<int, bool>? preservedInclusions = null;
             Dictionary<int, bool>? preservedDefaults = null;
-            Dictionary<int, bool>? preservedMandatoryFlags = null;
             Dictionary<(int SubStagePresetId, int MaterialId), decimal?>? preservedMaterials = null;
             List<int>? previousSubStageIds = null;
 
@@ -1552,7 +1514,6 @@ namespace Kanstraction.Views
                 preservedLabors = previousList.ToDictionary(x => x.SubStagePresetId, x => x.LaborCost);
                 preservedInclusions = previousList.ToDictionary(x => x.SubStagePresetId, x => x.IncludeInReport);
                 preservedDefaults = previousList.ToDictionary(x => x.SubStagePresetId, x => x.DefaultIncludeInReport);
-                preservedMandatoryFlags = previousList.ToDictionary(x => x.SubStagePresetId, x => x.IsMandatoryInReport);
                 previousSubStageIds = previousList.Select(x => x.SubStagePresetId).ToList();
 
                 preservedMaterials = previousList
@@ -1597,37 +1558,6 @@ namespace Kanstraction.Views
                         .Where(x => x.BuildingTypeId == _editingBtId.Value && subIds.Contains(x.SubStagePresetId))
                         .ToListAsync();
 
-                    if (subs.Count > 0)
-                    {
-                        var mandatorySubStageId = subs[^1].Id;
-                        var ensured = false;
-                        var mandatoryRow = laborRows.FirstOrDefault(x => x.SubStagePresetId == mandatorySubStageId);
-                        if (mandatoryRow == null)
-                        {
-                            mandatoryRow = new BuildingTypeSubStageLabor
-                            {
-                                BuildingTypeId = _editingBtId.Value,
-                                SubStagePresetId = mandatorySubStageId,
-                                IncludeInReport = true
-                            };
-                            _db.BuildingTypeSubStageLabors.Add(mandatoryRow);
-                            laborRows.Add(mandatoryRow);
-                            ensured = true;
-                        }
-                        else if (!mandatoryRow.IncludeInReport)
-                        {
-                            mandatoryRow.IncludeInReport = true;
-                            ensured = true;
-                        }
-
-                        if (ensured)
-                        {
-                            await _db.SaveChangesAsync();
-                            _currentBtLaborMap[mandatorySubStageId] = mandatoryRow.LaborCost;
-                            _currentBtSubStageInclusionMap[mandatorySubStageId] = true;
-                        }
-                    }
-
                     existingLabors = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.LaborCost);
                     existingInclusions = laborRows.ToDictionary(x => x.SubStagePresetId, x => x.IncludeInReport);
                 }
@@ -1637,7 +1567,6 @@ namespace Kanstraction.Views
             for (int i = 0; i < subs.Count; i++)
             {
                 var sub = subs[i];
-                var isLast = i == subs.Count - 1;
                 decimal? labor = null;
                 if (preservedLabors != null && preservedLabors.TryGetValue(sub.Id, out var preserved))
                 {
@@ -1658,15 +1587,9 @@ namespace Kanstraction.Views
                     defaultInclude = persistedDefault;
                 }
 
-                if (defaultInclude != true && preservedMandatoryFlags != null &&
-                    preservedMandatoryFlags.TryGetValue(sub.Id, out var wasMandatory) && wasMandatory)
-                {
-                    defaultInclude = true;
-                }
-
                 if (defaultInclude == null)
                 {
-                    defaultInclude = isLast;
+                    defaultInclude = false;
                 }
 
                 var defaultIncludeValue = defaultInclude.Value;
@@ -1680,11 +1603,6 @@ namespace Kanstraction.Views
                 {
                     includeValue = storedInclude;
                 }
-                else if (preservedMandatoryFlags != null &&
-                         preservedMandatoryFlags.TryGetValue(sub.Id, out var wasMandatoryInclude) && wasMandatoryInclude)
-                {
-                    includeValue = true;
-                }
                 else
                 {
                     includeValue = defaultIncludeValue;
@@ -1697,8 +1615,7 @@ namespace Kanstraction.Views
                     OrderIndex = sub.OrderIndex,
                     Name = sub.Name,
                     LaborCost = labor,
-                    DefaultIncludeInReport = defaultIncludeValue,
-                    IsMandatoryInReport = isLast
+                    DefaultIncludeInReport = defaultIncludeValue
                 };
                 vm.IncludeInReport = includeValue;
                 vm.PropertyChanged += SubStageLaborVm_PropertyChanged;
@@ -2563,39 +2480,15 @@ namespace Kanstraction.Views
                 get => _includeInReport;
                 set
                 {
-                    var effective = _isMandatoryInReport ? true : value;
-                    if (_includeInReport != effective)
+                    if (_includeInReport != value)
                     {
-                        _includeInReport = effective;
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IncludeInReport)));
-                    }
-                    else if (effective != value)
-                    {
+                        _includeInReport = value;
                         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IncludeInReport)));
                     }
                 }
             }
 
-            private bool _isMandatoryInReport;
-            public bool IsMandatoryInReport
-            {
-                get => _isMandatoryInReport;
-                set
-                {
-                    if (_isMandatoryInReport != value)
-                    {
-                        _isMandatoryInReport = value;
-                        if (_isMandatoryInReport)
-                        {
-                            IncludeInReport = true;
-                        }
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(IsMandatoryInReport)));
-                        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(CanModifyInclude)));
-                    }
-                }
-            }
-
-            public bool CanModifyInclude => !_isMandatoryInReport;
+            public bool CanModifyInclude => true;
 
             public event PropertyChangedEventHandler? PropertyChanged;
         }
