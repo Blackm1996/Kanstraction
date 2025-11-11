@@ -714,6 +714,7 @@ public partial class OperationsView : UserControl
                     .ThenInclude(ss => ss.MaterialUsages)
                 .Include(s => s.Building)
                     .ThenInclude(b => b.Stages)
+                        .ThenInclude(st => st.SubStages)
                 .FirstOrDefaultAsync(s => s.Id == stageId);
 
             if (stage == null)
@@ -785,7 +786,45 @@ public partial class OperationsView : UserControl
                     break;
             }
 
-            UpdateBuildingStatusFromStages(stage.Building);
+            if (stage.Building != null)
+            {
+                if (newStatus == WorkStatus.Stopped)
+                {
+                    var today = DateTime.Today;
+
+                    if (stage.Building.Stages != null)
+                    {
+                        foreach (var buildingStage in stage.Building.Stages)
+                        {
+                            buildingStage.Status = WorkStatus.Stopped;
+                            if (buildingStage.StartDate == null)
+                            {
+                                buildingStage.StartDate = today;
+                            }
+                            buildingStage.EndDate = today;
+
+                            if (buildingStage.SubStages != null)
+                            {
+                                foreach (var sub in buildingStage.SubStages)
+                                {
+                                    sub.Status = WorkStatus.Stopped;
+                                    if (sub.StartDate == null)
+                                    {
+                                        sub.StartDate = today;
+                                    }
+                                    sub.EndDate = today;
+                                }
+                            }
+                        }
+                    }
+
+                    stage.Building.Status = WorkStatus.Stopped;
+                }
+                else
+                {
+                    UpdateBuildingStatusFromStages(stage.Building);
+                }
+            }
             await _db.SaveChangesAsync();
 
             await ReloadBuildingsAsync(stage.BuildingId, stage.Id);
@@ -2016,30 +2055,60 @@ public partial class OperationsView : UserControl
         }
 
         bool allPaid = s.SubStages.All(ss => ss.Status == WorkStatus.Paid);
+        bool allStopped = s.SubStages.All(ss => ss.Status == WorkStatus.Stopped);
+        bool anyStopped = s.SubStages.Any(ss => ss.Status == WorkStatus.Stopped);
         bool anyOngoing = s.SubStages.Any(ss => ss.Status == WorkStatus.Ongoing);
         bool allNotStarted = s.SubStages.All(ss => ss.Status == WorkStatus.NotStarted);
-        bool allDoneLike = s.SubStages.All(ss => ss.Status == WorkStatus.Finished || ss.Status == WorkStatus.Paid);
+        bool allFinishedOrPaid = s.SubStages.All(ss => ss.Status == WorkStatus.Finished || ss.Status == WorkStatus.Paid);
+        bool anyFinishedOrPaid = s.SubStages.Any(ss => ss.Status == WorkStatus.Finished || ss.Status == WorkStatus.Paid);
 
-        var prev = s.Status;
-
-        if (allPaid)
+        if (allStopped)
+        {
+            s.Status = WorkStatus.Stopped;
+        }
+        else if (allPaid)
+        {
             s.Status = WorkStatus.Paid;
-        else if (anyOngoing)
-            s.Status = WorkStatus.Ongoing;
-        else if (allNotStarted)
-            s.Status = WorkStatus.NotStarted;
-        else if (allDoneLike)
+        }
+        else if (allFinishedOrPaid)
+        {
             s.Status = WorkStatus.Finished;
-        // else: mixed — leave as-is, or set to Ongoing if you prefer
+        }
+        else if (anyOngoing)
+        {
+            s.Status = WorkStatus.Ongoing;
+        }
+        else if (anyStopped)
+        {
+            s.Status = WorkStatus.Stopped;
+        }
+        else if (allNotStarted)
+        {
+            s.Status = WorkStatus.NotStarted;
+        }
+        else if (anyFinishedOrPaid)
+        {
+            s.Status = WorkStatus.Ongoing;
+        }
+        else
+        {
+            s.Status = WorkStatus.Ongoing;
+        }
 
-        // Dates
         if (s.Status == WorkStatus.Ongoing && s.StartDate == null)
             s.StartDate = DateTime.Today;
 
         if ((s.Status == WorkStatus.Finished || s.Status == WorkStatus.Paid) && s.EndDate == null)
             s.EndDate = DateTime.Today;
 
-        if (s.Status == WorkStatus.NotStarted)
+        if (s.Status == WorkStatus.Stopped)
+        {
+            if (s.StartDate == null)
+                s.StartDate = DateTime.Today;
+            if (s.EndDate == null)
+                s.EndDate = DateTime.Today;
+        }
+        else if (s.Status == WorkStatus.NotStarted)
         {
             s.StartDate = null;
             s.EndDate = null;
@@ -2050,22 +2119,41 @@ public partial class OperationsView : UserControl
     {
         if (b == null || b.Stages == null || b.Stages.Count == 0) return;
 
+        bool anyStopped = b.Stages.Any(st => st.Status == WorkStatus.Stopped);
         bool allPaid = b.Stages.All(st => st.Status == WorkStatus.Paid);
-        bool anyOngoing = b.Stages.Any(st => st.Status == WorkStatus.Ongoing);
+        bool allFinishedOrPaid = b.Stages.All(st => st.Status == WorkStatus.Finished || st.Status == WorkStatus.Paid);
         bool allNotStarted = b.Stages.All(st => st.Status == WorkStatus.NotStarted);
-        bool allDoneLike = b.Stages.All(st => st.Status == WorkStatus.Finished || st.Status == WorkStatus.Paid);
+        bool anyOngoing = b.Stages.Any(st => st.Status == WorkStatus.Ongoing);
+        bool anyFinishedOrPaid = b.Stages.Any(st => st.Status == WorkStatus.Finished || st.Status == WorkStatus.Paid);
 
-        var prev = b.Status;
-
-        if (allPaid)
+        if (anyStopped)
+        {
+            b.Status = WorkStatus.Stopped;
+        }
+        else if (allPaid)
+        {
             b.Status = WorkStatus.Paid;
-        else if (anyOngoing)
-            b.Status = WorkStatus.Ongoing;
-        else if (allNotStarted)
-            b.Status = WorkStatus.NotStarted;
-        else if (allDoneLike)
+        }
+        else if (allFinishedOrPaid)
+        {
             b.Status = WorkStatus.Finished;
-        // else: mixed — leave as-is or set Ongoing if you prefer
+        }
+        else if (allNotStarted)
+        {
+            b.Status = WorkStatus.NotStarted;
+        }
+        else if (anyOngoing)
+        {
+            b.Status = WorkStatus.Ongoing;
+        }
+        else if (anyFinishedOrPaid)
+        {
+            b.Status = WorkStatus.Ongoing;
+        }
+        else
+        {
+            b.Status = WorkStatus.Ongoing;
+        }
     }
 
     private async void AddMaterialToSubStage_Click(object sender, RoutedEventArgs e)
