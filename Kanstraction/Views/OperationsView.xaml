@@ -102,19 +102,8 @@
                     <TextBlock Text="{DynamicResource OperationsView_Buildings}" FontWeight="SemiBold"
                VerticalAlignment="Center"/>
 
-                    <TextBox x:Name="BuildingSearchBox"
-                             Grid.Column="1"
-                             Width="200"
-                             Margin="10,0,0,0"
-                             Padding="8"
-                             VerticalAlignment="Center"
-                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
-                             materialDesign:HintAssist.Hint="{DynamicResource OperationsView_SearchByCodeHint}"
-                             materialDesign:TextFieldAssist.HasClearButton="True"
-                             TextChanged="BuildingSearchBox_TextChanged"/>
-
                     <materialDesign:PopupBox x:Name="StatusFilterPopup"
-                                             Grid.Column="2"
+                                             Grid.Column="1"
                                              Margin="10,0,0,0"
                                              Padding="0"
                                              StaysOpen="True"
@@ -139,6 +128,11 @@
                             <TextBlock Text="{DynamicResource OperationsView_StatusFilter_Title}"
                                        FontWeight="SemiBold"
                                        Margin="0,0,0,8"/>
+                            <CheckBox x:Name="StatusFilterAllCheckBox"
+                                      Margin="0,0,0,8"
+                                      Content="{DynamicResource OperationsView_StatusFilter_AllOption}"
+                                      Checked="StatusFilterAllCheckBox_Changed"
+                                      Unchecked="StatusFilterAllCheckBox_Changed"/>
                             <CheckBox x:Name="StatusFilterNotStartedCheckBox"
                                       Margin="0,0,0,4"
                                       Tag="{x:Static models:WorkStatus.NotStarted}"
@@ -169,12 +163,19 @@
                                       Content="{Binding Tag, RelativeSource={RelativeSource Self}, Converter={StaticResource StatusToString}}"
                                       Checked="StatusFilterCheckBox_Changed"
                                       Unchecked="StatusFilterCheckBox_Changed"/>
-                            <Button Content="{DynamicResource OperationsView_StatusFilter_SelectAll}"
-                                    HorizontalAlignment="Right"
-                                    Style="{StaticResource MaterialDesignFlatButton}"
-                                    Click="StatusFilterSelectAll_Click"/>
                         </StackPanel>
                     </materialDesign:PopupBox>
+
+                    <TextBox x:Name="BuildingSearchBox"
+                             Grid.Column="2"
+                             Width="200"
+                             Margin="10,0,0,0"
+                             Padding="8"
+                             VerticalAlignment="Center"
+                             Style="{StaticResource MaterialDesignOutlinedTextBox}"
+                             materialDesign:HintAssist.Hint="{DynamicResource OperationsView_SearchByCodeHint}"
+                             materialDesign:TextFieldAssist.HasClearButton="True"
+                             TextChanged="BuildingSearchBox_TextChanged"/>
 
                     <!-- Add Building button (small, icon-only) -->
                     <Button Grid.Column="3"

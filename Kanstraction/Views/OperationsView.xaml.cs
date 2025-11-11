@@ -1375,9 +1375,22 @@ public partial class OperationsView : UserControl
         ApplyStatusFilter();
     }
 
-    private void StatusFilterSelectAll_Click(object sender, RoutedEventArgs e)
+    private void StatusFilterAllCheckBox_Changed(object sender, RoutedEventArgs e)
     {
-        _selectedStatusFilters = _allWorkStatuses.ToHashSet();
+        if (_isUpdatingStatusCheckBoxes)
+        {
+            return;
+        }
+
+        if (StatusFilterAllCheckBox?.IsChecked == true)
+        {
+            _selectedStatusFilters = _allWorkStatuses.ToHashSet();
+        }
+        else
+        {
+            _selectedStatusFilters = new HashSet<WorkStatus>();
+        }
+
         ApplyStatusFilter();
     }
 
@@ -1425,6 +1438,10 @@ public partial class OperationsView : UserControl
         {
             var showAll = _selectedStatusFilters.Count == _allWorkStatuses.Count;
 
+            if (StatusFilterAllCheckBox != null)
+            {
+                StatusFilterAllCheckBox.IsChecked = showAll ? true : false;
+            }
             StatusFilterNotStartedCheckBox.IsChecked = showAll || (_selectedStatusFilters.Contains(WorkStatus.NotStarted) && _selectedStatusFilters.Count > 0);
             StatusFilterOngoingCheckBox.IsChecked = showAll || (_selectedStatusFilters.Contains(WorkStatus.Ongoing) && _selectedStatusFilters.Count > 0);
             StatusFilterFinishedCheckBox.IsChecked = showAll || (_selectedStatusFilters.Contains(WorkStatus.Finished) && _selectedStatusFilters.Count > 0);

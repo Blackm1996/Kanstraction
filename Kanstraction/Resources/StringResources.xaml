@@ -175,8 +175,8 @@
     <sys:String x:Key="OperationsView_SearchByCodeHint">Search by code</sys:String>
     <sys:String x:Key="OperationsView_StatusFilter_All">All statuses</sys:String>
     <sys:String x:Key="OperationsView_StatusFilter_None">No statuses selected</sys:String>
-    <sys:String x:Key="OperationsView_StatusFilter_SelectAll">Select all</sys:String>
     <sys:String x:Key="OperationsView_StatusFilter_Title">Status filter</sys:String>
+    <sys:String x:Key="OperationsView_StatusFilter_AllOption">All</sys:String>
     <sys:String x:Key="OperationsView_Status">Status</sys:String>
     <sys:String x:Key="OperationsView_Code">Code</sys:String>
     <sys:String x:Key="OperationsView_Type">Type</sys:String>
