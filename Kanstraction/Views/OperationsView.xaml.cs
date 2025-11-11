@@ -1363,6 +1363,16 @@ public partial class OperationsView : UserControl
             return;
         }
 
+        var wasShowingAll = _selectedStatusFilters.Count == _allWorkStatuses.Count;
+        var allToggleIsChecked = StatusFilterAllCheckBox?.IsChecked == true;
+
+        if (wasShowingAll && allToggleIsChecked)
+        {
+            _selectedStatusFilters = new HashSet<WorkStatus> { status };
+            ApplyStatusFilter();
+            return;
+        }
+
         if (checkBox.IsChecked == true)
         {
             _selectedStatusFilters.Add(status);
