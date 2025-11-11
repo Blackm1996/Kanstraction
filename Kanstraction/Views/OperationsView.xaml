@@ -120,6 +120,10 @@
                                     <iconPacks:PackIconFontAwesome Kind="FilterSolid" Width="14" Height="14"/>
                                     <TextBlock Margin="6,0,0,0"
                                                VerticalAlignment="Center"
+                                               Width="160"
+                                               TextTrimming="CharacterEllipsis"
+                                               TextWrapping="NoWrap"
+                                               ToolTipService.ToolTip="{Binding BuildingStatusFilterLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
                                                Text="{Binding BuildingStatusFilterLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
                                 </StackPanel>
                             </Border>
