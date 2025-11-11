@@ -1,4 +1,5 @@
 ﻿using Kanstraction;
+using Kanstraction.Converters;
 using Kanstraction.Data;
 using Kanstraction.Entities;
 using Kanstraction.Services;
@@ -31,6 +32,16 @@ public partial class OperationsView : UserControl
         DependencyProperty.Register(nameof(Breadcrumb), typeof(string), typeof(OperationsView),
             new PropertyMetadata(ResourceHelper.GetString("OperationsView_SelectProjectPrompt", "Select a project")));
 
+    public string BuildingStatusFilterLabel
+    {
+        get => (string)GetValue(BuildingStatusFilterLabelProperty);
+        set => SetValue(BuildingStatusFilterLabelProperty, value);
+    }
+
+    public static readonly DependencyProperty BuildingStatusFilterLabelProperty =
+        DependencyProperty.Register(nameof(BuildingStatusFilterLabel), typeof(string), typeof(OperationsView),
+            new PropertyMetadata(ResourceHelper.GetString("OperationsView_StatusFilter_All", "All statuses")));
+
     private int? _currentBuildingId;
     private int? _currentStageId;
     private SubStage? _editingSubStageForLabor;
@@ -41,6 +52,10 @@ public partial class OperationsView : UserControl
     private List<BuildingRow> _buildingRows = new();
     private ICollectionView? _buildingView;
     private string _buildingSearchText = string.Empty;
+    private readonly List<WorkStatus> _allWorkStatuses = Enum.GetValues(typeof(WorkStatus)).Cast<WorkStatus>().ToList();
+    private HashSet<WorkStatus> _selectedStatusFilters = new();
+    private bool _isUpdatingStatusCheckBoxes;
+    private readonly WorkStatusToStringConverter _statusToStringConverter = new();
 
     private static readonly XLColor InfoLabelFillColor = XLColor.FromHtml("#D9EAF7");
     private static readonly XLColor InfoValueFillColor = XLColor.FromHtml("#F0F7FF");
@@ -451,6 +466,8 @@ public partial class OperationsView : UserControl
     public OperationsView()
     {
         InitializeComponent();
+        _selectedStatusFilters = _allWorkStatuses.ToHashSet();
+        UpdateStatusFilterSummary();
     }
 
     public void SetDb(AppDbContext db) => _db = db;
@@ -1295,9 +1312,111 @@ public partial class OperationsView : UserControl
         BuildingsGrid.ScrollIntoView(first);
     }
 
+    private void StatusFilterCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingStatusCheckBoxes)
+        {
+            return;
+        }
+
+        if (sender is not CheckBox checkBox || checkBox.Tag is not WorkStatus status)
+        {
+            return;
+        }
+
+        if (checkBox.IsChecked == true)
+        {
+            _selectedStatusFilters.Add(status);
+        }
+        else
+        {
+            _selectedStatusFilters.Remove(status);
+        }
+
+        ApplyStatusFilter();
+    }
+
+    private void StatusFilterSelectAll_Click(object sender, RoutedEventArgs e)
+    {
+        _selectedStatusFilters = _allWorkStatuses.ToHashSet();
+        ApplyStatusFilter();
+    }
+
+    private void ApplyStatusFilter()
+    {
+        UpdateStatusFilterSummary();
+        RefreshBuildingView();
+    }
+
+    private void UpdateStatusFilterSummary()
+    {
+        string label;
+
+        if (_selectedStatusFilters.Count == 0)
+        {
+            label = ResourceHelper.GetString("OperationsView_StatusFilter_None", "No statuses selected");
+        }
+        else if (_selectedStatusFilters.Count == _allWorkStatuses.Count)
+        {
+            label = ResourceHelper.GetString("OperationsView_StatusFilter_All", "All statuses");
+        }
+        else
+        {
+            var names = _selectedStatusFilters
+                .OrderBy(status => status)
+                .Select(GetStatusDisplayName);
+
+            label = string.Join(", ", names);
+        }
+
+        BuildingStatusFilterLabel = label;
+        UpdateStatusFilterCheckBoxes();
+    }
+
+    private void UpdateStatusFilterCheckBoxes()
+    {
+        if (StatusFilterNotStartedCheckBox == null)
+        {
+            return;
+        }
+
+        _isUpdatingStatusCheckBoxes = true;
+
+        try
+        {
+            var showAll = _selectedStatusFilters.Count == _allWorkStatuses.Count;
+
+            StatusFilterNotStartedCheckBox.IsChecked = showAll || (_selectedStatusFilters.Contains(WorkStatus.NotStarted) && _selectedStatusFilters.Count > 0);
+            StatusFilterOngoingCheckBox.IsChecked = showAll || (_selectedStatusFilters.Contains(WorkStatus.Ongoing) && _selectedStatusFilters.Count > 0);
+            StatusFilterFinishedCheckBox.IsChecked = showAll || (_selectedStatusFilters.Contains(WorkStatus.Finished) && _selectedStatusFilters.Count > 0);
+            StatusFilterPaidCheckBox.IsChecked = showAll || (_selectedStatusFilters.Contains(WorkStatus.Paid) && _selectedStatusFilters.Count > 0);
+            StatusFilterStoppedCheckBox.IsChecked = showAll || (_selectedStatusFilters.Contains(WorkStatus.Stopped) && _selectedStatusFilters.Count > 0);
+        }
+        finally
+        {
+            _isUpdatingStatusCheckBoxes = false;
+        }
+    }
+
+    private string GetStatusDisplayName(WorkStatus status)
+    {
+        var converted = _statusToStringConverter.Convert(status, typeof(string), null, CultureInfo.CurrentUICulture);
+        return converted?.ToString() ?? status.ToString();
+    }
+
     private bool BuildingFilter(object? obj)
     {
         if (obj is not BuildingRow row)
+        {
+            return false;
+        }
+
+        if (_selectedStatusFilters.Count == 0)
+        {
+            return false;
+        }
+
+        if (_selectedStatusFilters.Count < _allWorkStatuses.Count && !_selectedStatusFilters.Contains(row.Status))
         {
             return false;
         }
