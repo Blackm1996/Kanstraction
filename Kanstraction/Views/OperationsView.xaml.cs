@@ -1,4 +1,5 @@
 ﻿using Kanstraction;
+using Kanstraction.Converters;
 using Kanstraction.Data;
 using Kanstraction.Entities;
 using Kanstraction.Services;
@@ -31,6 +32,16 @@ public partial class OperationsView : UserControl
         DependencyProperty.Register(nameof(Breadcrumb), typeof(string), typeof(OperationsView),
             new PropertyMetadata(ResourceHelper.GetString("OperationsView_SelectProjectPrompt", "Select a project")));
 
+    public string BuildingStatusFilterLabel
+    {
+        get => (string)GetValue(BuildingStatusFilterLabelProperty);
+        set => SetValue(BuildingStatusFilterLabelProperty, value);
+    }
+
+    public static readonly DependencyProperty BuildingStatusFilterLabelProperty =
+        DependencyProperty.Register(nameof(BuildingStatusFilterLabel), typeof(string), typeof(OperationsView),
+            new PropertyMetadata(ResourceHelper.GetString("OperationsView_StatusFilter_All", "All statuses")));
+
     private int? _currentBuildingId;
     private int? _currentStageId;
     private SubStage? _editingSubStageForLabor;
@@ -41,6 +52,10 @@ public partial class OperationsView : UserControl
     private List<BuildingRow> _buildingRows = new();
     private ICollectionView? _buildingView;
     private string _buildingSearchText = string.Empty;
+    private readonly List<WorkStatus> _allWorkStatuses = Enum.GetValues(typeof(WorkStatus)).Cast<WorkStatus>().ToList();
+    private HashSet<WorkStatus> _selectedStatusFilters = new();
+    private bool _isUpdatingStatusCheckBoxes;
+    private readonly WorkStatusToStringConverter _statusToStringConverter = new();
 
     private static readonly XLColor InfoLabelFillColor = XLColor.FromHtml("#D9EAF7");
     private static readonly XLColor InfoValueFillColor = XLColor.FromHtml("#F0F7FF");
@@ -451,6 +466,8 @@ public partial class OperationsView : UserControl
     public OperationsView()
     {
         InitializeComponent();
+        _selectedStatusFilters = _allWorkStatuses.ToHashSet();
+        UpdateStatusFilterSummary();
     }
 
     public void SetDb(AppDbContext db) => _db = db;
@@ -697,6 +714,7 @@ public partial class OperationsView : UserControl
                     .ThenInclude(ss => ss.MaterialUsages)
                 .Include(s => s.Building)
                     .ThenInclude(b => b.Stages)
+                        .ThenInclude(st => st.SubStages)
                 .FirstOrDefaultAsync(s => s.Id == stageId);
 
             if (stage == null)
@@ -768,7 +786,45 @@ public partial class OperationsView : UserControl
                     break;
             }
 
-            UpdateBuildingStatusFromStages(stage.Building);
+            if (stage.Building != null)
+            {
+                if (newStatus == WorkStatus.Stopped)
+                {
+                    var today = DateTime.Today;
+
+                    if (stage.Building.Stages != null)
+                    {
+                        foreach (var buildingStage in stage.Building.Stages)
+                        {
+                            buildingStage.Status = WorkStatus.Stopped;
+                            if (buildingStage.StartDate == null)
+                            {
+                                buildingStage.StartDate = today;
+                            }
+                            buildingStage.EndDate = today;
+
+                            if (buildingStage.SubStages != null)
+                            {
+                                foreach (var sub in buildingStage.SubStages)
+                                {
+                                    sub.Status = WorkStatus.Stopped;
+                                    if (sub.StartDate == null)
+                                    {
+                                        sub.StartDate = today;
+                                    }
+                                    sub.EndDate = today;
+                                }
+                            }
+                        }
+                    }
+
+                    stage.Building.Status = WorkStatus.Stopped;
+                }
+                else
+                {
+                    UpdateBuildingStatusFromStages(stage.Building);
+                }
+            }
             await _db.SaveChangesAsync();
 
             await ReloadBuildingsAsync(stage.BuildingId, stage.Id);
@@ -1295,9 +1351,138 @@ public partial class OperationsView : UserControl
         BuildingsGrid.ScrollIntoView(first);
     }
 
+    private void StatusFilterCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingStatusCheckBoxes)
+        {
+            return;
+        }
+
+        if (sender is not CheckBox checkBox || checkBox.Tag is not WorkStatus status)
+        {
+            return;
+        }
+
+        var wasShowingAll = _selectedStatusFilters.Count == _allWorkStatuses.Count;
+        var allToggleIsChecked = StatusFilterAllCheckBox?.IsChecked == true;
+
+        if (wasShowingAll && allToggleIsChecked)
+        {
+            _selectedStatusFilters = new HashSet<WorkStatus> { status };
+            ApplyStatusFilter();
+            return;
+        }
+
+        if (checkBox.IsChecked == true)
+        {
+            _selectedStatusFilters.Add(status);
+        }
+        else
+        {
+            _selectedStatusFilters.Remove(status);
+        }
+
+        ApplyStatusFilter();
+    }
+
+    private void StatusFilterAllCheckBox_Changed(object sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingStatusCheckBoxes)
+        {
+            return;
+        }
+
+        if (StatusFilterAllCheckBox?.IsChecked == true)
+        {
+            _selectedStatusFilters = _allWorkStatuses.ToHashSet();
+        }
+        else
+        {
+            _selectedStatusFilters = new HashSet<WorkStatus>();
+        }
+
+        ApplyStatusFilter();
+    }
+
+    private void ApplyStatusFilter()
+    {
+        UpdateStatusFilterSummary();
+        RefreshBuildingView();
+    }
+
+    private void UpdateStatusFilterSummary()
+    {
+        string label;
+
+        if (_selectedStatusFilters.Count == 0)
+        {
+            label = ResourceHelper.GetString("OperationsView_StatusFilter_None", "No statuses selected");
+        }
+        else if (_selectedStatusFilters.Count == _allWorkStatuses.Count)
+        {
+            label = ResourceHelper.GetString("OperationsView_StatusFilter_All", "All statuses");
+        }
+        else
+        {
+            var names = _selectedStatusFilters
+                .OrderBy(status => status)
+                .Select(GetStatusDisplayName);
+
+            label = string.Join(", ", names);
+        }
+
+        BuildingStatusFilterLabel = label;
+        UpdateStatusFilterCheckBoxes();
+    }
+
+    private void UpdateStatusFilterCheckBoxes()
+    {
+        if (StatusFilterNotStartedCheckBox == null)
+        {
+            return;
+        }
+
+        _isUpdatingStatusCheckBoxes = true;
+
+        try
+        {
+            var showAll = _selectedStatusFilters.Count == _allWorkStatuses.Count;
+
+            if (StatusFilterAllCheckBox != null)
+            {
+                StatusFilterAllCheckBox.IsChecked = showAll ? true : false;
+            }
+            StatusFilterNotStartedCheckBox.IsChecked = showAll || (_selectedStatusFilters.Contains(WorkStatus.NotStarted) && _selectedStatusFilters.Count > 0);
+            StatusFilterOngoingCheckBox.IsChecked = showAll || (_selectedStatusFilters.Contains(WorkStatus.Ongoing) && _selectedStatusFilters.Count > 0);
+            StatusFilterFinishedCheckBox.IsChecked = showAll || (_selectedStatusFilters.Contains(WorkStatus.Finished) && _selectedStatusFilters.Count > 0);
+            StatusFilterPaidCheckBox.IsChecked = showAll || (_selectedStatusFilters.Contains(WorkStatus.Paid) && _selectedStatusFilters.Count > 0);
+            StatusFilterStoppedCheckBox.IsChecked = showAll || (_selectedStatusFilters.Contains(WorkStatus.Stopped) && _selectedStatusFilters.Count > 0);
+        }
+        finally
+        {
+            _isUpdatingStatusCheckBoxes = false;
+        }
+    }
+
+    private string GetStatusDisplayName(WorkStatus status)
+    {
+        var converted = _statusToStringConverter.Convert(status, typeof(string), null, CultureInfo.CurrentUICulture);
+        return converted?.ToString() ?? status.ToString();
+    }
+
     private bool BuildingFilter(object? obj)
     {
         if (obj is not BuildingRow row)
+        {
+            return false;
+        }
+
+        if (_selectedStatusFilters.Count == 0)
+        {
+            return false;
+        }
+
+        if (_selectedStatusFilters.Count < _allWorkStatuses.Count && !_selectedStatusFilters.Contains(row.Status))
         {
             return false;
         }
@@ -1897,30 +2082,60 @@ public partial class OperationsView : UserControl
         }
 
         bool allPaid = s.SubStages.All(ss => ss.Status == WorkStatus.Paid);
+        bool allStopped = s.SubStages.All(ss => ss.Status == WorkStatus.Stopped);
+        bool anyStopped = s.SubStages.Any(ss => ss.Status == WorkStatus.Stopped);
         bool anyOngoing = s.SubStages.Any(ss => ss.Status == WorkStatus.Ongoing);
         bool allNotStarted = s.SubStages.All(ss => ss.Status == WorkStatus.NotStarted);
-        bool allDoneLike = s.SubStages.All(ss => ss.Status == WorkStatus.Finished || ss.Status == WorkStatus.Paid);
+        bool allFinishedOrPaid = s.SubStages.All(ss => ss.Status == WorkStatus.Finished || ss.Status == WorkStatus.Paid);
+        bool anyFinishedOrPaid = s.SubStages.Any(ss => ss.Status == WorkStatus.Finished || ss.Status == WorkStatus.Paid);
 
-        var prev = s.Status;
-
-        if (allPaid)
+        if (allStopped)
+        {
+            s.Status = WorkStatus.Stopped;
+        }
+        else if (allPaid)
+        {
             s.Status = WorkStatus.Paid;
-        else if (anyOngoing)
-            s.Status = WorkStatus.Ongoing;
-        else if (allNotStarted)
-            s.Status = WorkStatus.NotStarted;
-        else if (allDoneLike)
+        }
+        else if (allFinishedOrPaid)
+        {
             s.Status = WorkStatus.Finished;
-        // else: mixed — leave as-is, or set to Ongoing if you prefer
+        }
+        else if (anyOngoing)
+        {
+            s.Status = WorkStatus.Ongoing;
+        }
+        else if (anyStopped)
+        {
+            s.Status = WorkStatus.Stopped;
+        }
+        else if (allNotStarted)
+        {
+            s.Status = WorkStatus.NotStarted;
+        }
+        else if (anyFinishedOrPaid)
+        {
+            s.Status = WorkStatus.Ongoing;
+        }
+        else
+        {
+            s.Status = WorkStatus.Ongoing;
+        }
 
-        // Dates
         if (s.Status == WorkStatus.Ongoing && s.StartDate == null)
             s.StartDate = DateTime.Today;
 
         if ((s.Status == WorkStatus.Finished || s.Status == WorkStatus.Paid) && s.EndDate == null)
             s.EndDate = DateTime.Today;
 
-        if (s.Status == WorkStatus.NotStarted)
+        if (s.Status == WorkStatus.Stopped)
+        {
+            if (s.StartDate == null)
+                s.StartDate = DateTime.Today;
+            if (s.EndDate == null)
+                s.EndDate = DateTime.Today;
+        }
+        else if (s.Status == WorkStatus.NotStarted)
         {
             s.StartDate = null;
             s.EndDate = null;
@@ -1931,22 +2146,41 @@ public partial class OperationsView : UserControl
     {
         if (b == null || b.Stages == null || b.Stages.Count == 0) return;
 
+        bool anyStopped = b.Stages.Any(st => st.Status == WorkStatus.Stopped);
         bool allPaid = b.Stages.All(st => st.Status == WorkStatus.Paid);
-        bool anyOngoing = b.Stages.Any(st => st.Status == WorkStatus.Ongoing);
+        bool allFinishedOrPaid = b.Stages.All(st => st.Status == WorkStatus.Finished || st.Status == WorkStatus.Paid);
         bool allNotStarted = b.Stages.All(st => st.Status == WorkStatus.NotStarted);
-        bool allDoneLike = b.Stages.All(st => st.Status == WorkStatus.Finished || st.Status == WorkStatus.Paid);
+        bool anyOngoing = b.Stages.Any(st => st.Status == WorkStatus.Ongoing);
+        bool anyFinishedOrPaid = b.Stages.Any(st => st.Status == WorkStatus.Finished || st.Status == WorkStatus.Paid);
 
-        var prev = b.Status;
-
-        if (allPaid)
+        if (anyStopped)
+        {
+            b.Status = WorkStatus.Stopped;
+        }
+        else if (allPaid)
+        {
             b.Status = WorkStatus.Paid;
-        else if (anyOngoing)
-            b.Status = WorkStatus.Ongoing;
-        else if (allNotStarted)
-            b.Status = WorkStatus.NotStarted;
-        else if (allDoneLike)
+        }
+        else if (allFinishedOrPaid)
+        {
             b.Status = WorkStatus.Finished;
-        // else: mixed — leave as-is or set Ongoing if you prefer
+        }
+        else if (allNotStarted)
+        {
+            b.Status = WorkStatus.NotStarted;
+        }
+        else if (anyOngoing)
+        {
+            b.Status = WorkStatus.Ongoing;
+        }
+        else if (anyFinishedOrPaid)
+        {
+            b.Status = WorkStatus.Ongoing;
+        }
+        else
+        {
+            b.Status = WorkStatus.Ongoing;
+        }
     }
 
     private async void AddMaterialToSubStage_Click(object sender, RoutedEventArgs e)

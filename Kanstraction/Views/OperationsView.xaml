@@ -95,14 +95,83 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
 
                     <!-- Title -->
                     <TextBlock Text="{DynamicResource OperationsView_Buildings}" FontWeight="SemiBold"
                VerticalAlignment="Center"/>
 
+                    <materialDesign:PopupBox x:Name="StatusFilterPopup"
+                                             Grid.Column="1"
+                                             Margin="10,0,0,0"
+                                             Padding="0"
+                                             StaysOpen="True"
+                                             PlacementMode="BottomAndAlignRightEdges"
+                                             HorizontalAlignment="Right"
+                                             VerticalAlignment="Center">
+                        <materialDesign:PopupBox.ToggleContent>
+                            <Border Background="{DynamicResource MaterialDesignCardBackground}"
+                                    BorderBrush="{DynamicResource MaterialDesignDivider}"
+                                    BorderThickness="1"
+                                    CornerRadius="18"
+                                    Padding="10,6">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <iconPacks:PackIconFontAwesome Kind="FilterSolid" Width="14" Height="14"/>
+                                    <TextBlock Margin="6,0,0,0"
+                                               VerticalAlignment="Center"
+                                               Width="160"
+                                               TextTrimming="CharacterEllipsis"
+                                               TextWrapping="NoWrap"
+                                               ToolTipService.ToolTip="{Binding BuildingStatusFilterLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                               Text="{Binding BuildingStatusFilterLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"/>
+                                </StackPanel>
+                            </Border>
+                        </materialDesign:PopupBox.ToggleContent>
+                        <StackPanel Margin="12">
+                            <TextBlock Text="{DynamicResource OperationsView_StatusFilter_Title}"
+                                       FontWeight="SemiBold"
+                                       Margin="0,0,0,8"/>
+                            <CheckBox x:Name="StatusFilterAllCheckBox"
+                                      Margin="0,0,0,8"
+                                      Content="{DynamicResource OperationsView_StatusFilter_AllOption}"
+                                      Checked="StatusFilterAllCheckBox_Changed"
+                                      Unchecked="StatusFilterAllCheckBox_Changed"/>
+                            <CheckBox x:Name="StatusFilterNotStartedCheckBox"
+                                      Margin="0,0,0,4"
+                                      Tag="{x:Static models:WorkStatus.NotStarted}"
+                                      Content="{Binding Tag, RelativeSource={RelativeSource Self}, Converter={StaticResource StatusToString}}"
+                                      Checked="StatusFilterCheckBox_Changed"
+                                      Unchecked="StatusFilterCheckBox_Changed"/>
+                            <CheckBox x:Name="StatusFilterOngoingCheckBox"
+                                      Margin="0,0,0,4"
+                                      Tag="{x:Static models:WorkStatus.Ongoing}"
+                                      Content="{Binding Tag, RelativeSource={RelativeSource Self}, Converter={StaticResource StatusToString}}"
+                                      Checked="StatusFilterCheckBox_Changed"
+                                      Unchecked="StatusFilterCheckBox_Changed"/>
+                            <CheckBox x:Name="StatusFilterFinishedCheckBox"
+                                      Margin="0,0,0,4"
+                                      Tag="{x:Static models:WorkStatus.Finished}"
+                                      Content="{Binding Tag, RelativeSource={RelativeSource Self}, Converter={StaticResource StatusToString}}"
+                                      Checked="StatusFilterCheckBox_Changed"
+                                      Unchecked="StatusFilterCheckBox_Changed"/>
+                            <CheckBox x:Name="StatusFilterPaidCheckBox"
+                                      Margin="0,0,0,4"
+                                      Tag="{x:Static models:WorkStatus.Paid}"
+                                      Content="{Binding Tag, RelativeSource={RelativeSource Self}, Converter={StaticResource StatusToString}}"
+                                      Checked="StatusFilterCheckBox_Changed"
+                                      Unchecked="StatusFilterCheckBox_Changed"/>
+                            <CheckBox x:Name="StatusFilterStoppedCheckBox"
+                                      Margin="0,0,0,8"
+                                      Tag="{x:Static models:WorkStatus.Stopped}"
+                                      Content="{Binding Tag, RelativeSource={RelativeSource Self}, Converter={StaticResource StatusToString}}"
+                                      Checked="StatusFilterCheckBox_Changed"
+                                      Unchecked="StatusFilterCheckBox_Changed"/>
+                        </StackPanel>
+                    </materialDesign:PopupBox>
+
                     <TextBox x:Name="BuildingSearchBox"
-                             Grid.Column="1"
+                             Grid.Column="2"
                              Width="200"
                              Margin="10,0,0,0"
                              Padding="8"
@@ -113,7 +182,7 @@
                              TextChanged="BuildingSearchBox_TextChanged"/>
 
                     <!-- Add Building button (small, icon-only) -->
-                    <Button Grid.Column="2"
+                    <Button Grid.Column="3"
             Click="AddBuilding_Click"
                             Background="#3f51b5"
             Style="{StaticResource TinyIconButton}"

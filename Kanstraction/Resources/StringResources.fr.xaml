@@ -164,6 +164,10 @@
     <sys:String x:Key="WorkStatus_Finished">Terminé</sys:String>
     <sys:String x:Key="WorkStatus_Paid">Payé</sys:String>
     <sys:String x:Key="WorkStatus_Stopped">Arrêté</sys:String>
+    <sys:String x:Key="OperationsView_StatusFilter_All">Tous les statuts</sys:String>
+    <sys:String x:Key="OperationsView_StatusFilter_None">Aucun statut sélectionné</sys:String>
+    <sys:String x:Key="OperationsView_StatusFilter_Title">Filtre des statuts</sys:String>
+    <sys:String x:Key="OperationsView_StatusFilter_AllOption">Tous</sys:String>
     <sys:String x:Key="OperationsView_ResolvePayment">Résoudre le paiement</sys:String>
     <sys:String x:Key="OperationsView_ResolvePaymentTooltip">Générer un PDF de résolution de paiement pour ce projet et marquer les éléments terminés comme payés</sys:String>
     <sys:String x:Key="OperationsView_Buildings">Bâtiments</sys:String>
