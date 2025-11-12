@@ -109,6 +109,14 @@ public partial class OperationsView : UserControl
         public List<Building> Buildings { get; init; } = new();
     }
 
+    private sealed class CompensationEntry
+    {
+        public Stage Stage { get; init; } = null!;
+        public SubStage SubStage { get; init; } = null!;
+        public int StageOrder { get; init; }
+        public int SubStageOrder { get; init; }
+    }
+
     private static string FormatDecimal(decimal value) => value.ToString("0.##", CultureInfo.CurrentCulture);
 
     private static string SanitizeFileName(string? input, string fallback)
@@ -218,6 +226,158 @@ public partial class OperationsView : UserControl
 
         existingNames.Add(candidate);
         return candidate;
+    }
+
+    private static decimal CalculateMaterialTotal(SubStage subStage)
+    {
+        if (subStage.MaterialUsages == null)
+        {
+            return 0m;
+        }
+
+        decimal total = 0m;
+
+        foreach (var usage in subStage.MaterialUsages)
+        {
+            if (usage == null || usage.Material == null)
+            {
+                continue;
+            }
+
+            var unitPrice = ComputeUnitPriceForUsage(usage, true);
+            total += usage.Qty * unitPrice;
+        }
+
+        return total;
+    }
+
+    private Task ExportCompensationAsync(Building building, IReadOnlyList<CompensationEntry> entries)
+    {
+        if (entries == null || entries.Count == 0)
+        {
+            return Task.CompletedTask;
+        }
+
+        var titlePrefix = ResourceHelper.GetString("OperationsView_CompensationTitlePrefix", "Compensation lot");
+        var lotLabel = ResourceHelper.GetString("OperationsView_LotLabel", "Lot");
+        var title = $"{titlePrefix} {building.Code}".Trim();
+
+        var sanitizedPrefix = SanitizeFileName(titlePrefix, "Compensation lot");
+        var sanitizedCode = SanitizeFileName(building.Code, lotLabel);
+        var defaultFileName = $"{sanitizedPrefix}_{sanitizedCode}_{DateTime.Now:yyyyMMdd_HHmm}.xlsx";
+
+        var sfd = new SaveFileDialog
+        {
+            Title = ResourceHelper.GetString("OperationsView_CompensationExportTitle", "Export compensation"),
+            Filter = ResourceHelper.GetString("OperationsView_CompensationExportFilter", "Excel files (*.xlsx)|*.xlsx"),
+            FileName = defaultFileName
+        };
+
+        var owner = Window.GetWindow(this);
+        if (sfd.ShowDialog(owner) != true)
+        {
+            return Task.CompletedTask;
+        }
+
+        try
+        {
+            using var workbook = new XLWorkbook();
+            var existingNames = new HashSet<string>();
+            var worksheetLabel = ResourceHelper.GetString("OperationsView_CompensationWorksheetName", "Compensation");
+            var sheetName = SanitizeWorksheetName(worksheetLabel, existingNames);
+            var ws = workbook.Worksheets.Add(sheetName);
+
+            var titleRange = ws.Range(1, 3, 1, 4);
+            titleRange.Merge();
+            titleRange.Value = title;
+            titleRange.Style.Font.Bold = true;
+            titleRange.Style.Font.FontSize = 16;
+            titleRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            titleRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            ws.Row(1).Height = 24;
+
+            int headerRow = 3;
+            var subStageHeader = ResourceHelper.GetString("OperationsView_SubStageLabel", "Sub-stage");
+            var laborHeader = ResourceHelper.GetString("OperationsView_Labor", "Labor");
+            var materialsHeader = ResourceHelper.GetString("OperationsView_MaterialsCost", "Materials cost");
+
+            ws.Cell(headerRow, 1).Value = subStageHeader;
+            ws.Cell(headerRow, 2).Value = laborHeader;
+            ws.Cell(headerRow, 3).Value = materialsHeader;
+
+            var headerRange = ws.Range(headerRow, 1, headerRow, 3);
+            headerRange.Style.Font.Bold = true;
+            headerRange.Style.Font.FontColor = SubStageHeaderFontColor;
+            headerRange.Style.Fill.BackgroundColor = SubStageHeaderFillColor;
+            headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            headerRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            ws.Row(headerRow).Height = 20;
+
+            int currentRow = headerRow + 1;
+            decimal totalLabor = 0m;
+            decimal totalMaterials = 0m;
+
+            foreach (var entry in entries
+                         .OrderBy(e => e.StageOrder)
+                         .ThenBy(e => e.SubStageOrder))
+            {
+                var stageName = entry.Stage.Name ?? string.Empty;
+                var subStageName = entry.SubStage.Name ?? string.Empty;
+                var nameValue = string.IsNullOrWhiteSpace(stageName)
+                    ? subStageName
+                    : $"{subStageName} ({stageName})";
+
+                ws.Cell(currentRow, 1).Value = nameValue;
+
+                ws.Cell(currentRow, 2).Value = entry.SubStage.LaborCost;
+                var materialTotal = CalculateMaterialTotal(entry.SubStage);
+                ws.Cell(currentRow, 3).Value = materialTotal;
+
+                totalLabor += entry.SubStage.LaborCost;
+                totalMaterials += materialTotal;
+
+                currentRow++;
+            }
+
+            ws.Column(2).Style.NumberFormat.Format = "#,##0.00";
+            ws.Column(3).Style.NumberFormat.Format = "#,##0.00";
+            ws.Column(4).Style.NumberFormat.Format = "#,##0.00";
+            ws.Column(2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            ws.Column(3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            ws.Column(4).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+
+            ApplyAlternatingRowStyles(ws, headerRow + 1, currentRow - 1, 1, 3, SubStageRowPrimaryFill, SubStageRowSecondaryFill);
+
+            var totalRow = currentRow;
+            ws.Cell(totalRow, 1).Value = ResourceHelper.GetString("OperationsView_Total", "Total");
+            ws.Cell(totalRow, 1).Style.Font.Bold = true;
+            ws.Cell(totalRow, 2).Value = totalLabor;
+            ws.Cell(totalRow, 3).Value = totalMaterials;
+            ws.Cell(totalRow, 4).Value = totalLabor + totalMaterials;
+
+            var totalRange = ws.Range(totalRow, 1, totalRow, 4);
+            totalRange.Style.Font.Bold = true;
+            totalRange.Style.Fill.BackgroundColor = SubStageHeaderFillColor;
+            totalRange.Style.Font.FontColor = SubStageHeaderFontColor;
+            totalRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+            totalRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            ws.Cell(totalRow, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Left;
+
+            ws.Columns(1, 4).AdjustToContents();
+
+            workbook.SaveAs(sfd.FileName);
+            TryOpenExportedFile(sfd.FileName);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("OperationsView_CompensationExportFailedFormat", "Failed to export compensation:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+
+        return Task.CompletedTask;
     }
 
     private static DateTime? GetBuildingLastActivityDate(Building building)
@@ -1714,26 +1874,43 @@ public partial class OperationsView : UserControl
         try
         {
             var b = await _db.Buildings
+                .Include(b => b.Project)
                 .Include(b => b.Stages)
                     .ThenInclude(s => s.SubStages)
+                        .ThenInclude(ss => ss.MaterialUsages)
+                            .ThenInclude(mu => mu.Material)
+                                .ThenInclude(m => m.PriceHistory)
                 .FirstAsync(b => b.Id == buildingId);
 
             b.Status = WorkStatus.Stopped;
 
-            foreach (var s in b.Stages)
+            var compensationEntries = new List<CompensationEntry>();
+
+            foreach (var s in b.Stages.OrderBy(stage => stage.OrderIndex))
             {
                 if (s.Status != WorkStatus.Finished && s.Status != WorkStatus.Paid)
                     s.Status = WorkStatus.Stopped;
 
-                foreach (var ss in s.SubStages)
+                foreach (var ss in s.SubStages.OrderBy(subStage => subStage.OrderIndex))
                 {
                     if (ss.Status != WorkStatus.Finished && ss.Status != WorkStatus.Paid)
+                    {
+                        compensationEntries.Add(new CompensationEntry
+                        {
+                            Stage = s,
+                            SubStage = ss,
+                            StageOrder = s.OrderIndex,
+                            SubStageOrder = ss.OrderIndex
+                        });
                         ss.Status = WorkStatus.Stopped;
+                    }
                 }
             }
 
             await _db.SaveChangesAsync();
             await tx.CommitAsync();
+
+            await ExportCompensationAsync(b, compensationEntries);
 
             // Refresh UI (keep selection)
             await ReloadBuildingsAsync(buildingId);
