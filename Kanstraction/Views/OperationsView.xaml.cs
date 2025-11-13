@@ -1746,10 +1746,11 @@ public partial class OperationsView : UserControl
 
     private static string ComputeCurrentStageName(Building b)
     {
-        if (b.Stages == null || b.Stages.Count == 0) return "";
+        if (b.Stages == null || b.Stages.Count == 0)
+            return string.Empty;
 
         // "Current" = first stage that is not fully done (i.e., not Finished/Paid/Stopped);
-        // else the last stage name.
+        // when all stages are done we return an empty string so the grid shows nothing.
         foreach (var s in b.Stages.OrderBy(s => s.OrderIndex))
         {
             bool stageDone = s.Status == WorkStatus.Finished || s.Status == WorkStatus.Paid || s.Status == WorkStatus.Stopped;
@@ -1760,9 +1761,11 @@ public partial class OperationsView : UserControl
                 stageDone = s.SubStages.All(ss => ss.Status == WorkStatus.Finished || ss.Status == WorkStatus.Paid || ss.Status == WorkStatus.Stopped);
             }
 
-            if (!stageDone) return s.Name;
+            if (!stageDone)
+                return s.Name;
         }
-        return b.Stages.OrderBy(s => s.OrderIndex).Last().Name;
+
+        return string.Empty;
     }
 
     private async Task SeedStagesForBuildingAsync(int buildingId, int buildingTypeId)
