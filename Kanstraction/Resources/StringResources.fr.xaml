@@ -181,7 +181,7 @@
     <sys:String x:Key="OperationsView_Percent">%</sys:String>
     <sys:String x:Key="OperationsView_CurrentStage">Étape actuelle</sys:String>
     <sys:String x:Key="OperationsView_PaidDate">Payé le</sys:String>
-    <sys:String x:Key="OperationsView_StopBuildingTooltip">Arrêter la construction</sys:String>
+    <sys:String x:Key="OperationsView_StopBuildingTooltip">Compensation</sys:String>
     <sys:String x:Key="OperationsView_AddStageTooltip">Ajouter une étape existante à ce bâtiment</sys:String>
     <sys:String x:Key="OperationsView_Stage">Étape</sys:String>
     <sys:String x:Key="OperationsView_OngoingSubStage">Sous-étape en cours</sys:String>
@@ -230,6 +230,12 @@
     <sys:String x:Key="OperationsView_StopBuildingConfirmMessage">Arrêter ce bâtiment ? Toutes les étapes et sous-étapes non terminées/payées seront marquées Arrêtées.</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingConfirmTitle">Confirmer l'arrêt</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingFailedFormat">Échec de l'arrêt du bâtiment :&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_CompensationTitlePrefix">Compensation lot</sys:String>
+    <sys:String x:Key="OperationsView_CompensationWorksheetName">Compensation</sys:String>
+    <sys:String x:Key="OperationsView_CompensationExportTitle">Exporter la compensation</sys:String>
+    <sys:String x:Key="OperationsView_CompensationExportFilter">Fichiers Excel (*.xlsx)|*.xlsx</sys:String>
+    <sys:String x:Key="OperationsView_CompensationExportFailedFormat">Échec de l'exportation de la compensation :&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_MaterialsCost">Coût des matériaux</sys:String>
     <sys:String x:Key="OperationsView_DeleteBuildingTooltip">Supprimer le bâtiment</sys:String>
     <sys:String x:Key="OperationsView_DeleteBuildingConfirmFormat">Supprimer le bâtiment « {0} » ? Toutes les étapes et sous-étapes seront supprimées.</sys:String>
     <sys:String x:Key="OperationsView_DeleteBuildingTitle">Supprimer le bâtiment</sys:String>

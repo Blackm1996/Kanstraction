@@ -183,7 +183,7 @@
     <sys:String x:Key="OperationsView_Percent">%</sys:String>
     <sys:String x:Key="OperationsView_CurrentStage">Current Stage</sys:String>
     <sys:String x:Key="OperationsView_PaidDate">Paid On</sys:String>
-    <sys:String x:Key="OperationsView_StopBuildingTooltip">Stop building</sys:String>
+    <sys:String x:Key="OperationsView_StopBuildingTooltip">Compensation</sys:String>
     <sys:String x:Key="OperationsView_AddStageTooltip">Add stage from preset to this building</sys:String>
     <sys:String x:Key="OperationsView_Stage">Stage</sys:String>
     <sys:String x:Key="OperationsView_OngoingSubStage">Ongoing Sub-stage</sys:String>
@@ -232,6 +232,12 @@
     <sys:String x:Key="OperationsView_StopBuildingConfirmMessage">Stop this building? All unfinished/unpaid stages and sub-stages will be marked Stopped.</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingConfirmTitle">Confirm stop</sys:String>
     <sys:String x:Key="OperationsView_StopBuildingFailedFormat">Failed to stop building:&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_CompensationTitlePrefix">Compensation lot</sys:String>
+    <sys:String x:Key="OperationsView_CompensationWorksheetName">Compensation</sys:String>
+    <sys:String x:Key="OperationsView_CompensationExportTitle">Export compensation</sys:String>
+    <sys:String x:Key="OperationsView_CompensationExportFilter">Excel files (*.xlsx)|*.xlsx</sys:String>
+    <sys:String x:Key="OperationsView_CompensationExportFailedFormat">Failed to export compensation:&#x0a;{0}</sys:String>
+    <sys:String x:Key="OperationsView_MaterialsCost">Materials cost</sys:String>
     <sys:String x:Key="OperationsView_DeleteBuildingTooltip">Delete building</sys:String>
     <sys:String x:Key="OperationsView_DeleteBuildingConfirmFormat">Delete building '{0}'? All stages and sub-stages will be removed.</sys:String>
     <sys:String x:Key="OperationsView_DeleteBuildingTitle">Delete building</sys:String>
