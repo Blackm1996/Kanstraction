@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Kanstraction.Entities;
+namespace Kanstraction.Domain.Entities;
 
 public class MaterialUsage
 {

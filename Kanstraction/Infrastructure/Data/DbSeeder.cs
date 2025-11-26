@@ -1,10 +1,10 @@
 using System;
 using System.Linq;
 using System.Collections.Generic;
-using Kanstraction.Entities;
+using Kanstraction.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Kanstraction.Data
+namespace Kanstraction.Infrastructure.Data
 {
     /// <summary>
     /// Seeds presets ONLY:

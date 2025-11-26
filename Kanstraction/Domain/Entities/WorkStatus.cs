@@ -1,4 +1,4 @@
-﻿namespace Kanstraction.Entities;
+﻿namespace Kanstraction.Domain.Entities;
 public enum WorkStatus
 {
     NotStarted = 0, // nothing begun

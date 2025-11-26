@@ -1,8 +1,8 @@
 ﻿using Kanstraction;
 using Kanstraction.Converters;
-using Kanstraction.Data;
-using Kanstraction.Entities;
-using Kanstraction.Services;
+using Kanstraction.Infrastructure.Data;
+using Kanstraction.Domain.Entities;
+using Kanstraction.Infrastructure.Services;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;

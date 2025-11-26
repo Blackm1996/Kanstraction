@@ -1,4 +1,4 @@
-﻿namespace Kanstraction.Entities;
+﻿namespace Kanstraction.Domain.Entities;
 public class MaterialPriceHistory
 {
     public int Id { get; set; }

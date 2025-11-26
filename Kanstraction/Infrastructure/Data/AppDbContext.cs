@@ -1,9 +1,9 @@
-using Kanstraction.Entities;
+using Kanstraction.Domain.Entities;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.IO;
 
-namespace Kanstraction.Data;
+namespace Kanstraction.Infrastructure.Data;
 
 public class AppDbContext : DbContext
 {

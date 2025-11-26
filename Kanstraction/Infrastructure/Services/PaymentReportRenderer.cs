@@ -7,7 +7,7 @@ using MigraDoc.DocumentObjectModel;
 using MigraDoc.DocumentObjectModel.Tables;
 using MigraDoc.Rendering;
 
-namespace Kanstraction.Services
+namespace Kanstraction.Infrastructure.Services
 {
     public sealed class PaymentReportRenderer
     {

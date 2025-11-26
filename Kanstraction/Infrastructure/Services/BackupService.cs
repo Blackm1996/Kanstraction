@@ -1,4 +1,4 @@
-using Kanstraction.Data;
+using Kanstraction.Infrastructure.Data;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
@@ -7,9 +7,11 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Kanstraction.Services;
+using Kanstraction.Application.Abstractions;
 
-public class BackupService
+namespace Kanstraction.Infrastructure.Services;
+
+public class BackupService : IBackupService
 {
     private const string StartupPrefix = "startup";
     private const string HourlyPrefix = "hourly";

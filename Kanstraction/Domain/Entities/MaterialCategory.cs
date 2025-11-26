@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Kanstraction.Entities;
+namespace Kanstraction.Domain.Entities;
 
 public class MaterialCategory
 {

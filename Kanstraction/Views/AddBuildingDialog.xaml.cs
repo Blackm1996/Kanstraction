@@ -1,5 +1,5 @@
 using System.Collections.Generic;
-﻿using Kanstraction.Data;
+﻿using Kanstraction.Infrastructure.Data;
 using System.Windows;
 using Microsoft.EntityFrameworkCore;
 

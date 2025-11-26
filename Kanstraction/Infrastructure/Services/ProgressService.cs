@@ -1,8 +1,8 @@
-﻿using Kanstraction.Data;
-using Kanstraction.Entities;
+﻿using Kanstraction.Infrastructure.Data;
+using Kanstraction.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
-namespace Kanstraction.Services;
+namespace Kanstraction.Infrastructure.Services;
 
 public static class ProgressService
 {
