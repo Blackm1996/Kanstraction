@@ -19,7 +19,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Kanstraction;
 
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     private const string DefaultMaterialCategoryName = "Defaut";
 
