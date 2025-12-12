@@ -111,7 +111,8 @@ public partial class App : System.Windows.Application
 
     private StartupInitializer BuildStartupInitializer()
     {
-        return new StartupInitializer(() => new AppDbContext(), new BackupService());
+        var migrator = new DatabaseMigrator(() => new AppDbContext());
+        return new StartupInitializer(migrator, new BackupService());
     }
 
     private static async Task<MaterialCategory> EnsureDefaultMaterialCategoryAsync(AppDbContext db)
