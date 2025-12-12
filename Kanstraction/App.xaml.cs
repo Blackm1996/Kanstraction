@@ -10,6 +10,8 @@ using System.Windows;
 using Kanstraction.Application.Abstractions;
 using Kanstraction.Application.Startup;
 using Kanstraction.Behaviors;
+using Kanstraction.Application.Localization;
+using Kanstraction.Localization;
 using Kanstraction.Domain.Entities;
 using Kanstraction.Infrastructure.Data;
 using Kanstraction.Infrastructure.Services;
@@ -29,6 +31,7 @@ public partial class App : System.Windows.Application
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        StringLocalizer.Configure(new ResourceDictionaryStringLocalizer());
         TextBoxEditHighlighter.Register();
 
         var culture = new CultureInfo("fr-FR");

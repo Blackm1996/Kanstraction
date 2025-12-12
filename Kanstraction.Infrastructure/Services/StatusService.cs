@@ -1,6 +1,6 @@
-﻿using Kanstraction.Infrastructure.Data;
+using Kanstraction.Infrastructure.Data;
 using Kanstraction.Domain.Entities;
-using Kanstraction;
+using Kanstraction.Application.Localization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kanstraction.Infrastructure.Services;
@@ -14,9 +14,9 @@ public static class StatusService
         {
             // must have labor set (define your rule: > 0 or >= 0?)
             if (ss.LaborCost <= 0 && newStatus != WorkStatus.Stopped)
-                throw new InvalidOperationException(ResourceHelper.GetString("StatusService_SetLaborFirst", "Set labor cost before marking as Finished/Paid."));
+                throw new InvalidOperationException(StringLocalizer.GetString("StatusService_SetLaborFirst", "Set labor cost before marking as Finished/Paid."));
             if (newStatus == WorkStatus.Paid && ss.Status != WorkStatus.Finished)
-                throw new InvalidOperationException(ResourceHelper.GetString("StatusService_SubStageMustBeFinished", "Sub-stage must be Finished before Paid."));
+                throw new InvalidOperationException(StringLocalizer.GetString("StatusService_SubStageMustBeFinished", "Sub-stage must be Finished before Paid."));
         }
         ss.Status = newStatus;
     }
@@ -28,13 +28,13 @@ public static class StatusService
         {
             var subs = s.SubStages;
             if (subs.Count == 0)
-                throw new InvalidOperationException(ResourceHelper.GetString("StatusService_NoSubStages", "Stage has no sub-stages; cannot mark as Finished."));
+                throw new InvalidOperationException(StringLocalizer.GetString("StatusService_NoSubStages", "Stage has no sub-stages; cannot mark as Finished."));
 
             var allDone = subs.All(x => x.Status == WorkStatus.Finished || x.Status == WorkStatus.Paid);
             if (!allDone)
-                throw new InvalidOperationException(ResourceHelper.GetString("StatusService_AllSubStagesMustBeDone", "All sub-stages must be Finished/Paid."));
+                throw new InvalidOperationException(StringLocalizer.GetString("StatusService_AllSubStagesMustBeDone", "All sub-stages must be Finished/Paid."));
             if (newStatus == WorkStatus.Paid && s.Status != WorkStatus.Finished)
-                throw new InvalidOperationException(ResourceHelper.GetString("StatusService_StageMustBeFinished", "Stage must be Finished before Paid."));
+                throw new InvalidOperationException(StringLocalizer.GetString("StatusService_StageMustBeFinished", "Stage must be Finished before Paid."));
         }
         s.Status = newStatus;
     }
