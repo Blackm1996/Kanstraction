@@ -302,6 +302,8 @@
     <sys:String x:Key="ProgressReport_ExportFailedFormat">Échec de l'export du rapport d'avancement :&#x0a;{0}</sys:String>
     <sys:String x:Key="RemainingCostReport_NoBuildingsMessage">Il n'y a aucun bâtiment à exporter.</sys:String>
     <sys:String x:Key="RemainingCostReport_NoBuildingsTitle">Aucun bâtiment</sys:String>
+    <sys:String x:Key="RemainingCostReport_NoBuildingTypesMessage">Ce projet n'a aucun bâtiment avec un type associé. Rien à exporter.</sys:String>
+    <sys:String x:Key="RemainingCostReport_NoBuildingTypesTitle">Aucun type de bâtiment</sys:String>
     <sys:String x:Key="RemainingCostReport_SaveDialogTitleLabor">Exporter le rapport des coûts restants de main d'oeuvre</sys:String>
     <sys:String x:Key="RemainingCostReport_SaveDialogTitleMaterial">Exporter le rapport des coûts restants des matériaux</sys:String>
     <sys:String x:Key="RemainingCostReport_SaveDialogFilter">Fichiers Excel (*.xlsx)|*.xlsx</sys:String>

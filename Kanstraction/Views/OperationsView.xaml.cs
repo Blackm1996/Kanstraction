@@ -2881,8 +2881,55 @@ public partial class OperationsView : UserControl
             return;
         }
 
+        var buildingTypeIds = await _db.Buildings
+            .Where(b => b.ProjectId == _currentProject.Id && b.BuildingTypeId != null)
+            .Select(b => b.BuildingTypeId!.Value)
+            .Distinct()
+            .ToListAsync();
+
+        if (buildingTypeIds.Count == 0)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("RemainingCostReport_NoBuildingTypesMessage", "This project has no buildings with a building type. Nothing to export."),
+                ResourceHelper.GetString("RemainingCostReport_NoBuildingTypesTitle", "No building types"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var buildingTypes = await _db.BuildingTypes
+            .Where(bt => buildingTypeIds.Contains(bt.Id))
+            .Select(bt => new { bt.Id, bt.Name })
+            .OrderBy(bt => bt.Name)
+            .ToListAsync();
+
+        var stageAssignments = await _db.BuildingTypeStagePresets
+            .Where(x => buildingTypeIds.Contains(x.BuildingTypeId))
+            .Select(x => new
+            {
+                x.BuildingTypeId,
+                x.OrderIndex,
+                StageName = x.StagePreset.Name
+            })
+            .ToListAsync();
+
+        var stageLabel = ResourceHelper.GetString("OperationsView_StageLabel", "Stage");
+        var columnsByType = stageAssignments
+            .GroupBy(x => x.BuildingTypeId)
+            .ToDictionary(
+                g => g.Key,
+                g => g.OrderBy(x => x.OrderIndex)
+                      .Select(x => new RemainingStageColumn
+                      {
+                          Name = string.IsNullOrWhiteSpace(x.StageName)
+                              ? $"{stageLabel} {x.OrderIndex}"
+                              : x.StageName,
+                          OrderIndex = x.OrderIndex
+                      })
+                      .ToList());
+
         var buildings = await _db.Buildings
-            .Where(b => b.ProjectId == _currentProject.Id)
+            .Where(b => b.ProjectId == _currentProject.Id && b.BuildingTypeId != null)
             .Include(b => b.Stages)
                 .ThenInclude(s => s.SubStages)
                     .ThenInclude(ss => ss.MaterialUsages)
@@ -2901,32 +2948,6 @@ public partial class OperationsView : UserControl
                 MessageBoxImage.Information);
             return;
         }
-
-        var stageLabel = ResourceHelper.GetString("OperationsView_StageLabel", "Stage");
-        var stageColumns = buildings
-            .SelectMany(b => b.Stages ?? Array.Empty<Stage>())
-            .GroupBy(s => new { s.OrderIndex, Name = (s.Name ?? string.Empty).Trim() })
-            .Select(g =>
-            {
-                var name = string.IsNullOrWhiteSpace(g.Key.Name)
-                    ? $"{stageLabel} {g.Key.OrderIndex}"
-                    : g.Key.Name;
-                return new RemainingStageColumn
-                {
-                    Name = name,
-                    OrderIndex = g.Key.OrderIndex
-                };
-            })
-            .OrderBy(c => c.OrderIndex)
-            .ThenBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
-
-        var report = new RemainingCostReportData
-        {
-            ProjectName = _currentProject.Name,
-            Columns = stageColumns,
-            Buildings = buildings
-        };
 
         var reportTitleKey = reportType == RemainingCostReportType.Labor
             ? "RemainingCostReport_TitleLaborSuffix"
@@ -2961,13 +2982,38 @@ public partial class OperationsView : UserControl
         try
         {
             using var workbook = new XLWorkbook();
-            var worksheetName = reportType == RemainingCostReportType.Labor ? "Main d'oeuvre" : "Materiaux";
-            var ws = workbook.AddWorksheet(worksheetName);
-
             var buildingHeader = ResourceHelper.GetString("ProgressReport_BuildingCodeHeader", "Lot");
             var totalHeader = ResourceHelper.GetString("RemainingCostReport_TotalHeader", "Total restant");
+            var existingNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            WriteRemainingCostWorksheet(ws, report, buildingHeader, totalHeader, reportTitle, reportType);
+            foreach (var type in buildingTypes)
+            {
+                var typeBuildings = buildings
+                    .Where(b => b.BuildingTypeId == type.Id)
+                    .OrderBy(b => b.Code, StringComparer.CurrentCultureIgnoreCase)
+                    .ToList();
+
+                if (typeBuildings.Count == 0)
+                {
+                    continue;
+                }
+
+                if (!columnsByType.TryGetValue(type.Id, out var stageColumns))
+                {
+                    stageColumns = new List<RemainingStageColumn>();
+                }
+
+                var report = new RemainingCostReportData
+                {
+                    ProjectName = _currentProject.Name,
+                    Columns = stageColumns,
+                    Buildings = typeBuildings
+                };
+
+                var sheetName = SanitizeWorksheetName(type.Name, existingNames);
+                var ws = workbook.Worksheets.Add(sheetName);
+                WriteRemainingCostWorksheet(ws, report, buildingHeader, totalHeader, reportTitle, reportType);
+            }
 
             workbook.SaveAs(sfd.FileName);
             TryOpenExportedFile(sfd.FileName);
