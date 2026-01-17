@@ -3511,6 +3511,17 @@ public partial class OperationsView : UserControl
         await GenerateProgressReportAsync(dialog.StartDate, dialog.EndDate);
     }
 
+    private void ReportsMenuButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button button || button.ContextMenu == null)
+        {
+            return;
+        }
+
+        button.ContextMenu.PlacementTarget = button;
+        button.ContextMenu.IsOpen = true;
+    }
+
     private async void GenerateRemainingLaborReport_Click(object sender, RoutedEventArgs e)
     {
         if (_db == null || _currentProject == null)

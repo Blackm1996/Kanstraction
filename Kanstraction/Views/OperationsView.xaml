@@ -43,55 +43,31 @@
         BorderBrush="{DynamicResource MaterialDesignDivider}"
         BorderThickness="0,0,0,1">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                <Button Click="GenerateProgressReport_Click"
-                        Margin="0,0,8,0"
+                <Button x:Name="ReportsMenuButton"
+                        Click="ReportsMenuButton_Click"
                         Padding="10,6"
-                        ToolTip="{DynamicResource OperationsView_GenerateProgressReportTooltip}"
+                        ToolTip="{DynamicResource OperationsView_ReportsTooltip}"
                         Background="#2e7d32"
                         Foreground="White"
                         Style="{StaticResource MaterialDesignRaisedButton}">
                     <StackPanel Orientation="Horizontal">
                         <iconPacks:PackIconFontAwesome Kind="FileExcelSolid" Width="14" Height="14" Margin="0,0,6,0"/>
-                        <TextBlock Text="{DynamicResource OperationsView_GenerateProgressReport}"/>
+                        <TextBlock Text="{DynamicResource OperationsView_Reports}"/>
+                        <iconPacks:PackIconFontAwesome Kind="ChevronDownSolid" Width="12" Height="12" Margin="6,0,0,0"/>
                     </StackPanel>
-                </Button>
-
-                <Button Click="ResolvePayment_Click"
-                        Padding="10,6"
-                        ToolTip="{DynamicResource OperationsView_ResolvePaymentTooltip}"
-                        Background="#3f51b5"
-                        Foreground="White"
-                        Style="{StaticResource MaterialDesignRaisedButton}">
-                    <StackPanel Orientation="Horizontal">
-                        <iconPacks:PackIconFontAwesome Kind="FileInvoiceDollarSolid" Width="14" Height="14" Margin="0,0,6,0"/>
-                        <TextBlock Text="{DynamicResource OperationsView_ResolvePayment}"/>
-                    </StackPanel>
-                </Button>
-
-                <Button Click="GenerateRemainingLaborReport_Click"
-                        Margin="8,0,0,0"
-                        Padding="10,6"
-                        ToolTip="{DynamicResource OperationsView_GenerateRemainingLaborReportTooltip}"
-                        Background="#6a1b9a"
-                        Foreground="White"
-                        Style="{StaticResource MaterialDesignRaisedButton}">
-                    <StackPanel Orientation="Horizontal">
-                        <iconPacks:PackIconFontAwesome Kind="FileExcelSolid" Width="14" Height="14" Margin="0,0,6,0"/>
-                        <TextBlock Text="{DynamicResource OperationsView_GenerateRemainingLaborReport}"/>
-                    </StackPanel>
-                </Button>
-
-                <Button Click="GenerateRemainingMaterialReport_Click"
-                        Margin="8,0,0,0"
-                        Padding="10,6"
-                        ToolTip="{DynamicResource OperationsView_GenerateRemainingMaterialReportTooltip}"
-                        Background="#00897b"
-                        Foreground="White"
-                        Style="{StaticResource MaterialDesignRaisedButton}">
-                    <StackPanel Orientation="Horizontal">
-                        <iconPacks:PackIconFontAwesome Kind="FileExcelSolid" Width="14" Height="14" Margin="0,0,6,0"/>
-                        <TextBlock Text="{DynamicResource OperationsView_GenerateRemainingMaterialReport}"/>
-                    </StackPanel>
+                    <Button.ContextMenu>
+                        <ContextMenu>
+                            <MenuItem Header="{DynamicResource OperationsView_GenerateProgressReport}"
+                                      Click="GenerateProgressReport_Click"/>
+                            <MenuItem Header="{DynamicResource OperationsView_GenerateRemainingLaborReport}"
+                                      Click="GenerateRemainingLaborReport_Click"/>
+                            <MenuItem Header="{DynamicResource OperationsView_GenerateRemainingMaterialReport}"
+                                      Click="GenerateRemainingMaterialReport_Click"/>
+                            <Separator/>
+                            <MenuItem Header="{DynamicResource OperationsView_ResolvePayment}"
+                                      Click="ResolvePayment_Click"/>
+                        </ContextMenu>
+                    </Button.ContextMenu>
                 </Button>
             </StackPanel>
         </Border>

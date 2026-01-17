@@ -275,6 +275,8 @@
     <sys:String x:Key="OperationsView_NoCompletedSubStages">No completed sub-stages to resolve.</sys:String>
     <sys:String x:Key="OperationsView_NothingToDoTitle">Nothing to do</sys:String>
     <sys:String x:Key="OperationsView_SavePaymentReportTitle">Save payment resolution report</sys:String>
+    <sys:String x:Key="OperationsView_Reports">Reports</sys:String>
+    <sys:String x:Key="OperationsView_ReportsTooltip">Open report options.</sys:String>
     <sys:String x:Key="OperationsView_GenerateProgressReport">Progress report</sys:String>
     <sys:String x:Key="OperationsView_GenerateProgressReportTooltip">Generate the work progress report.</sys:String>
     <sys:String x:Key="OperationsView_GenerateRemainingLaborReport">Remaining labor report</sys:String>
