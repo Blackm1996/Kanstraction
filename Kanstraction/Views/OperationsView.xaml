@@ -67,6 +67,32 @@
                         <TextBlock Text="{DynamicResource OperationsView_ResolvePayment}"/>
                     </StackPanel>
                 </Button>
+
+                <Button Click="GenerateRemainingLaborReport_Click"
+                        Margin="8,0,0,0"
+                        Padding="10,6"
+                        ToolTip="{DynamicResource OperationsView_GenerateRemainingLaborReportTooltip}"
+                        Background="#6a1b9a"
+                        Foreground="White"
+                        Style="{StaticResource MaterialDesignRaisedButton}">
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconFontAwesome Kind="FileExcelSolid" Width="14" Height="14" Margin="0,0,6,0"/>
+                        <TextBlock Text="{DynamicResource OperationsView_GenerateRemainingLaborReport}"/>
+                    </StackPanel>
+                </Button>
+
+                <Button Click="GenerateRemainingMaterialReport_Click"
+                        Margin="8,0,0,0"
+                        Padding="10,6"
+                        ToolTip="{DynamicResource OperationsView_GenerateRemainingMaterialReportTooltip}"
+                        Background="#00897b"
+                        Foreground="White"
+                        Style="{StaticResource MaterialDesignRaisedButton}">
+                    <StackPanel Orientation="Horizontal">
+                        <iconPacks:PackIconFontAwesome Kind="FileExcelSolid" Width="14" Height="14" Margin="0,0,6,0"/>
+                        <TextBlock Text="{DynamicResource OperationsView_GenerateRemainingMaterialReport}"/>
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </Border>
 

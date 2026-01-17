@@ -109,6 +109,25 @@ public partial class OperationsView : UserControl
         public List<Building> Buildings { get; init; } = new();
     }
 
+    private sealed class RemainingStageColumn
+    {
+        public string Name { get; init; } = string.Empty;
+        public int OrderIndex { get; init; }
+    }
+
+    private sealed class RemainingCostReportData
+    {
+        public string ProjectName { get; init; } = string.Empty;
+        public List<RemainingStageColumn> Columns { get; init; } = new();
+        public List<Building> Buildings { get; init; } = new();
+    }
+
+    private enum RemainingCostReportType
+    {
+        Labor,
+        Material
+    }
+
     private sealed class CompensationEntry
     {
         public Stage Stage { get; init; } = null!;
@@ -621,6 +640,158 @@ public partial class OperationsView : UserControl
         var borderedRange = ws.Range(1, 1, lastRow, totalColumns);
         borderedRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
         borderedRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+    }
+
+    private static void WriteRemainingCostWorksheet(
+        IXLWorksheet ws,
+        RemainingCostReportData report,
+        string buildingHeader,
+        string totalHeader,
+        string reportTitle,
+        RemainingCostReportType reportType)
+    {
+        int totalColumns = Math.Max(4, report.Columns.Count + 2);
+
+        if (!string.IsNullOrWhiteSpace(reportTitle))
+        {
+            int titleStartColumn = Math.Min(3, totalColumns);
+            int titleEndColumn = Math.Min(4, totalColumns);
+            if (titleStartColumn <= titleEndColumn)
+            {
+                var titleRange = ws.Range(1, titleStartColumn, 1, titleEndColumn);
+                titleRange.Merge();
+                titleRange.Value = reportTitle;
+                titleRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                titleRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+                titleRange.Style.Font.Bold = true;
+            }
+        }
+
+        ws.Row(1).Height = 22;
+
+        ws.Cell(2, 1).Value = buildingHeader;
+        for (int i = 0; i < report.Columns.Count; i++)
+        {
+            ws.Cell(2, i + 2).Value = report.Columns[i].Name;
+        }
+        ws.Cell(2, totalColumns).Value = totalHeader;
+
+        var headerRange = ws.Range(2, 1, 2, totalColumns);
+        headerRange.Style.Font.Bold = true;
+        headerRange.Style.Font.FontColor = ProgressHeaderFontColor;
+        headerRange.Style.Fill.BackgroundColor = ProgressHeaderFillColor;
+        headerRange.Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+        headerRange.Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        headerRange.Style.Alignment.WrapText = true;
+        ws.Row(2).Height = 26;
+        ws.SheetView.FreezeRows(2);
+
+        int row = 3;
+        foreach (var building in report.Buildings)
+        {
+            ws.Cell(row, 1).Value = building.Code;
+            decimal buildingTotal = 0m;
+
+            for (int colIndex = 0; colIndex < report.Columns.Count; colIndex++)
+            {
+                var column = report.Columns[colIndex];
+                var stage = FindStageForRemainingReport(building, column);
+                var remaining = ComputeRemainingCost(stage, reportType);
+                ws.Cell(row, colIndex + 2).Value = remaining;
+                buildingTotal += remaining;
+            }
+
+            ws.Cell(row, totalColumns).Value = buildingTotal;
+            row++;
+        }
+
+        if (row > 3)
+        {
+            ApplyAlternatingRowStyles(ws, 3, row - 1, 1, totalColumns, ProgressRowPrimaryFill, ProgressRowSecondaryFill);
+            ws.Rows(3, row - 1).Height = 22;
+        }
+
+        ws.Column(1).Width = Math.Max(ws.Column(1).Width, 18);
+        ws.Column(1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        for (int col = 2; col <= totalColumns; col++)
+        {
+            ws.Column(col).Width = Math.Max(ws.Column(col).Width, 24);
+            ws.Column(col).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            ws.Column(col).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
+        }
+
+        for (int col = 2; col <= totalColumns; col++)
+        {
+            ws.Column(col).Style.NumberFormat.Format = "#,##0.00";
+        }
+
+        int lastRow = Math.Max(2, row - 1);
+        var borderedRange = ws.Range(1, 1, lastRow, totalColumns);
+        borderedRange.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
+        borderedRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
+    }
+
+    private static Stage? FindStageForRemainingReport(Building building, RemainingStageColumn column)
+    {
+        if (building.Stages == null)
+        {
+            return null;
+        }
+
+        if (!string.IsNullOrWhiteSpace(column.Name))
+        {
+            return building.Stages.FirstOrDefault(s =>
+                string.Equals(s.Name, column.Name, StringComparison.OrdinalIgnoreCase));
+        }
+
+        return building.Stages.FirstOrDefault(s => s.OrderIndex == column.OrderIndex);
+    }
+
+    private static decimal ComputeRemainingCost(Stage? stage, RemainingCostReportType reportType)
+    {
+        if (stage == null)
+        {
+            return 0m;
+        }
+
+        if (stage.Status == WorkStatus.Paid || stage.Status == WorkStatus.Stopped)
+        {
+            return 0m;
+        }
+
+        decimal total = 0m;
+        if (stage.SubStages == null)
+        {
+            return total;
+        }
+
+        foreach (var subStage in stage.SubStages)
+        {
+            if (subStage.Status == WorkStatus.Paid || subStage.Status == WorkStatus.Stopped)
+            {
+                continue;
+            }
+
+            if (reportType == RemainingCostReportType.Labor)
+            {
+                total += subStage.LaborCost;
+                continue;
+            }
+
+            if (subStage.MaterialUsages == null)
+            {
+                continue;
+            }
+
+            bool freezePrices = subStage.Status == WorkStatus.Finished || subStage.Status == WorkStatus.Paid;
+            foreach (var usage in subStage.MaterialUsages)
+            {
+                var unitPrice = ComputeUnitPriceForUsage(usage, freezePrices);
+                total += usage.Qty * unitPrice;
+            }
+        }
+
+        return total;
     }
 
     public OperationsView()
@@ -2703,6 +2874,113 @@ public partial class OperationsView : UserControl
         }
     }
 
+    private async Task GenerateRemainingCostReportAsync(RemainingCostReportType reportType)
+    {
+        if (_db == null || _currentProject == null)
+        {
+            return;
+        }
+
+        var buildings = await _db.Buildings
+            .Where(b => b.ProjectId == _currentProject.Id)
+            .Include(b => b.Stages)
+                .ThenInclude(s => s.SubStages)
+                    .ThenInclude(ss => ss.MaterialUsages)
+                        .ThenInclude(mu => mu.Material)
+                            .ThenInclude(m => m.PriceHistory)
+            .AsNoTracking()
+            .OrderBy(b => b.Code)
+            .ToListAsync();
+
+        if (buildings.Count == 0)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("RemainingCostReport_NoBuildingsMessage", "There are no buildings to export."),
+                ResourceHelper.GetString("RemainingCostReport_NoBuildingsTitle", "No buildings"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var stageLabel = ResourceHelper.GetString("OperationsView_StageLabel", "Stage");
+        var stageColumns = buildings
+            .SelectMany(b => b.Stages ?? Array.Empty<Stage>())
+            .GroupBy(s => new { s.OrderIndex, Name = (s.Name ?? string.Empty).Trim() })
+            .Select(g =>
+            {
+                var name = string.IsNullOrWhiteSpace(g.Key.Name)
+                    ? $"{stageLabel} {g.Key.OrderIndex}"
+                    : g.Key.Name;
+                return new RemainingStageColumn
+                {
+                    Name = name,
+                    OrderIndex = g.Key.OrderIndex
+                };
+            })
+            .OrderBy(c => c.OrderIndex)
+            .ThenBy(c => c.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+
+        var report = new RemainingCostReportData
+        {
+            ProjectName = _currentProject.Name,
+            Columns = stageColumns,
+            Buildings = buildings
+        };
+
+        var reportTitleFormatKey = reportType == RemainingCostReportType.Labor
+            ? "RemainingCostReport_TitleLaborFormat"
+            : "RemainingCostReport_TitleMaterialFormat";
+        var reportTitleFormat = ResourceHelper.GetString(
+            reportTitleFormatKey,
+            reportType == RemainingCostReportType.Labor
+                ? "RAPPORT AVANCEMENT DE TRAVAUX {0} - Main D'OEUVRE"
+                : "RAPPORT AVANCEMENT DE TRAVAUX {0} - Materiaux");
+        var reportTitle = string.Format(reportTitleFormat, _currentProject.Name ?? string.Empty);
+
+        var dialogTitle = reportType == RemainingCostReportType.Labor
+            ? ResourceHelper.GetString("RemainingCostReport_SaveDialogTitleLabor", "Export remaining labor costs report")
+            : ResourceHelper.GetString("RemainingCostReport_SaveDialogTitleMaterial", "Export remaining material costs report");
+        var dialogFilter = ResourceHelper.GetString("RemainingCostReport_SaveDialogFilter", "Excel files (*.xlsx)|*.xlsx");
+        var fileNameBase = SanitizeFileName(reportTitle, "Rapport");
+
+        var sfd = new SaveFileDialog
+        {
+            Title = dialogTitle,
+            Filter = dialogFilter,
+            FileName = $"{fileNameBase}.xlsx"
+        };
+
+        var owner = Window.GetWindow(this);
+        if (sfd.ShowDialog(owner) != true)
+        {
+            return;
+        }
+
+        try
+        {
+            using var workbook = new XLWorkbook();
+            var worksheetName = reportType == RemainingCostReportType.Labor ? "Main d'oeuvre" : "Materiaux";
+            var ws = workbook.AddWorksheet(worksheetName);
+
+            var buildingHeader = ResourceHelper.GetString("ProgressReport_BuildingCodeHeader", "Lot");
+            var totalHeader = ResourceHelper.GetString("RemainingCostReport_TotalHeader", "Total restant");
+
+            WriteRemainingCostWorksheet(ws, report, buildingHeader, totalHeader, reportTitle, reportType);
+
+            workbook.SaveAs(sfd.FileName);
+            TryOpenExportedFile(sfd.FileName);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show(
+                string.Format(ResourceHelper.GetString("RemainingCostReport_ExportFailedFormat", "Failed to export the remaining costs report:\n{0}"), ex.Message),
+                ResourceHelper.GetString("Common_ErrorTitle", "Error"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
+    }
+
     private async void ExportSubStages_Click(object sender, RoutedEventArgs e)
     {
         if (_db == null)
@@ -3231,6 +3509,36 @@ public partial class OperationsView : UserControl
         }
 
         await GenerateProgressReportAsync(dialog.StartDate, dialog.EndDate);
+    }
+
+    private async void GenerateRemainingLaborReport_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null || _currentProject == null)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_SelectProjectFirst", "Select a project first."),
+                ResourceHelper.GetString("OperationsView_NoProjectTitle", "No project"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        await GenerateRemainingCostReportAsync(RemainingCostReportType.Labor);
+    }
+
+    private async void GenerateRemainingMaterialReport_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null || _currentProject == null)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("OperationsView_SelectProjectFirst", "Select a project first."),
+                ResourceHelper.GetString("OperationsView_NoProjectTitle", "No project"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        await GenerateRemainingCostReportAsync(RemainingCostReportType.Material);
     }
 
     private async void ResolvePayment_Click(object sender, RoutedEventArgs e)
