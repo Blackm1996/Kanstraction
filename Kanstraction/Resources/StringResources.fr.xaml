@@ -305,8 +305,8 @@
     <sys:String x:Key="RemainingCostReport_SaveDialogTitleLabor">Exporter le rapport des coûts restants de main d'oeuvre</sys:String>
     <sys:String x:Key="RemainingCostReport_SaveDialogTitleMaterial">Exporter le rapport des coûts restants des matériaux</sys:String>
     <sys:String x:Key="RemainingCostReport_SaveDialogFilter">Fichiers Excel (*.xlsx)|*.xlsx</sys:String>
-    <sys:String x:Key="RemainingCostReport_TitleLaborFormat">RAPPORT AVANCEMENT DE TRAVAUX {0} - Main D'OEUVRE</sys:String>
-    <sys:String x:Key="RemainingCostReport_TitleMaterialFormat">RAPPORT AVANCEMENT DE TRAVAUX {0} - Matériaux</sys:String>
+    <sys:String x:Key="RemainingCostReport_TitleLaborSuffix">Main d'oeuvre</sys:String>
+    <sys:String x:Key="RemainingCostReport_TitleMaterialSuffix">Matériaux</sys:String>
     <sys:String x:Key="RemainingCostReport_TotalHeader">Total restant</sys:String>
     <sys:String x:Key="RemainingCostReport_ExportFailedFormat">Échec de l'export du rapport des coûts restants :&#x0a;{0}</sys:String>
     <sys:String x:Key="OperationsView_GeneratePdfFailedFormat">Échec de génération du PDF :&#x0a;{0}</sys:String>

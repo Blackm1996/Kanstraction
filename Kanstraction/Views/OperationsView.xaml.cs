@@ -2928,15 +2928,16 @@ public partial class OperationsView : UserControl
             Buildings = buildings
         };
 
-        var reportTitleFormatKey = reportType == RemainingCostReportType.Labor
-            ? "RemainingCostReport_TitleLaborFormat"
-            : "RemainingCostReport_TitleMaterialFormat";
-        var reportTitleFormat = ResourceHelper.GetString(
-            reportTitleFormatKey,
-            reportType == RemainingCostReportType.Labor
-                ? "RAPPORT AVANCEMENT DE TRAVAUX {0} - Main D'OEUVRE"
-                : "RAPPORT AVANCEMENT DE TRAVAUX {0} - Materiaux");
-        var reportTitle = string.Format(reportTitleFormat, _currentProject.Name ?? string.Empty);
+        var reportTitleKey = reportType == RemainingCostReportType.Labor
+            ? "RemainingCostReport_TitleLaborSuffix"
+            : "RemainingCostReport_TitleMaterialSuffix";
+        var reportTitleSuffix = ResourceHelper.GetString(
+            reportTitleKey,
+            reportType == RemainingCostReportType.Labor ? "Main d'oeuvre" : "Matériaux");
+        var projectName = _currentProject.Name ?? string.Empty;
+        var reportTitle = string.IsNullOrWhiteSpace(projectName)
+            ? reportTitleSuffix
+            : $"{projectName} - {reportTitleSuffix}";
 
         var dialogTitle = reportType == RemainingCostReportType.Labor
             ? ResourceHelper.GetString("RemainingCostReport_SaveDialogTitleLabor", "Export remaining labor costs report")
