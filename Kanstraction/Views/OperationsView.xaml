@@ -13,6 +13,7 @@
         <conv:WorkStatusToStringConverter x:Key="StatusToString" />
         <conv:TotalCostConverter x:Key="TotalCostConverter"/>
         <conv:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <conv:PaidDateConverter x:Key="PaidDateConverter"/>
     </UserControl.Resources>
 
     <!-- MAIN: breadcrumb + three columns + bottom materials (each grid scrolls independently) -->
@@ -524,6 +525,9 @@
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
                     </DataGridTemplateColumn>
+                    <DataGridTextColumn IsReadOnly="True"
+                                        Header="{DynamicResource OperationsView_PaidDate}"
+                                        Binding="{Binding ., Converter={StaticResource PaidDateConverter}, StringFormat={}{0:dd/MM/yyyy}}"/>
                     <DataGridTextColumn Header="{DynamicResource OperationsView_Labor}"  IsReadOnly="False"
                       Binding="{Binding LaborCost, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"/>
 
