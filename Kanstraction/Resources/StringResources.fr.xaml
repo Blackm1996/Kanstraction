@@ -196,12 +196,13 @@
     <sys:String x:Key="OperationsView_Stages">Étapes</sys:String>
     <sys:String x:Key="OperationsView_SubStages">Sous-étapes</sys:String>
     <sys:String x:Key="OperationsView_SubStageLabel">Sous-étape</sys:String>
-    <sys:String x:Key="OperationsView_ExportSubStagesTooltip">Exporter les sous-étapes vers Excel</sys:String>
+    <sys:String x:Key="OperationsView_ExportSubStagesTooltip">Exporter les sous-étapes ou matériaux vers Excel</sys:String>
     <sys:String x:Key="OperationsView_ExportSubStagesTitle">Exporter les sous-étapes</sys:String>
     <sys:String x:Key="OperationsView_ExportSubStagesFilter">Fichiers Excel (*.xlsx)|*.xlsx</sys:String>
     <sys:String x:Key="OperationsView_ExportMaterialsTooltip">Exporter les matériaux vers Excel</sys:String>
     <sys:String x:Key="OperationsView_ExportMaterialsTitle">Exporter les matériaux</sys:String>
     <sys:String x:Key="OperationsView_ExportMaterialsFilter">Fichiers Excel (*.xlsx)|*.xlsx</sys:String>
+    <sys:String x:Key="OperationsView_ExportStageMaterialsTitle">Exporter les matériaux de l'étape</sys:String>
     <sys:String x:Key="OperationsView_ProjectLabel">Projet</sys:String>
     <sys:String x:Key="OperationsView_LotLabel">Lot</sys:String>
     <sys:String x:Key="OperationsView_StageLabel">Étape</sys:String>

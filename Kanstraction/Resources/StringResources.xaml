@@ -198,12 +198,13 @@
     <sys:String x:Key="OperationsView_Stages">Stages</sys:String>
     <sys:String x:Key="OperationsView_SubStages">Sub-stages</sys:String>
     <sys:String x:Key="OperationsView_SubStageLabel">Sub-stage</sys:String>
-    <sys:String x:Key="OperationsView_ExportSubStagesTooltip">Export sub-stages to Excel</sys:String>
+    <sys:String x:Key="OperationsView_ExportSubStagesTooltip">Export sub-stages or materials to Excel</sys:String>
     <sys:String x:Key="OperationsView_ExportSubStagesTitle">Export sub-stages</sys:String>
     <sys:String x:Key="OperationsView_ExportSubStagesFilter">Excel files (*.xlsx)|*.xlsx</sys:String>
     <sys:String x:Key="OperationsView_ExportMaterialsTooltip">Export materials to Excel</sys:String>
     <sys:String x:Key="OperationsView_ExportMaterialsTitle">Export materials</sys:String>
     <sys:String x:Key="OperationsView_ExportMaterialsFilter">Excel files (*.xlsx)|*.xlsx</sys:String>
+    <sys:String x:Key="OperationsView_ExportStageMaterialsTitle">Export stage materials</sys:String>
     <sys:String x:Key="OperationsView_ProjectLabel">Project</sys:String>
     <sys:String x:Key="OperationsView_LotLabel">Lot</sys:String>
     <sys:String x:Key="OperationsView_StageLabel">Stage</sys:String>
