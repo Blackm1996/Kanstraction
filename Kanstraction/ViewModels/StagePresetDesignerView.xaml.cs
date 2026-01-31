@@ -1,6 +1,6 @@
 ﻿using Kanstraction;
-using Kanstraction.Data;
-using Kanstraction.Entities;
+using Kanstraction.Infrastructure.Data;
+using Kanstraction.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;

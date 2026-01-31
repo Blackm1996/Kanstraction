@@ -7,25 +7,31 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using Kanstraction.Application.Abstractions;
+using Kanstraction.Application.Startup;
 using Kanstraction.Behaviors;
-using Kanstraction.Data;
-using Kanstraction.Entities;
-using Kanstraction.Services;
+using Kanstraction.Application.Localization;
+using Kanstraction.Localization;
+using Kanstraction.Domain.Entities;
+using Kanstraction.Infrastructure.Data;
+using Kanstraction.Infrastructure.Services;
 using Kanstraction.Views;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kanstraction;
 
-public partial class App : Application
+public partial class App : System.Windows.Application
 {
     private const string DefaultMaterialCategoryName = "Defaut";
 
 
-    public static BackupService BackupService { get; private set; } = null!;
+    public static IBackupService BackupService { get; private set; } = null!;
+    private StartupInitializer? _startupInitializer;
 
     protected override async void OnStartup(StartupEventArgs e)
     {
+        StringLocalizer.Configure(new ResourceDictionaryStringLocalizer());
         TextBoxEditHighlighter.Register();
 
         var culture = new CultureInfo("fr-FR");
@@ -43,27 +49,19 @@ public partial class App : Application
         {
 
             loadingWindow.UpdateStatus("Application des migrations...");
-            await using (var db = new AppDbContext())
-            {
-                await db.Database.MigrateAsync();
-
-                /*if (databaseWasRecreated)
-                {
-                    DbSeeder.Seed(db);
-                    await ImportMaterialsFromLatestBackupAsync(db);
-                }*/
-            }
-
-            loadingWindow.UpdateStatus("Préparation des sauvegardes...");
-            BackupService = new BackupService();
+            _startupInitializer ??= BuildStartupInitializer();
+            ApplicationStartupContext startupContext;
             try
             {
-                await BackupService.RunStartupMaintenanceAsync();
+                startupContext = await _startupInitializer.InitializeAsync();
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Startup backup failed: {ex}");
+                Debug.WriteLine($"Application startup failed during initialization: {ex}");
+                throw;
             }
+
+            BackupService = startupContext.BackupService;
 
             loadingWindow.UpdateStatus("Démarrage de l'application...");
             if (loadingWindow.IsVisible)
@@ -109,6 +107,12 @@ public partial class App : Application
         {
             File.Delete(path);
         }
+    }
+
+    private StartupInitializer BuildStartupInitializer()
+    {
+        var migrator = new DatabaseMigrator(() => new AppDbContext());
+        return new StartupInitializer(migrator, new BackupService());
     }
 
     private static async Task<MaterialCategory> EnsureDefaultMaterialCategoryAsync(AppDbContext db)

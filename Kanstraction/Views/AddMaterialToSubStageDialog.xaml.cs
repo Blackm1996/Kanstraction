@@ -1,5 +1,5 @@
-﻿using Kanstraction.Data;
-using Kanstraction.Entities;
+﻿using Kanstraction.Infrastructure.Data;
+using Kanstraction.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Linq;
