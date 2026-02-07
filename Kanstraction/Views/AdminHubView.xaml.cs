@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 using System.Windows.Threading;
 
 namespace Kanstraction.Views
@@ -24,6 +25,8 @@ namespace Kanstraction.Views
         private List<MaterialCategory> _allMaterialCategories = new();
         private List<StagePreset> _allPresets = new();
         private List<BuildingType> _allBuildingTypes = new();
+        private SubStageMaterialVm? _editingBtMaterial;
+        private decimal? _originalBtMaterialQty;
 
         public bool IsMaterialDirty
         {
@@ -2068,6 +2071,90 @@ namespace Kanstraction.Views
                 _btAssigned[i].OrderIndex = i + 1;
             BtAssignedGrid.Items.Refresh();
             UpdateBuildingDirtyState();
+        }
+
+        private static string FormatDecimal(decimal value) => value.ToString("0.##", CultureInfo.CurrentCulture);
+
+        private void BtMaterialsGrid_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
+        {
+            if (e.Column is DataGridTextColumn column &&
+                column.Binding is Binding binding &&
+                binding.Path?.Path == nameof(SubStageMaterialVm.Qty) &&
+                e.Row.Item is SubStageMaterialVm vm)
+            {
+                _editingBtMaterial = vm;
+                _originalBtMaterialQty = vm.Qty;
+            }
+            else
+            {
+                _editingBtMaterial = null;
+                _originalBtMaterialQty = null;
+            }
+        }
+
+        private void BtMaterialsGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            if (e.EditAction != DataGridEditAction.Commit)
+            {
+                if (e.Row.Item is SubStageMaterialVm materialVm && ReferenceEquals(_editingBtMaterial, materialVm))
+                {
+                    _editingBtMaterial = null;
+                    _originalBtMaterialQty = null;
+                }
+
+                return;
+            }
+
+            if (e.Column is DataGridTextColumn column &&
+                column.Binding is Binding binding &&
+                binding.Path?.Path == nameof(SubStageMaterialVm.Qty) &&
+                e.Row.Item is SubStageMaterialVm vm)
+            {
+                var originalValue = _editingBtMaterial == vm ? _originalBtMaterialQty : vm.Qty;
+
+                if (e.EditingElement is TextBox qtyTextBox)
+                {
+                    var text = qtyTextBox.Text;
+                    if (string.IsNullOrWhiteSpace(text))
+                    {
+                        vm.Qty = null;
+                    }
+                    else if (!NumberParsing.TryParseFlexibleDecimal(text, out var parsedQty))
+                    {
+                        MessageBox.Show(
+                            ResourceHelper.GetString("OperationsView_InvalidQuantity", "Enter a valid quantity (>= 0)."),
+                            ResourceHelper.GetString("Common_InvalidTitle", "Invalid"),
+                            MessageBoxButton.OK,
+                            MessageBoxImage.Warning);
+                        vm.Qty = originalValue;
+                        qtyTextBox.Text = originalValue.HasValue ? FormatDecimal(originalValue.Value) : string.Empty;
+                        _editingBtMaterial = null;
+                        _originalBtMaterialQty = null;
+                        return;
+                    }
+                    else
+                    {
+                        vm.Qty = parsedQty;
+                    }
+                }
+
+                if (vm.Qty.HasValue && vm.Qty.Value < 0)
+                {
+                    MessageBox.Show(
+                        ResourceHelper.GetString("OperationsView_QuantityNegative", "Quantity cannot be negative."),
+                        ResourceHelper.GetString("Common_ValidationTitle", "Validation"),
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    vm.Qty = 0;
+                    if (e.EditingElement is TextBox negativeTextBox)
+                    {
+                        negativeTextBox.Text = FormatDecimal(0);
+                    }
+                }
+
+                _editingBtMaterial = null;
+                _originalBtMaterialQty = null;
+            }
         }
 
         // Save / Cancel

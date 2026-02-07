@@ -1334,6 +1334,28 @@ public partial class OperationsView : UserControl
                 originalValue = _db.Entry(mu).Property(m => m.Qty).OriginalValue;
             }
 
+            if (e.EditingElement is TextBox qtyTextBox)
+            {
+                if (!NumberParsing.TryParseFlexibleDecimal(qtyTextBox.Text, out var parsedQty))
+                {
+                    MessageBox.Show(
+                        ResourceHelper.GetString("OperationsView_InvalidQuantity", "Enter a valid quantity (>= 0)."),
+                        ResourceHelper.GetString("Common_InvalidTitle", "Invalid"),
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Warning);
+                    mu.Qty = originalValue;
+                    qtyTextBox.Text = FormatDecimal(originalValue);
+                    var entry = _db.Entry(mu);
+                    entry.Property(m => m.Qty).CurrentValue = originalValue;
+                    entry.Property(m => m.Qty).IsModified = false;
+                    _editingMaterialUsage = null;
+                    _originalMaterialQuantity = null;
+                    return;
+                }
+
+                mu.Qty = parsedQty;
+            }
+
             if (mu.Qty < 0)
             {
                 MessageBox.Show(

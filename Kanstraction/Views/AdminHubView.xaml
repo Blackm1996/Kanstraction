@@ -565,7 +565,9 @@
                 MaxHeight="528"
                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                 ScrollViewer.CanContentScroll="True"
-                Style="{StaticResource MaterialDesignDataGrid}">
+                Style="{StaticResource MaterialDesignDataGrid}"
+                CellEditEnding="BtMaterialsGrid_CellEditEnding"
+                PreparingCellForEdit="BtMaterialsGrid_PreparingCellForEdit">
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="{DynamicResource OperationsView_MaterialHeader}" Binding="{Binding MaterialName}" Width="*" IsReadOnly="True"/>
                                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_Unit}" Binding="{Binding Unit}" Width="120" IsReadOnly="True"/>
