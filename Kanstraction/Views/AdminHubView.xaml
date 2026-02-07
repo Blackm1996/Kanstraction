@@ -3,9 +3,14 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:iconPacks="http://metro.mahapps.com/winfx/xaml/iconpacks"
              xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:conv="clr-namespace:Kanstraction.Converters"
              x:Name="AdminRoot"
              xmlns:viewModels="clr-namespace:Kanstraction.ViewModels"
              Background="{DynamicResource MaterialDesignPaper}">
+
+    <UserControl.Resources>
+        <conv:FlexibleDecimalConverter x:Key="FlexibleDecimalConverter"/>
+    </UserControl.Resources>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -573,7 +578,11 @@
                                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_Unit}" Binding="{Binding Unit}" Width="120" IsReadOnly="True"/>
                                                         <DataGridTextColumn Header="{DynamicResource OperationsView_Qty}" Width="140">
                                                             <DataGridTextColumn.Binding>
-                                                                <Binding Path="Qty" UpdateSourceTrigger="PropertyChanged" StringFormat="{}{0:0.##}" TargetNullValue="" />
+                                                                <Binding Path="Qty"
+                                                                         UpdateSourceTrigger="PropertyChanged"
+                                                                         Converter="{StaticResource FlexibleDecimalConverter}"
+                                                                         StringFormat="{}{0:0.##}"
+                                                                         TargetNullValue="" />
                                                             </DataGridTextColumn.Binding>
                                                         </DataGridTextColumn>
                                                     </DataGrid.Columns>

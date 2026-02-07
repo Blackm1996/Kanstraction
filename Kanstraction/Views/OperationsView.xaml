@@ -11,6 +11,7 @@
     <UserControl.Resources>
         <conv:StatusToBrushConverter x:Key="StatusToBrush" />
         <conv:WorkStatusToStringConverter x:Key="StatusToString" />
+        <conv:FlexibleDecimalConverter x:Key="FlexibleDecimalConverter"/>
         <conv:TotalCostConverter x:Key="TotalCostConverter"/>
         <conv:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         <conv:PaidDateConverter x:Key="PaidDateConverter"/>
@@ -681,7 +682,7 @@
                     <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_MaterialHeader}" Binding="{Binding Material.Name}"/>
                     <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_Category}" Binding="{Binding Material.MaterialCategory.Name}" Width="160"/>
                     <DataGridTextColumn Header="{DynamicResource OperationsView_Qty}" Width="100" IsReadOnly="False"
-                        Binding="{Binding Qty, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, StringFormat={}{0:0.##}}"/>
+                        Binding="{Binding Qty, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource FlexibleDecimalConverter}, StringFormat={}{0:0.##}}"/>
                     <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_Unit}" Binding="{Binding Material.Unit}"/>
                     <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_UsageDate}" Binding="{Binding UsageDate}"/>
                     <DataGridTextColumn IsReadOnly="True" Header="{DynamicResource OperationsView_UnitPrice}" Binding="{Binding DisplayUnitPrice}"/>
