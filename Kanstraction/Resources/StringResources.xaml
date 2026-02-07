@@ -25,6 +25,10 @@
     <sys:String x:Key="MainWindow_Backups">Backups</sys:String>
     <sys:String x:Key="MainWindow_SearchProjectsHint">Search projects</sys:String>
     <sys:String x:Key="MainWindow_AddProject">Add Project</sys:String>
+    <sys:String x:Key="MainWindow_RemoveProject">Remove Project</sys:String>
+    <sys:String x:Key="MainWindow_RemoveProjectTitle">Remove Project</sys:String>
+    <sys:String x:Key="MainWindow_RemoveProjectSelectFirst">Select a project to remove.</sys:String>
+    <sys:String x:Key="MainWindow_RemoveProjectConfirmFormat">Remove project "{0}"? This will delete all related buildings and data.</sys:String>
 
     <!-- AddBuildingDialog -->
     <sys:String x:Key="AddBuildingDialog_Title">Add Building</sys:String>

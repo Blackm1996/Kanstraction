@@ -292,6 +292,50 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void RemoveProject_Click(object sender, RoutedEventArgs e)
+    {
+        if (_db == null || _isRestoring)
+            return;
+
+        if (ProjectsList.SelectedItem is not Project selectedProject)
+        {
+            MessageBox.Show(
+                ResourceHelper.GetString("MainWindow_RemoveProjectSelectFirst", "Select a project to remove."),
+                ResourceHelper.GetString("MainWindow_RemoveProjectTitle", "Remove Project"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        var confirmation = MessageBox.Show(
+            string.Format(
+                ResourceHelper.GetString(
+                    "MainWindow_RemoveProjectConfirmFormat",
+                    "Remove project \"{0}\"? This will delete all related buildings and data."),
+                selectedProject.Name),
+            ResourceHelper.GetString("MainWindow_RemoveProjectTitle", "Remove Project"),
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirmation != MessageBoxResult.Yes)
+            return;
+
+        _db.Projects.Remove(selectedProject);
+        await _db.SaveChangesAsync();
+
+        await RefreshProjectsList();
+
+        if (ProjectsList.SelectedItem is Project project)
+        {
+            ActivateOperationsView();
+            await _opsView.ShowProject(project);
+        }
+        else
+        {
+            _opsView.ClearProject();
+        }
+    }
+
     private void Reporting_Click(object sender, RoutedEventArgs e)
     {
         if (_activeView != ActiveView.Operations)
