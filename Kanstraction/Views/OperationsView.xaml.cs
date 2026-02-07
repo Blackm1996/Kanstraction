@@ -3323,21 +3323,14 @@ public partial class OperationsView : UserControl
                 var unitPrice = ComputeUnitPriceForUsage(usage, freezePrices);
                 ws.Cell(row, 1).Value = usage.Material?.Name ?? string.Empty;
                 ws.Cell(row, 2).Value = usage.Material?.MaterialCategory?.Name ?? string.Empty;
-                var qty = usage.Qty;
-                if (qty == decimal.Truncate(qty))
-                {
-                    ws.Cell(row, 3).Value = decimal.ToInt64(qty);
-                }
-                else
-                {
-                    ws.Cell(row, 3).Value = qty;
-                }
+                ws.Cell(row, 3).Value = usage.Qty;
                 ws.Cell(row, 4).Value = usage.Material?.Unit ?? string.Empty;
                 ws.Cell(row, 5).Value = unitPrice;
                 ws.Cell(row, 6).Value = usage.Qty * unitPrice;
                 row++;
             }
 
+            ws.Column(3).Style.NumberFormat.Format = "#,##0.##";
             ws.Column(5).Style.NumberFormat.Format = "#,##0.00";
             ws.Column(6).Style.NumberFormat.Format = "#,##0.00";
             ApplyAlternatingRowStyles(ws, 7, row - 1, 1, 6, MaterialRowPrimaryFill, MaterialRowSecondaryFill);
@@ -3518,15 +3511,7 @@ public partial class OperationsView : UserControl
                     var unitPrice = ComputeUnitPriceForUsage(usage, freezePrices);
                     ws.Cell(row, 2).Value = usage.Material?.Name ?? string.Empty;
                     ws.Cell(row, 3).Value = usage.Material?.MaterialCategory?.Name ?? string.Empty;
-                    var qty = usage.Qty;
-                    if (qty == decimal.Truncate(qty))
-                    {
-                        ws.Cell(row, 4).Value = decimal.ToInt64(qty);
-                    }
-                    else
-                    {
-                        ws.Cell(row, 4).Value = qty;
-                    }
+                    ws.Cell(row, 4).Value = usage.Qty;
                     ws.Cell(row, 5).Value = usage.Material?.Unit ?? string.Empty;
                     ws.Cell(row, 6).Value = unitPrice;
                     ws.Cell(row, 7).Value = usage.Qty * unitPrice;
@@ -3538,6 +3523,7 @@ public partial class OperationsView : UserControl
                 ws.Cell(startRow, 1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
             }
 
+            ws.Column(4).Style.NumberFormat.Format = "#,##0.##";
             ws.Column(6).Style.NumberFormat.Format = "#,##0.00";
             ws.Column(7).Style.NumberFormat.Format = "#,##0.00";
             ApplyAlternatingRowStyles(ws, 6, row - 1, 1, 7, MaterialRowPrimaryFill, MaterialRowSecondaryFill);
