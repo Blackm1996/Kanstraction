@@ -1324,6 +1324,12 @@ public partial class OperationsView : UserControl
             binding.Path?.Path == nameof(MaterialUsage.Qty) &&
             e.Row.Item is MaterialUsage mu)
         {
+            if (e.EditingElement is TextBox editingTextBox &&
+                decimal.TryParse(editingTextBox.Text, NumberStyles.Number, CultureInfo.CurrentCulture, out var parsedValue))
+            {
+                mu.Qty = parsedValue;
+            }
+
             decimal originalValue;
             if (_editingMaterialUsage == mu && _originalMaterialQuantity.HasValue)
             {
