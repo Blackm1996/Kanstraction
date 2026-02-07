@@ -565,13 +565,14 @@
                 MaxHeight="528"
                 ScrollViewer.VerticalScrollBarVisibility="Auto"
                 ScrollViewer.CanContentScroll="True"
-                Style="{StaticResource MaterialDesignDataGrid}">
+                Style="{StaticResource MaterialDesignDataGrid}"
+                CellEditEnding="BtMaterialsGrid_CellEditEnding">
                                                     <DataGrid.Columns>
                                                         <DataGridTextColumn Header="{DynamicResource OperationsView_MaterialHeader}" Binding="{Binding MaterialName}" Width="*" IsReadOnly="True"/>
                                                         <DataGridTextColumn Header="{DynamicResource AdminHubView_Unit}" Binding="{Binding Unit}" Width="120" IsReadOnly="True"/>
                                                         <DataGridTextColumn Header="{DynamicResource OperationsView_Qty}" Width="140">
                                                             <DataGridTextColumn.Binding>
-                                                                <Binding Path="Qty" UpdateSourceTrigger="PropertyChanged" StringFormat="{}{0:0.##}" TargetNullValue="" />
+                                                                <Binding Path="Qty" UpdateSourceTrigger="LostFocus" StringFormat="{}{0:0.##}" TargetNullValue="" />
                                                             </DataGridTextColumn.Binding>
                                                         </DataGridTextColumn>
                                                     </DataGrid.Columns>

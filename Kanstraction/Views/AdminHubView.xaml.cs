@@ -1755,6 +1755,36 @@ namespace Kanstraction.Views
             IsBuildingDirty = dirty;
         }
 
+        private void BtMaterialsGrid_CellEditEnding(object sender, DataGridCellEditEndingEventArgs e)
+        {
+            if (e.EditAction != DataGridEditAction.Commit)
+            {
+                return;
+            }
+
+            if (e.Row.Item is not SubStageMaterialVm materialVm)
+            {
+                return;
+            }
+
+            if (e.EditingElement is not TextBox editingTextBox)
+            {
+                return;
+            }
+
+            var text = editingTextBox.Text?.Trim();
+            if (string.IsNullOrEmpty(text))
+            {
+                materialVm.Qty = null;
+                return;
+            }
+
+            if (decimal.TryParse(text, NumberStyles.Number, CultureInfo.CurrentCulture, out var parsedValue))
+            {
+                materialVm.Qty = parsedValue;
+            }
+        }
+
         private Dictionary<int, decimal?> GetCurrentLaborMap()
         {
             var map = new Dictionary<int, decimal?>();

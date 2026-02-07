@@ -1324,6 +1324,12 @@ public partial class OperationsView : UserControl
             binding.Path?.Path == nameof(MaterialUsage.Qty) &&
             e.Row.Item is MaterialUsage mu)
         {
+            if (e.EditingElement is TextBox editingTextBox &&
+                decimal.TryParse(editingTextBox.Text, NumberStyles.Number, CultureInfo.CurrentCulture, out var parsedValue))
+            {
+                mu.Qty = parsedValue;
+            }
+
             decimal originalValue;
             if (_editingMaterialUsage == mu && _originalMaterialQuantity.HasValue)
             {
@@ -3326,11 +3332,11 @@ public partial class OperationsView : UserControl
                 var qty = usage.Qty;
                 if (qty == decimal.Truncate(qty))
                 {
-                    ws.Cell(row, 3).Value = decimal.ToInt64(qty);
+                    ws.Cell(row, 3).Value = decimal.ToInt64(qty).ToString(CultureInfo.InvariantCulture);
                 }
                 else
                 {
-                    ws.Cell(row, 3).Value = qty;
+                    ws.Cell(row, 3).Value = qty.ToString("0.################", CultureInfo.InvariantCulture);
                 }
                 ws.Cell(row, 4).Value = usage.Material?.Unit ?? string.Empty;
                 ws.Cell(row, 5).Value = unitPrice;
@@ -3521,11 +3527,11 @@ public partial class OperationsView : UserControl
                     var qty = usage.Qty;
                     if (qty == decimal.Truncate(qty))
                     {
-                        ws.Cell(row, 4).Value = decimal.ToInt64(qty);
+                        ws.Cell(row, 4).Value = decimal.ToInt64(qty).ToString(CultureInfo.InvariantCulture);
                     }
                     else
                     {
-                        ws.Cell(row, 4).Value = qty;
+                        ws.Cell(row, 4).Value = qty.ToString("0.################", CultureInfo.InvariantCulture);
                     }
                     ws.Cell(row, 5).Value = usage.Material?.Unit ?? string.Empty;
                     ws.Cell(row, 6).Value = unitPrice;
