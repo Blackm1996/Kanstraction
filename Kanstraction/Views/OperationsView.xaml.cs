@@ -3330,7 +3330,14 @@ public partial class OperationsView : UserControl
                 ws.Cell(row, 1).Value = usage.Material?.Name ?? string.Empty;
                 ws.Cell(row, 2).Value = usage.Material?.MaterialCategory?.Name ?? string.Empty;
                 var qty = usage.Qty;
-                ws.Cell(row, 3).Value = qty;
+                if (qty == decimal.Truncate(qty))
+                {
+                    ws.Cell(row, 3).Value = decimal.ToInt64(qty);
+                }
+                else
+                {
+                    ws.Cell(row, 3).Value = qty;
+                }
                 ws.Cell(row, 4).Value = usage.Material?.Unit ?? string.Empty;
                 ws.Cell(row, 5).Value = unitPrice;
                 ws.Cell(row, 6).Value = usage.Qty * unitPrice;
@@ -3519,7 +3526,14 @@ public partial class OperationsView : UserControl
                     ws.Cell(row, 2).Value = usage.Material?.Name ?? string.Empty;
                     ws.Cell(row, 3).Value = usage.Material?.MaterialCategory?.Name ?? string.Empty;
                     var qty = usage.Qty;
-                    ws.Cell(row, 4).Value = qty;
+                    if (qty == decimal.Truncate(qty))
+                    {
+                        ws.Cell(row, 4).Value = decimal.ToInt64(qty);
+                    }
+                    else
+                    {
+                        ws.Cell(row, 4).Value = qty;
+                    }
                     ws.Cell(row, 5).Value = usage.Material?.Unit ?? string.Empty;
                     ws.Cell(row, 6).Value = unitPrice;
                     ws.Cell(row, 7).Value = usage.Qty * unitPrice;
