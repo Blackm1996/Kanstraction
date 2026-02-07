@@ -320,7 +320,17 @@ public partial class MainWindow : Window
         if (confirmation != MessageBoxResult.Yes)
             return;
 
-        _db.Projects.Remove(selectedProject);
+        var projectToRemove = await _db.Projects
+            .Include(p => p.Buildings)
+            .FirstOrDefaultAsync(p => p.Id == selectedProject.Id);
+
+        if (projectToRemove == null)
+        {
+            await RefreshProjectsList();
+            return;
+        }
+
+        _db.Projects.Remove(projectToRemove);
         await _db.SaveChangesAsync();
 
         await RefreshProjectsList();
