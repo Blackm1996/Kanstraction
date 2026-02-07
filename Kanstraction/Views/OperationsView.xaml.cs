@@ -823,6 +823,23 @@ public partial class OperationsView : UserControl
         await ReloadBuildingsAsync();  // (no specific selection; will select first if none)
     }
 
+    public void ClearProject()
+    {
+        _currentProject = null;
+        Breadcrumb = ResourceHelper.GetString("OperationsView_SelectProjectPrompt", "Select a project");
+
+        BuildingsGrid.ItemsSource = null;
+        StagesGrid.ItemsSource = null;
+        SubStagesGrid.ItemsSource = null;
+        MaterialsGrid.ItemsSource = null;
+        _currentBuildingId = null;
+        _currentStageId = null;
+        _buildingRows.Clear();
+        _buildingView = null;
+        UpdateSubStageLaborTotal(null);
+        UpdateMaterialsTotal(null);
+    }
+
     private async void BuildingsGrid_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_db == null) return;

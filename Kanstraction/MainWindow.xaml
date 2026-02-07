@@ -101,13 +101,21 @@
                             VerticalAlignment="Center"/>
 
                         <!-- Add Building button (small, icon-only) -->
-                        <Button Grid.Column="1"
-                            Click="NewProject_Click"
-                                            Background="#3f51b5"
-                            Style="{StaticResource TinyIconButton}"
-                            ToolTip="{DynamicResource MainWindow_AddProject}">
-                            <iconPacks:PackIconFontAwesome Foreground="White" Kind="PlusSolid" Width="12" Height="12"/>
-                        </Button>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal">
+                            <Button Click="NewProject_Click"
+                                    Background="#3f51b5"
+                                    Style="{StaticResource TinyIconButton}"
+                                    ToolTip="{DynamicResource MainWindow_AddProject}">
+                                <iconPacks:PackIconFontAwesome Foreground="White" Kind="PlusSolid" Width="12" Height="12"/>
+                            </Button>
+                            <Button Click="RemoveProject_Click"
+                                    Background="#c62828"
+                                    Style="{StaticResource TinyIconButton}"
+                                    Margin="6,0,0,0"
+                                    ToolTip="{DynamicResource MainWindow_RemoveProject}">
+                                <iconPacks:PackIconFontAwesome Foreground="White" Kind="TrashSolid" Width="12" Height="12"/>
+                            </Button>
+                        </StackPanel>
                     </Grid>
                 </Border>
 
