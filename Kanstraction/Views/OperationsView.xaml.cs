@@ -3337,7 +3337,7 @@ public partial class OperationsView : UserControl
                 row++;
             }
 
-            ws.Column(3).Style.NumberFormat.Format = "#,##0.##";
+            ws.Column(3).Style.NumberFormat.Format = "0.################";
             ws.Column(5).Style.NumberFormat.Format = "#,##0.00";
             ws.Column(6).Style.NumberFormat.Format = "#,##0.00";
             ApplyAlternatingRowStyles(ws, 7, row - 1, 1, 6, MaterialRowPrimaryFill, MaterialRowSecondaryFill);
@@ -3531,7 +3531,7 @@ public partial class OperationsView : UserControl
                 ws.Cell(startRow, 1).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
             }
 
-            ws.Column(4).Style.NumberFormat.Format = "#,##0.##";
+            ws.Column(4).Style.NumberFormat.Format = "0.################";
             ws.Column(6).Style.NumberFormat.Format = "#,##0.00";
             ws.Column(7).Style.NumberFormat.Format = "#,##0.00";
             ApplyAlternatingRowStyles(ws, 6, row - 1, 1, 7, MaterialRowPrimaryFill, MaterialRowSecondaryFill);
