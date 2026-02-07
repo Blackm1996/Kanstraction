@@ -223,6 +223,7 @@
     <sys:String x:Key="OperationsView_SelectProjectPrompt">Sélectionnez un projet</sys:String>
     <sys:String x:Key="OperationsView_LaborCostNegative">Le coût de main-d'œuvre ne peut pas être négatif.</sys:String>
     <sys:String x:Key="OperationsView_QuantityNegative">La quantité ne peut pas être négative.</sys:String>
+    <sys:String x:Key="OperationsView_InvalidQuantity">Entrez une quantité valide (&gt;= 0).</sys:String>
     <sys:String x:Key="OperationsView_SelectProjectFirst">Sélectionnez d'abord un projet.</sys:String>
     <sys:String x:Key="OperationsView_NoProjectTitle">Aucun projet</sys:String>
     <sys:String x:Key="OperationsView_DuplicateCodeMessage">Un bâtiment avec ce code existe déjà dans ce projet.</sys:String>

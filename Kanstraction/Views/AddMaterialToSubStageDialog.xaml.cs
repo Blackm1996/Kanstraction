@@ -70,7 +70,7 @@ public partial class AddMaterialToSubStageDialog : Window
                 MessageBoxImage.Warning);
             return;
         }
-        if (!decimal.TryParse(TxtQty.Text?.Trim(), out var qty) || qty < 0)
+        if (!NumberParsing.TryParseFlexibleDecimal(TxtQty.Text, out var qty) || qty < 0)
         {
             MessageBox.Show(
                 ResourceHelper.GetString("AddMaterialToSubStageDialog_InvalidQuantity", "Enter a valid quantity (>= 0)."),

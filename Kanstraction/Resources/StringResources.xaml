@@ -225,6 +225,7 @@
     <sys:String x:Key="OperationsView_SelectProjectPrompt">Select a project</sys:String>
     <sys:String x:Key="OperationsView_LaborCostNegative">Labor cost cannot be negative.</sys:String>
     <sys:String x:Key="OperationsView_QuantityNegative">Quantity cannot be negative.</sys:String>
+    <sys:String x:Key="OperationsView_InvalidQuantity">Enter a valid quantity (&gt;= 0).</sys:String>
     <sys:String x:Key="OperationsView_SelectProjectFirst">Select a project first.</sys:String>
     <sys:String x:Key="OperationsView_NoProjectTitle">No project</sys:String>
     <sys:String x:Key="OperationsView_DuplicateCodeMessage">A building with this code already exists in this project.</sys:String>
