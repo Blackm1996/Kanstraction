@@ -1290,9 +1290,7 @@ public partial class OperationsView : UserControl
 
     private void MaterialsGrid_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
     {
-        if (e.Column is DataGridTextColumn column &&
-            column.Binding is Binding binding &&
-            binding.Path?.Path == nameof(MaterialUsage.Qty) &&
+        if (ReferenceEquals(e.Column, MaterialsQtyColumn) &&
             e.Row.Item is MaterialUsage mu)
         {
             _editingMaterialUsage = mu;
@@ -1319,9 +1317,7 @@ public partial class OperationsView : UserControl
             return;
         }
 
-        if (e.Column is DataGridTextColumn column &&
-            column.Binding is Binding binding &&
-            binding.Path?.Path == nameof(MaterialUsage.Qty) &&
+        if (ReferenceEquals(e.Column, MaterialsQtyColumn) &&
             e.Row.Item is MaterialUsage mu)
         {
             decimal originalValue;
