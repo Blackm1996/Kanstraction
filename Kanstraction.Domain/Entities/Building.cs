@@ -10,4 +10,25 @@ public class Building
     public Project Project { get; set; } = null!;
     public BuildingType? BuildingType { get; set; }
     public ICollection<Stage> Stages { get; set; } = new List<Stage>();
+
+
+    public void RecomputeStatusFromStages()
+    {
+        if (Stages.Count == 0)
+        {
+            Status = WorkStatus.NotStarted;
+            return;
+        }
+
+        if (Stages.Any(x => x.Status == WorkStatus.Ongoing))
+            Status = WorkStatus.Ongoing;
+        else if (Stages.All(x => x.Status == WorkStatus.Paid))
+            Status = WorkStatus.Paid;
+        else if (Stages.All(x => x.Status == WorkStatus.Finished || x.Status == WorkStatus.Paid))
+            Status = WorkStatus.Finished;
+        else if (Stages.Any(x => x.Status == WorkStatus.Stopped) && !Stages.Any(x => x.Status == WorkStatus.Ongoing))
+            Status = WorkStatus.Stopped;
+        else
+            Status = WorkStatus.NotStarted;
+    }
 }
