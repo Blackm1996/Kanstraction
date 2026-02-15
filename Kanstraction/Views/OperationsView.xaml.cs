@@ -1065,6 +1065,10 @@ public partial class OperationsView : UserControl
         {
             await _sender.Send(new ChangeStageStatusCommand(stageId, newStatus));
 
+            // ChangeStageStatusCommand runs in a different DbContext instance.
+            // Clear tracked entities so reload queries don't reuse stale in-memory sub-stage states.
+            _db.ChangeTracker.Clear();
+
             var stageBuildingId = await _db.Stages
                 .Where(s => s.Id == stageId)
                 .Select(s => s.BuildingId)
