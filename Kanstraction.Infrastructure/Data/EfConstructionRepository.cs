@@ -13,18 +13,15 @@ public sealed class EfConstructionRepository : IConstructionRepository
         _dbContext = dbContext;
     }
 
-    public Task<Stage?> GetStageForStatusChangeAsync(int stageId, CancellationToken cancellationToken = default)
+    public Task<Building?> GetBuildingAggregateForStageStatusChangeAsync(int stageId, CancellationToken cancellationToken = default)
     {
-        return _dbContext.Stages
-            .Include(s => s.SubStages)
-                .ThenInclude(ss => ss.MaterialUsages)
-            .Include(s => s.Building)
-                .ThenInclude(b => b.Stages)
-                    .ThenInclude(st => st.SubStages)
-                        .ThenInclude(ss => ss.MaterialUsages)
-            .FirstOrDefaultAsync(s => s.Id == stageId, cancellationToken);
+        return _dbContext.Buildings
+            .Include(b => b.Stages)
+                .ThenInclude(s => s.SubStages)
+                    .ThenInclude(ss => ss.MaterialUsages)
+            .FirstOrDefaultAsync(b => b.Stages.Any(s => s.Id == stageId), cancellationToken);
     }
 
-    public Task SaveChangesAsync(CancellationToken cancellationToken = default)
+    public Task SaveBuildingAggregateAsync(Building building, CancellationToken cancellationToken = default)
         => _dbContext.SaveChangesAsync(cancellationToken);
 }
