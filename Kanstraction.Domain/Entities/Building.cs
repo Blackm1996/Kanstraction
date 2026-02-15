@@ -34,7 +34,7 @@ public class Building
     {
         if (Stages.Count == 0)
         {
-            Status = WorkStatus.Finished;
+            Status = WorkStatus.NotStarted;
             return;
         }
 

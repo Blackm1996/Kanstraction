@@ -14,6 +14,58 @@ public class Stage
     public Building Building { get; set; } = null!;
     public ICollection<SubStage> SubStages { get; set; } = new List<SubStage>();
 
+    public void RecomputeStatusFromSubStages(DateTime today)
+    {
+        if (SubStages.Count == 0)
+        {
+            Status = WorkStatus.NotStarted;
+            StartDate = null;
+            EndDate = null;
+            return;
+        }
+
+        var allPaid = SubStages.All(ss => ss.Status == WorkStatus.Paid);
+        var allStopped = SubStages.All(ss => ss.Status == WorkStatus.Stopped);
+        var anyStopped = SubStages.Any(ss => ss.Status == WorkStatus.Stopped);
+        var anyOngoing = SubStages.Any(ss => ss.Status == WorkStatus.Ongoing);
+        var allNotStarted = SubStages.All(ss => ss.Status == WorkStatus.NotStarted);
+        var allFinishedOrPaid = SubStages.All(ss => ss.Status == WorkStatus.Finished || ss.Status == WorkStatus.Paid);
+        var anyFinishedOrPaid = SubStages.Any(ss => ss.Status == WorkStatus.Finished || ss.Status == WorkStatus.Paid);
+
+        if (allStopped)
+            Status = WorkStatus.Stopped;
+        else if (allPaid)
+            Status = WorkStatus.Paid;
+        else if (allFinishedOrPaid)
+            Status = WorkStatus.Finished;
+        else if (anyOngoing)
+            Status = WorkStatus.Ongoing;
+        else if (anyStopped)
+            Status = WorkStatus.Stopped;
+        else if (allNotStarted)
+            Status = WorkStatus.NotStarted;
+        else if (anyFinishedOrPaid)
+            Status = WorkStatus.Ongoing;
+        else
+            Status = WorkStatus.Ongoing;
+
+        if (Status == WorkStatus.Ongoing && StartDate == null)
+            StartDate = today;
+
+        if ((Status == WorkStatus.Finished || Status == WorkStatus.Paid || Status == WorkStatus.Stopped) && EndDate == null)
+            EndDate = today;
+
+        if (Status == WorkStatus.NotStarted)
+        {
+            StartDate = null;
+            EndDate = null;
+        }
+        else if (Status == WorkStatus.Stopped && StartDate == null)
+        {
+            StartDate = today;
+        }
+    }
+
     public void ApplyStatusTransition(WorkStatus newStatus, DateTime today)
     {
         if (newStatus == WorkStatus.Finished || newStatus == WorkStatus.Paid)
