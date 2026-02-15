@@ -13,4 +13,38 @@ public class Stage
 
     public Building Building { get; set; } = null!;
     public ICollection<SubStage> SubStages { get; set; } = new List<SubStage>();
+
+    public void ApplyStatusTransition(WorkStatus newStatus, DateTime today)
+    {
+        if (newStatus == WorkStatus.Finished || newStatus == WorkStatus.Paid)
+        {
+            if (SubStages.Count == 0)
+                throw new InvalidOperationException("Stage has no sub-stages; cannot mark as Finished/Paid.");
+        }
+
+        foreach (var subStage in SubStages)
+            subStage.ApplyStatusTransition(newStatus, today);
+
+        Status = newStatus;
+
+        switch (newStatus)
+        {
+            case WorkStatus.NotStarted:
+                StartDate = null;
+                EndDate = null;
+                break;
+            case WorkStatus.Ongoing:
+                if (StartDate == null)
+                    StartDate = today;
+                EndDate = null;
+                break;
+            case WorkStatus.Finished:
+            case WorkStatus.Paid:
+            case WorkStatus.Stopped:
+                if (StartDate == null)
+                    StartDate = today;
+                EndDate = today;
+                break;
+        }
+    }
 }

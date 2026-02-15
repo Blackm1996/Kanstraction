@@ -3,6 +3,8 @@ using Kanstraction.Converters;
 using Kanstraction.Infrastructure.Data;
 using Kanstraction.Domain.Entities;
 using Kanstraction.Infrastructure.Services;
+using Kanstraction.Application.Stages.Commands.ChangeStageStatus;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -17,11 +19,13 @@ using System.Windows.Data;
 using ClosedXML.Excel;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Win32;
+using Microsoft.Extensions.DependencyInjection;
 namespace Kanstraction.Views;
 
 public partial class OperationsView : UserControl
 {
     private AppDbContext? _db;
+    private readonly ISender _sender;
     private Project? _currentProject;
     public string Breadcrumb
     {
@@ -796,6 +800,7 @@ public partial class OperationsView : UserControl
 
     public OperationsView()
     {
+        _sender = App.Services.GetRequiredService<ISender>();
         InitializeComponent();
         _selectedStatusFilters = _allWorkStatuses.ToHashSet();
         UpdateStatusFilterSummary();
@@ -1057,126 +1062,18 @@ public partial class OperationsView : UserControl
 
         try
         {
-            var stage = await _db.Stages
-                .Include(s => s.SubStages)
-                    .ThenInclude(ss => ss.MaterialUsages)
-                .Include(s => s.Building)
-                    .ThenInclude(b => b.Stages)
-                        .ThenInclude(st => st.SubStages)
-                .FirstOrDefaultAsync(s => s.Id == stageId);
+            await _sender.Send(new ChangeStageStatusCommand(stageId, newStatus));
 
-            if (stage == null)
+            var stageBuildingId = await _db.Stages
+                .Where(s => s.Id == stageId)
+                .Select(s => s.BuildingId)
+                .FirstOrDefaultAsync();
+
+            if (stageBuildingId == 0)
                 return;
 
-            if (stage.SubStages != null)
-            {
-                foreach (var sub in stage.SubStages)
-                {
-                    sub.Status = newStatus;
-
-                    switch (newStatus)
-                    {
-                        case WorkStatus.NotStarted:
-                            sub.StartDate = null;
-                            sub.EndDate = null;
-                            break;
-                        case WorkStatus.Ongoing:
-                            if (sub.StartDate == null)
-                                sub.StartDate = DateTime.Today;
-                            sub.EndDate = null;
-                            break;
-                        case WorkStatus.Finished:
-                        case WorkStatus.Paid:
-                            if (sub.StartDate == null)
-                                sub.StartDate = DateTime.Today;
-                            sub.EndDate = DateTime.Today;
-                            if (sub.MaterialUsages != null)
-                            {
-                                var freezeDate = sub.EndDate.Value.Date;
-                                foreach (var usage in sub.MaterialUsages)
-                                {
-                                    usage.UsageDate = freezeDate;
-                                }
-                            }
-                            break;
-                        case WorkStatus.Stopped:
-                            if (sub.StartDate == null)
-                                sub.StartDate = DateTime.Today;
-                            sub.EndDate = DateTime.Today;
-                            break;
-                    }
-                }
-            }
-
-            stage.Status = newStatus;
-
-            switch (newStatus)
-            {
-                case WorkStatus.NotStarted:
-                    stage.StartDate = null;
-                    stage.EndDate = null;
-                    break;
-                case WorkStatus.Ongoing:
-                    if (stage.StartDate == null)
-                        stage.StartDate = DateTime.Today;
-                    stage.EndDate = null;
-                    break;
-                case WorkStatus.Finished:
-                case WorkStatus.Paid:
-                    if (stage.StartDate == null)
-                        stage.StartDate = DateTime.Today;
-                    stage.EndDate = DateTime.Today;
-                    break;
-                case WorkStatus.Stopped:
-                    if (stage.StartDate == null)
-                        stage.StartDate = DateTime.Today;
-                    stage.EndDate = DateTime.Today;
-                    break;
-            }
-
-            if (stage.Building != null)
-            {
-                if (newStatus == WorkStatus.Stopped)
-                {
-                    var today = DateTime.Today;
-
-                    if (stage.Building.Stages != null)
-                    {
-                        foreach (var buildingStage in stage.Building.Stages)
-                        {
-                            buildingStage.Status = WorkStatus.Stopped;
-                            if (buildingStage.StartDate == null)
-                            {
-                                buildingStage.StartDate = today;
-                            }
-                            buildingStage.EndDate = today;
-
-                            if (buildingStage.SubStages != null)
-                            {
-                                foreach (var sub in buildingStage.SubStages)
-                                {
-                                    sub.Status = WorkStatus.Stopped;
-                                    if (sub.StartDate == null)
-                                    {
-                                        sub.StartDate = today;
-                                    }
-                                    sub.EndDate = today;
-                                }
-                            }
-                        }
-                    }
-
-                    stage.Building.Status = WorkStatus.Stopped;
-                }
-                else
-                {
-                    UpdateBuildingStatusFromStages(stage.Building);
-                }
-            }
-            await _db.SaveChangesAsync();
-
-            await ReloadBuildingsAsync(stage.BuildingId, stage.Id);
-            await ReloadStagesAndSubStagesAsync(stage.BuildingId, stage.Id);
+            await ReloadBuildingsAsync(stageBuildingId, stageId);
+            await ReloadStagesAndSubStagesAsync(stageBuildingId, stageId);
         }
         catch (Exception ex)
         {
@@ -1187,6 +1084,7 @@ public partial class OperationsView : UserControl
                 MessageBoxImage.Error);
         }
     }
+
     private void SubStagesGrid_PreparingCellForEdit(object sender, DataGridPreparingCellForEditEventArgs e)
     {
         if (e.Column is DataGridTextColumn column &&

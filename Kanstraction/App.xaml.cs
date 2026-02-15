@@ -9,15 +9,18 @@ using System.Threading.Tasks;
 using System.Windows;
 using Kanstraction.Application.Abstractions;
 using Kanstraction.Application.Startup;
+using Kanstraction.Application.DependencyInjection;
 using Kanstraction.Behaviors;
 using Kanstraction.Application.Localization;
 using Kanstraction.Localization;
 using Kanstraction.Domain.Entities;
 using Kanstraction.Infrastructure.Data;
+using Kanstraction.Infrastructure.DependencyInjection;
 using Kanstraction.Infrastructure.Services;
 using Kanstraction.Views;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kanstraction;
 
@@ -27,6 +30,7 @@ public partial class App : System.Windows.Application
 
 
     public static IBackupService BackupService { get; private set; } = null!;
+    public static IServiceProvider Services { get; private set; } = null!;
     private StartupInitializer? _startupInitializer;
 
     protected override async void OnStartup(StartupEventArgs e)
@@ -47,6 +51,7 @@ public partial class App : System.Windows.Application
 
         try
         {
+            Services = BuildServiceProvider();
 
             loadingWindow.UpdateStatus("Application des migrations...");
             _startupInitializer ??= BuildStartupInitializer();
@@ -111,8 +116,17 @@ public partial class App : System.Windows.Application
 
     private StartupInitializer BuildStartupInitializer()
     {
-        var migrator = new DatabaseMigrator(() => new AppDbContext());
-        return new StartupInitializer(migrator, new BackupService());
+        var migrator = Services.GetRequiredService<IDatabaseMigrator>();
+        var backupService = Services.GetRequiredService<IBackupService>();
+        return new StartupInitializer(migrator, backupService);
+    }
+
+    private static IServiceProvider BuildServiceProvider()
+    {
+        var services = new ServiceCollection();
+        services.AddApplicationServices();
+        services.AddInfrastructureServices();
+        return services.BuildServiceProvider();
     }
 
     private static async Task<MaterialCategory> EnsureDefaultMaterialCategoryAsync(AppDbContext db)
