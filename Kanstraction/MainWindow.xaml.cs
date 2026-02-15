@@ -1,9 +1,13 @@
 using Kanstraction.Application.Abstractions;
 using Kanstraction.Infrastructure.Data;
 using Kanstraction.Domain.Entities;
+using Kanstraction.Application.Projects.Commands.CreateProject;
+using Kanstraction.Application.Projects.Commands.DeleteProject;
+using Kanstraction.Application.Projects.Queries.ListProjects;
 using Kanstraction.Views;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Win32;
+using MediatR;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -19,6 +23,7 @@ namespace Kanstraction;
 public partial class MainWindow : Window
 {
     private AppDbContext? _db;
+    private readonly ISender _sender;
 
     // Explorer sizing/toggle
     private double _explorerLastWidth = 220;
@@ -46,6 +51,7 @@ public partial class MainWindow : Window
 
     public MainWindow()
     {
+        _sender = App.Services.GetRequiredService<ISender>();
         InitializeComponent();
 
         InitializeDataLayer();
@@ -65,7 +71,7 @@ public partial class MainWindow : Window
     private void InitializeDataLayer()
     {
         _db?.Dispose();
-        _db = new AppDbContext();
+        _db = App.Services.GetRequiredService<AppDbContext>();
     }
 
     private void BuildViews()
@@ -88,7 +94,7 @@ public partial class MainWindow : Window
         if (_db == null || _isRestoring)
             return;
 
-        _allProjects = await _db.Projects.AsNoTracking().OrderBy(p => p.Name).ToListAsync();
+        _allProjects = (await _sender.Send(new ListProjectsQuery())).ToList();
         ProjectsList.ItemsSource = _allProjects;
 
         if (ProjectsList.Items.Count > 0)
@@ -273,17 +279,11 @@ public partial class MainWindow : Window
         };
         if (dlg.ShowDialog() != true) return;
 
-        var p = new Project
-        {
-            Name = dlg.Value!,
-            StartDate = DateTime.Today
-        };
-        _db.Projects.Add(p);
-        await _db.SaveChangesAsync();
+        var createdProject = await _sender.Send(new CreateProjectCommand(dlg.Value!, DateTime.Today));
 
-        _allProjects = await _db.Projects.AsNoTracking().OrderBy(x => x.Name).ToListAsync();
+        _allProjects = (await _sender.Send(new ListProjectsQuery())).ToList();
         await RefreshProjectsList();
-        var row = _allProjects.FirstOrDefault(x => x.Id == p.Id);
+        var row = _allProjects.FirstOrDefault(x => x.Id == createdProject.Id);
         if (row != null)
         {
             ProjectsList.SelectedItem = row;
@@ -320,18 +320,12 @@ public partial class MainWindow : Window
         if (confirmation != MessageBoxResult.Yes)
             return;
 
-        var projectToRemove = await _db.Projects
-            .Include(p => p.Buildings)
-            .FirstOrDefaultAsync(p => p.Id == selectedProject.Id);
-
-        if (projectToRemove == null)
+        var deleted = await _sender.Send(new DeleteProjectCommand(selectedProject.Id));
+        if (!deleted)
         {
             await RefreshProjectsList();
             return;
         }
-
-        _db.Projects.Remove(projectToRemove);
-        await _db.SaveChangesAsync();
 
         await RefreshProjectsList();
 
@@ -392,10 +386,7 @@ public partial class MainWindow : Window
 
         var previouslySelectedId = (ProjectsList.SelectedItem as Project)?.Id;
 
-        _allProjects = await _db.Projects
-            .AsNoTracking()
-            .OrderBy(p => p.Name)
-            .ToListAsync();
+        _allProjects = (await _sender.Send(new ListProjectsQuery())).ToList();
 
         ProjectsList.ItemsSource = _allProjects;
 

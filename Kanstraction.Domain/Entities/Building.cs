@@ -16,12 +16,12 @@ public class Building
     {
         if (Stages.Count == 0)
         {
-            Status = WorkStatus.NotStarted;
+            Status = WorkStatus.Finished;
             return;
         }
 
-        if (Stages.Any(x => x.Status == WorkStatus.Ongoing))
-            Status = WorkStatus.Ongoing;
+        if (Stages.All(x => x.Status == WorkStatus.NotStarted))
+            Status = WorkStatus.NotStarted;
         else if (Stages.All(x => x.Status == WorkStatus.Paid))
             Status = WorkStatus.Paid;
         else if (Stages.All(x => x.Status == WorkStatus.Finished || x.Status == WorkStatus.Paid))
@@ -29,6 +29,6 @@ public class Building
         else if (Stages.Any(x => x.Status == WorkStatus.Stopped) && !Stages.Any(x => x.Status == WorkStatus.Ongoing))
             Status = WorkStatus.Stopped;
         else
-            Status = WorkStatus.NotStarted;
+            Status = WorkStatus.Ongoing;
     }
 }
