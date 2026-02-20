@@ -2,6 +2,7 @@
 using Kanstraction.Converters;
 using Kanstraction.Infrastructure.Data;
 using Kanstraction.Domain.Entities;
+using Kanstraction.Domain.Services;
 using Kanstraction.Infrastructure.Services;
 using Kanstraction.Application.Stages.Commands.ChangeStageStatus;
 using MediatR;
@@ -1064,6 +1065,10 @@ public partial class OperationsView : UserControl
         {
             await _sender.Send(new ChangeStageStatusCommand(stageId, newStatus));
 
+            // ChangeStageStatusCommand runs in a different DbContext instance.
+            // Clear tracked entities so reload queries don't reuse stale in-memory sub-stage states.
+            _db.ChangeTracker.Clear();
+
             var stageBuildingId = await _db.Stages
                 .Where(s => s.Id == stageId)
                 .Select(s => s.BuildingId)
@@ -1747,55 +1752,16 @@ public partial class OperationsView : UserControl
         return row.Code?.IndexOf(_buildingSearchText, StringComparison.OrdinalIgnoreCase) >= 0;
     }
 
-    private static decimal CompletionValue(WorkStatus status) =>
-        status == WorkStatus.Finished || status == WorkStatus.Paid || status == WorkStatus.Stopped ? 1m : 0m;
-
     private static int ComputeBuildingProgress(Building b)
     {
-        if (b.Stages == null || b.Stages.Count == 0)
-            return (int)Math.Round(CompletionValue(b.Status) * 100m, MidpointRounding.AwayFromZero);
-
-        decimal perStageWeight = 1m / b.Stages.Count;
-        decimal sum = 0m;
-
-        foreach (var s in b.Stages.OrderBy(s => s.OrderIndex))
-        {
-            decimal stageFraction;
-
-            if (s.SubStages == null || s.SubStages.Count == 0)
-            {
-                stageFraction = CompletionValue(s.Status);
-            }
-            else
-            {
-                stageFraction = ComputeStageProgress(s) / 100m;
-            }
-
-            sum += perStageWeight * stageFraction;
-        }
-
-        return (int)Math.Round(sum * 100m, MidpointRounding.AwayFromZero);
+        var progress = WorkProgressRules.ComputeBuildingProgress(b);
+        return (int)Math.Round((decimal)progress * 100m, MidpointRounding.AwayFromZero);
     }
 
     private static int ComputeStageProgress(Stage stage)
     {
-        if (stage.SubStages == null || stage.SubStages.Count == 0)
-            return (int)Math.Round(CompletionValue(stage.Status) * 100m, MidpointRounding.AwayFromZero);
-
-        var orderedSubs = stage.SubStages
-            .OrderBy(ss => ss.OrderIndex)
-            .ToList();
-
-        if (orderedSubs.Count == 0)
-            return (int)Math.Round(CompletionValue(stage.Status) * 100m, MidpointRounding.AwayFromZero);
-
-        decimal perSub = 1m / orderedSubs.Count;
-        decimal sum = 0m;
-
-        foreach (var ss in orderedSubs)
-            sum += perSub * CompletionValue(ss.Status);
-
-        return (int)Math.Round(sum * 100m, MidpointRounding.AwayFromZero);
+        var progress = WorkProgressRules.ComputeStageProgress(stage);
+        return (int)Math.Round((decimal)progress * 100m, MidpointRounding.AwayFromZero);
     }
 
     private static string ComputeCurrentSubStageName(Stage stage)
@@ -2340,119 +2306,12 @@ public partial class OperationsView : UserControl
 
     private static void UpdateStageStatusFromSubStages(Stage? s)
     {
-        if (s == null)
-        {
-            return;
-        }
-
-        if (s.SubStages == null || s.SubStages.Count == 0)
-        {
-            s.Status = WorkStatus.NotStarted;
-            s.StartDate = null;
-            s.EndDate = null;
-            return;
-        }
-
-        bool allPaid = s.SubStages.All(ss => ss.Status == WorkStatus.Paid);
-        bool allStopped = s.SubStages.All(ss => ss.Status == WorkStatus.Stopped);
-        bool anyStopped = s.SubStages.Any(ss => ss.Status == WorkStatus.Stopped);
-        bool anyOngoing = s.SubStages.Any(ss => ss.Status == WorkStatus.Ongoing);
-        bool allNotStarted = s.SubStages.All(ss => ss.Status == WorkStatus.NotStarted);
-        bool allFinishedOrPaid = s.SubStages.All(ss => ss.Status == WorkStatus.Finished || ss.Status == WorkStatus.Paid);
-        bool anyFinishedOrPaid = s.SubStages.Any(ss => ss.Status == WorkStatus.Finished || ss.Status == WorkStatus.Paid);
-
-        if (allStopped)
-        {
-            s.Status = WorkStatus.Stopped;
-        }
-        else if (allPaid)
-        {
-            s.Status = WorkStatus.Paid;
-        }
-        else if (allFinishedOrPaid)
-        {
-            s.Status = WorkStatus.Finished;
-        }
-        else if (anyOngoing)
-        {
-            s.Status = WorkStatus.Ongoing;
-        }
-        else if (anyStopped)
-        {
-            s.Status = WorkStatus.Stopped;
-        }
-        else if (allNotStarted)
-        {
-            s.Status = WorkStatus.NotStarted;
-        }
-        else if (anyFinishedOrPaid)
-        {
-            s.Status = WorkStatus.Ongoing;
-        }
-        else
-        {
-            s.Status = WorkStatus.Ongoing;
-        }
-
-        if (s.Status == WorkStatus.Ongoing && s.StartDate == null)
-            s.StartDate = DateTime.Today;
-
-        if ((s.Status == WorkStatus.Finished || s.Status == WorkStatus.Paid) && s.EndDate == null)
-            s.EndDate = DateTime.Today;
-
-        if (s.Status == WorkStatus.Stopped)
-        {
-            if (s.StartDate == null)
-                s.StartDate = DateTime.Today;
-            if (s.EndDate == null)
-                s.EndDate = DateTime.Today;
-        }
-        else if (s.Status == WorkStatus.NotStarted)
-        {
-            s.StartDate = null;
-            s.EndDate = null;
-        }
+        s?.RecomputeStatusFromSubStages(DateTime.Today);
     }
 
     private static void UpdateBuildingStatusFromStages(Building? b)
     {
-        if (b == null || b.Stages == null || b.Stages.Count == 0) return;
-
-        bool anyStopped = b.Stages.Any(st => st.Status == WorkStatus.Stopped);
-        bool allPaid = b.Stages.All(st => st.Status == WorkStatus.Paid);
-        bool allFinishedOrPaid = b.Stages.All(st => st.Status == WorkStatus.Finished || st.Status == WorkStatus.Paid);
-        bool allNotStarted = b.Stages.All(st => st.Status == WorkStatus.NotStarted);
-        bool anyOngoing = b.Stages.Any(st => st.Status == WorkStatus.Ongoing);
-        bool anyFinishedOrPaid = b.Stages.Any(st => st.Status == WorkStatus.Finished || st.Status == WorkStatus.Paid);
-
-        if (anyStopped)
-        {
-            b.Status = WorkStatus.Stopped;
-        }
-        else if (allPaid)
-        {
-            b.Status = WorkStatus.Paid;
-        }
-        else if (allFinishedOrPaid)
-        {
-            b.Status = WorkStatus.Finished;
-        }
-        else if (allNotStarted)
-        {
-            b.Status = WorkStatus.NotStarted;
-        }
-        else if (anyOngoing)
-        {
-            b.Status = WorkStatus.Ongoing;
-        }
-        else if (anyFinishedOrPaid)
-        {
-            b.Status = WorkStatus.Ongoing;
-        }
-        else
-        {
-            b.Status = WorkStatus.Ongoing;
-        }
+        b?.RecomputeStatusFromStages();
     }
 
     private async void AddMaterialToSubStage_Click(object sender, RoutedEventArgs e)

@@ -1,80 +1,40 @@
-using Kanstraction.Infrastructure.Data;
 using Kanstraction.Domain.Entities;
-using Kanstraction.Application.Localization;
+using Kanstraction.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace Kanstraction.Infrastructure.Services;
 
 public static class StatusService
 {
-    // Validate and set a sub-stage status
-    public static void SetSubStageStatus(SubStage ss, WorkStatus newStatus)
+    public static void SetSubStageStatus(SubStage subStage, WorkStatus newStatus, DateTime today)
+        => subStage.ApplyStatusTransition(newStatus, today);
+
+    public static void SetStageStatus(Stage stage, WorkStatus newStatus, DateTime today)
+        => stage.ApplyStatusTransition(newStatus, today);
+
+    public static async Task StopStageAsync(AppDbContext db, int stageId, DateTime today, CancellationToken ct = default)
     {
-        if (newStatus == WorkStatus.Finished || newStatus == WorkStatus.Paid)
-        {
-            // must have labor set (define your rule: > 0 or >= 0?)
-            if (ss.LaborCost <= 0 && newStatus != WorkStatus.Stopped)
-                throw new InvalidOperationException(StringLocalizer.GetString("StatusService_SetLaborFirst", "Set labor cost before marking as Finished/Paid."));
-            if (newStatus == WorkStatus.Paid && ss.Status != WorkStatus.Finished)
-                throw new InvalidOperationException(StringLocalizer.GetString("StatusService_SubStageMustBeFinished", "Sub-stage must be Finished before Paid."));
-        }
-        ss.Status = newStatus;
+        var building = await db.Buildings
+            .Include(b => b.Stages)
+                .ThenInclude(s => s.SubStages)
+                    .ThenInclude(ss => ss.MaterialUsages)
+            .FirstAsync(b => b.Stages.Any(s => s.Id == stageId), ct);
+
+        building.ChangeStageStatus(stageId, WorkStatus.Stopped, today);
+        await db.SaveChangesAsync(ct);
     }
 
-    // Validate and set a stage status (checks children)
-    public static void SetStageStatus(AppDbContext db, Stage s, WorkStatus newStatus)
+    public static async Task RecomputeBuildingStatusAsync(AppDbContext db, int buildingId, DateTime today, CancellationToken ct = default)
     {
-        if (newStatus == WorkStatus.Finished || newStatus == WorkStatus.Paid)
-        {
-            var subs = s.SubStages;
-            if (subs.Count == 0)
-                throw new InvalidOperationException(StringLocalizer.GetString("StatusService_NoSubStages", "Stage has no sub-stages; cannot mark as Finished."));
+        var building = await db.Buildings
+            .Include(b => b.Stages)
+                .ThenInclude(s => s.SubStages)
+            .FirstAsync(b => b.Id == buildingId, ct);
 
-            var allDone = subs.All(x => x.Status == WorkStatus.Finished || x.Status == WorkStatus.Paid);
-            if (!allDone)
-                throw new InvalidOperationException(StringLocalizer.GetString("StatusService_AllSubStagesMustBeDone", "All sub-stages must be Finished/Paid."));
-            if (newStatus == WorkStatus.Paid && s.Status != WorkStatus.Finished)
-                throw new InvalidOperationException(StringLocalizer.GetString("StatusService_StageMustBeFinished", "Stage must be Finished before Paid."));
-        }
-        s.Status = newStatus;
-    }
+        foreach (var stage in building.Stages)
+            stage.RecomputeStatusFromSubStages(today);
 
-    // Stop a stage (and cascade)
-    public static async Task StopStageAsync(AppDbContext db, int stageId)
-    {
-        var s = await db.Stages
-            .Include(x => x.SubStages)
-            .FirstAsync(x => x.Id == stageId);
-
-        foreach (var ss in s.SubStages)
-        {
-            if (ss.Status == WorkStatus.NotStarted || ss.Status == WorkStatus.Ongoing)
-                ss.Status = WorkStatus.Stopped;
-        }
-        s.Status = WorkStatus.Stopped;
-        await db.SaveChangesAsync();
-
-        await RecomputeBuildingStatusAsync(db, s.BuildingId);
-    }
-
-    // Recompute building from its stages
-    public static async Task RecomputeBuildingStatusAsync(AppDbContext db, int buildingId)
-    {
-        var b = await db.Buildings
-            .Include(x => x.Stages)
-            .FirstAsync(x => x.Id == buildingId);
-
-        if (b.Stages.Any(x => x.Status == WorkStatus.Ongoing))
-            b.Status = WorkStatus.Ongoing;
-        else if (b.Stages.All(x => x.Status == WorkStatus.Finished || x.Status == WorkStatus.Paid))
-            b.Status = b.Stages.All(x => x.Status == WorkStatus.Paid) ? WorkStatus.Paid : WorkStatus.Finished;
-        else if (b.Stages.Any(x => x.Status == WorkStatus.Stopped) && !b.Stages.Any(x => x.Status == WorkStatus.Ongoing))
-            b.Status = WorkStatus.Stopped;
-        else if (b.Stages.All(x => x.Status == WorkStatus.NotStarted))
-            b.Status = WorkStatus.NotStarted;
-        else
-            b.Status = WorkStatus.NotStarted; // default fallback
-
-        await db.SaveChangesAsync();
+        building.RecomputeStatusFromStages();
+        await db.SaveChangesAsync(ct);
     }
 }
