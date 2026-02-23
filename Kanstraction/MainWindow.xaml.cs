@@ -1,5 +1,4 @@
 using Kanstraction.Application.Abstractions;
-using Kanstraction.Infrastructure.Data;
 using Kanstraction.Domain.Entities;
 using Kanstraction.Application.Projects.Commands.CreateProject;
 using Kanstraction.Application.Projects.Commands.DeleteProject;
@@ -22,7 +21,6 @@ namespace Kanstraction;
 
 public partial class MainWindow : Window
 {
-    private AppDbContext? _db;
     private readonly ISender _sender;
 
     // Explorer sizing/toggle
@@ -54,7 +52,6 @@ public partial class MainWindow : Window
         _sender = App.Services.GetRequiredService<ISender>();
         InitializeComponent();
 
-        InitializeDataLayer();
         BuildViews();
         ActivateOperationsView();
 
@@ -68,22 +65,11 @@ public partial class MainWindow : Window
         Loaded += OnLoaded;
     }
 
-    private void InitializeDataLayer()
-    {
-        _db?.Dispose();
-        _db = App.Services.GetRequiredService<AppDbContext>();
-    }
 
     private void BuildViews()
     {
         _opsView = new OperationsView();
-        if (_db != null)
-            _opsView.SetDb(_db);
-
         _adminView = new AdminHubView();
-        if (_db != null)
-            _adminView.SetDb(_db);
-
         _backupView = new BackupHubView();
         if (App.BackupService != null)
             _backupView.Initialize(App.BackupService, PrepareForRestoreAsync, FinalizeRestoreAsync);
@@ -91,7 +77,7 @@ public partial class MainWindow : Window
 
     private async void OnLoaded(object? sender, RoutedEventArgs e)
     {
-        if (_db == null || _isRestoring)
+        if (_isRestoring)
             return;
 
         _allProjects = (await _sender.Send(new ListProjectsQuery())).ToList();
@@ -127,8 +113,6 @@ public partial class MainWindow : Window
             _hourlyBackupTimer = null;
         }
 
-        _db?.Dispose();
-        _db = null;
     }
 
     // ============ Explorer toggle ============
@@ -257,7 +241,7 @@ public partial class MainWindow : Window
 
     private async void ProjectsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_db == null || _isRestoring || _activeView != ActiveView.Operations)
+        if (_isRestoring || _activeView != ActiveView.Operations)
             return;
 
         var p = ProjectsList.SelectedItem as Project;
@@ -270,7 +254,7 @@ public partial class MainWindow : Window
     // ============ Top bar action stubs ============
     private async void NewProject_Click(object sender, RoutedEventArgs e)
     {
-        if (_db == null || _isRestoring)
+        if (_isRestoring)
             return;
 
         var dlg = new PromptTextDialog(ResourceHelper.GetString("MainWindow_NewProjectDialogTitle", "New Project"))
@@ -294,7 +278,7 @@ public partial class MainWindow : Window
 
     private async void RemoveProject_Click(object sender, RoutedEventArgs e)
     {
-        if (_db == null || _isRestoring)
+        if (_isRestoring)
             return;
 
         if (ProjectsList.SelectedItem is not Project selectedProject)
@@ -382,7 +366,7 @@ public partial class MainWindow : Window
 
     private async Task RefreshProjectsList(bool ignoreRestoringGuard = false)
     {
-        if (_db == null || ProjectsList == null || (_isRestoring && !ignoreRestoringGuard)) return;
+        if (ProjectsList == null || (_isRestoring && !ignoreRestoringGuard)) return;
 
         var previouslySelectedId = (ProjectsList.SelectedItem as Project)?.Id;
 
@@ -423,8 +407,6 @@ public partial class MainWindow : Window
         _isRestoring = true;
         _hourlyBackupTimer?.Stop();
 
-        _db?.Dispose();
-        _db = null;
 
         _allProjects.Clear();
         ProjectsList.ItemsSource = null;
@@ -438,8 +420,7 @@ public partial class MainWindow : Window
     {
         try
         {
-            InitializeDataLayer();
-            BuildViews();
+                BuildViews();
             ShowActiveView();
             await RefreshProjectsList(ignoreRestoringGuard: true);
         }

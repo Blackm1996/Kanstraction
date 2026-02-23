@@ -12,6 +12,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddTransient<AppDbContext>();
         services.AddTransient<IConstructionRepository, EfConstructionRepository>();
         services.AddTransient<IProjectRepository, EfProjectRepository>();
+        services.AddTransient<IAdminReadRepository, EfAdminReadRepository>();
         services.AddTransient<IProgressDataReader, ProgressService>();
         services.AddSingleton<IBackupService, BackupService>();
         services.AddSingleton<IDatabaseMigrator>(sp => new DatabaseMigrator(() => new AppDbContext()));

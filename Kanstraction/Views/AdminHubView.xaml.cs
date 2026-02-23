@@ -1,6 +1,9 @@
 ﻿using Kanstraction;
 using Kanstraction.Infrastructure.Data;
 using Kanstraction.Domain.Entities;
+using Kanstraction.Application.BuildingTypes.Queries.ListBuildingTypesForAdmin;
+using Kanstraction.Application.Materials.Queries.ListMaterialsForAdmin;
+using Kanstraction.Application.Materials.Queries.ListMaterialCategoriesForAdmin;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -12,12 +15,15 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
+using MediatR;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Kanstraction.Views
 {
     public partial class AdminHubView : UserControl
     {
-        private AppDbContext? _db;
+        private readonly AppDbContext _db;
+        private readonly ISender _sender;
 
         // Caches for quick filtering
         private List<Material> _allMaterials = new();
@@ -47,6 +53,8 @@ namespace Kanstraction.Views
 
         public AdminHubView()
         {
+            _db = App.Services.GetRequiredService<AppDbContext>();
+            _sender = App.Services.GetRequiredService<ISender>();
             InitializeComponent();
             Loaded += OnLoaded;
 
@@ -56,15 +64,13 @@ namespace Kanstraction.Views
             }
         }
 
-        public void SetDb(AppDbContext db) => _db = db;
-
-        // -------------------- LIFECYCLE --------------------
+            // -------------------- LIFECYCLE --------------------
         private async void OnLoaded(object sender, RoutedEventArgs e)
         {
             if (_db == null) return;
 
             _allPresets = await _db.StagePresets.AsNoTracking().OrderBy(p => p.Name).ToListAsync();
-            _allBuildingTypes = await _db.BuildingTypes.AsNoTracking().OrderBy(b => b.Name).ToListAsync();
+            _allBuildingTypes = (await _sender.Send(new ListBuildingTypesForAdminQuery())).Select(x => new BuildingType { Id = x.Id, Name = x.Name, IsActive = x.IsActive }).ToList();
 
             await ReloadMaterialsCacheAsync();
             RefreshMaterialsList();
@@ -717,16 +723,22 @@ namespace Kanstraction.Views
 
         private async Task ReloadMaterialsCacheAsync()
         {
-            _allMaterialCategories = await _db!.MaterialCategories
-                .AsNoTracking()
-                .OrderBy(c => c.Name)
-                .ToListAsync();
+            _allMaterialCategories = (await _sender.Send(new ListMaterialCategoriesForAdminQuery()))
+                .Select(c => new MaterialCategory { Id = c.Id, Name = c.Name })
+                .ToList();
 
-            _allMaterials = await _db!.Materials
-                .AsNoTracking()
-                .Include(m => m.MaterialCategory)
-                .OrderBy(m => m.Name)
-                .ToListAsync();
+            _allMaterials = (await _sender.Send(new ListMaterialsForAdminQuery()))
+                .Select(m => new Material
+                {
+                    Id = m.Id,
+                    Name = m.Name,
+                    Unit = m.Unit,
+                    IsActive = m.IsActive,
+                    PricePerUnit = m.PricePerUnit,
+                    MaterialCategoryId = m.MaterialCategoryId,
+                    MaterialCategory = new MaterialCategory { Id = m.MaterialCategoryId, Name = m.CategoryName }
+                })
+                .ToList();
 
             RefreshMaterialCategoryControls();
             UpdateSimilarMaterialSuggestions();
