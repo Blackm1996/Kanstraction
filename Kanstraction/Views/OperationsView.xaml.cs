@@ -5,6 +5,7 @@ using Kanstraction.Domain.Entities;
 using Kanstraction.Domain.Services;
 using Kanstraction.Infrastructure.Services;
 using Kanstraction.Application.Stages.Commands.ChangeStageStatus;
+using Kanstraction.Application.Buildings.Queries.ListBuildingsForOperations;
 using MediatR;
 using System;
 using System.Collections.Generic;
@@ -25,7 +26,7 @@ namespace Kanstraction.Views;
 
 public partial class OperationsView : UserControl
 {
-    private AppDbContext? _db;
+    private readonly AppDbContext _db;
     private readonly ISender _sender;
     private Project? _currentProject;
     public string Breadcrumb
@@ -802,12 +803,11 @@ public partial class OperationsView : UserControl
     public OperationsView()
     {
         _sender = App.Services.GetRequiredService<ISender>();
+        _db = App.Services.GetRequiredService<AppDbContext>();
         InitializeComponent();
         _selectedStatusFilters = _allWorkStatuses.ToHashSet();
         UpdateStatusFilterSummary();
     }
-
-    public void SetDb(AppDbContext db) => _db = db;
 
     public async Task ShowProject(Project p)
     {
@@ -1485,29 +1485,23 @@ public partial class OperationsView : UserControl
 
     private async Task ReloadBuildingsAsync(int? selectBuildingId = null, int? preferredStageId = null)
     {
-        if (_currentProject == null || _db == null)
+        if (_currentProject == null)
         {
             return;
         }
 
-        var buildings = await _db.Buildings
-            .Where(b => b.ProjectId == _currentProject.Id)
-            .Include(b => b.BuildingType)
-            .Include(b => b.Stages)
-                .ThenInclude(s => s.SubStages)
-            .AsNoTracking()
-            .ToListAsync();
+        var buildings = await _sender.Send(new ListBuildingsForOperationsQuery(_currentProject.Id));
 
         _buildingRows = buildings
             .Select(b => new BuildingRow
             {
                 Id = b.Id,
                 Code = b.Code,
-                TypeName = b.BuildingType?.Name ?? string.Empty,
+                TypeName = b.TypeName,
                 Status = b.Status,
-                ProgressPercent = ComputeBuildingProgress(b),
-                CurrentStageName = ComputeCurrentStageName(b),
-                HasPaidItems = BuildingHasPaidItems(b)
+                ProgressPercent = b.ProgressPercent,
+                CurrentStageName = b.CurrentStageName,
+                HasPaidItems = b.HasPaidItems
             })
             .OrderBy(x => x.Id)
             .ToList();
