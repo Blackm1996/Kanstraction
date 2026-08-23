@@ -1,4 +1,4 @@
-using Kanstraction.Application.Abstractions;
+﻿using Kanstraction.OnSite.Application.Abstractions;
 
 namespace Kanstraction.Localization;
 

@@ -1,27 +1,24 @@
-using Kanstraction.Application.Abstractions;
-using Kanstraction.Domain.Entities;
-using Kanstraction.Application.Projects.Commands.CreateProject;
-using Kanstraction.Application.Projects.Commands.DeleteProject;
-using Kanstraction.Application.Projects.Queries.ListProjects;
+﻿using Kanstraction.OnSite.Application.Abstractions;
+using Kanstraction.OnSite.Application.Common.Changes;
+using Kanstraction.OnSite.Application.Projects.Queries.ListProjects;
 using Kanstraction.Views;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Win32;
-using MediatR;
+using Kanstraction.Services;
+using Kanstraction.ViewModels;
+using Kanstraction.Shell;
+using System.Collections.ObjectModel;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Threading;
 
 namespace Kanstraction;
 
 public partial class MainWindow : Window
 {
-    private readonly ISender _sender;
+    private readonly IOnSiteChangePublisher _changePublisher;
 
     // Explorer sizing/toggle
     private double _explorerLastWidth = 220;
@@ -32,47 +29,50 @@ public partial class MainWindow : Window
     private AdminHubView _adminView = null!;
     private BackupHubView _backupView = null!;
 
-    // Projects cache
-    private List<Project> _allProjects = new();
+    private readonly ProjectsExplorerViewModel _projects;
 
-    private DispatcherTimer? _hourlyBackupTimer;
     private bool _isRestoring;
 
-    private ActiveView _activeView = ActiveView.Operations;
+    private DesktopSection _activeSection = null!;
 
-    private enum ActiveView
-    {
-        Operations,
-        Admin,
-        Backup
-    }
+    public ObservableCollection<DesktopSection> Sections { get; } = [];
 
-    public MainWindow()
+    public MainWindow(
+        IOnSiteChangePublisher changePublisher,
+        ProjectsExplorerViewModel projects,
+        IEnumerable<IDesktopModule> modules)
     {
-        _sender = App.Services.GetRequiredService<ISender>();
+        _changePublisher = changePublisher;
+        _projects = projects;
         InitializeComponent();
+        DataContext = _projects;
 
-        BuildViews();
-        ActivateOperationsView();
+        BuildViews(modules);
+        ActivateSection(Sections.First(section => section.Content is OperationsView));
 
-        _hourlyBackupTimer = new DispatcherTimer
-        {
-            Interval = TimeSpan.FromHours(1)
-        };
-        _hourlyBackupTimer.Tick += HourlyBackupTimer_Tick;
-        _hourlyBackupTimer.Start();
+        _backupView.StartAutomaticBackups();
 
         Loaded += OnLoaded;
     }
 
 
-    private void BuildViews()
+    private void BuildViews(IEnumerable<IDesktopModule> modules)
     {
-        _opsView = new OperationsView();
-        _adminView = new AdminHubView();
-        _backupView = new BackupHubView();
-        if (App.BackupService != null)
-            _backupView.Initialize(App.BackupService, PrepareForRestoreAsync, FinalizeRestoreAsync);
+        foreach (var section in modules.SelectMany(module => module.Sections))
+            Sections.Add(section);
+
+        _opsView = Sections.Select(section => section.Content)
+            .OfType<OperationsView>()
+            .Single();
+        _adminView = Sections.Select(section => section.Content)
+            .OfType<AdminHubView>()
+            .Single();
+        _backupView = Sections.Select(section => section.Content)
+            .OfType<BackupHubView>()
+            .Single();
+        _backupView.ConfigureRestoreLifecycle(
+            PrepareForRestoreAsync,
+            FinalizeRestoreAsync);
     }
 
     private async void OnLoaded(object? sender, RoutedEventArgs e)
@@ -80,45 +80,19 @@ public partial class MainWindow : Window
         if (_isRestoring)
             return;
 
-        _allProjects = (await _sender.Send(new ListProjectsQuery())).ToList();
-        ProjectsList.ItemsSource = _allProjects;
-
-        if (ProjectsList.Items.Count > 0)
-            ProjectsList.SelectedIndex = 0;
-    }
-
-    private async void HourlyBackupTimer_Tick(object? sender, EventArgs e)
-    {
-        if (_isRestoring || App.BackupService == null)
-            return;
-
-        try
-        {
-            await App.BackupService.CreateHourlyBackupAsync();
-        }
-        catch
-        {
-            // Ignore automatic backup failures to avoid disrupting the user
-        }
+        await _projects.RefreshAsync();
     }
 
     protected override void OnClosed(EventArgs e)
     {
         base.OnClosed(e);
-
-        if (_hourlyBackupTimer != null)
-        {
-            _hourlyBackupTimer.Stop();
-            _hourlyBackupTimer.Tick -= HourlyBackupTimer_Tick;
-            _hourlyBackupTimer = null;
-        }
-
+        _backupView.StopAutomaticBackups();
     }
 
     // ============ Explorer toggle ============
     private void ToggleExplorer()
     {
-        if (_activeView != ActiveView.Operations)
+        if (!_activeSection.ShowProjectExplorer)
             return;
 
         if (_explorerCollapsed)
@@ -150,101 +124,52 @@ public partial class MainWindow : Window
         ExplorerSplitter.Cursor = Cursors.Arrow;
     }
 
-    private void ActivateOperationsView()
+    private void ActivateSection(DesktopSection section)
     {
-        _activeView = ActiveView.Operations;
-        MainContentHost.Content = _opsView;
+        _activeSection = section;
+        MainContentHost.Content = section.Content;
 
-        if (_explorerCollapsed)
+        if (section.ShowProjectExplorer)
         {
-            ExplorerCol.Width = new GridLength(_explorerLastWidth > 0 ? _explorerLastWidth : 220);
-            _explorerCollapsed = false;
-        }
+            if (_explorerCollapsed)
+            {
+                ExplorerCol.Width = new GridLength(
+                    _explorerLastWidth > 0 ? _explorerLastWidth : 220);
+                _explorerCollapsed = false;
+            }
 
-        SplitterCol.Width = new GridLength(6);
-        ExplorerSplitter.Visibility = Visibility.Visible;
-        ExplorerSplitter.IsEnabled = true;
-        ExplorerSplitter.IsHitTestVisible = true;
-        ExplorerSplitter.Cursor = Cursors.SizeWE;
+            SplitterCol.Width = new GridLength(6);
+            ExplorerSplitter.Visibility = Visibility.Visible;
+            ExplorerSplitter.IsEnabled = true;
+            ExplorerSplitter.IsHitTestVisible = true;
+            ExplorerSplitter.Cursor = Cursors.SizeWE;
 
-        if (ProjectsList.Items.Count > 0 && ProjectsList.SelectedIndex < 0)
-            ProjectsList.SelectedIndex = 0;
-    }
-
-    private void ActivateAdminView()
-    {
-        _activeView = ActiveView.Admin;
-        MainContentHost.Content = _adminView;
-        CollapseExplorer();
-    }
-
-    private void ActivateBackupView()
-    {
-        _activeView = ActiveView.Backup;
-        MainContentHost.Content = _backupView;
-        CollapseExplorer();
-    }
-
-    private void ShowActiveView()
-    {
-        switch (_activeView)
-        {
-            case ActiveView.Operations:
-                ActivateOperationsView();
-                break;
-            case ActiveView.Admin:
-                ActivateAdminView();
-                break;
-            case ActiveView.Backup:
-                ActivateBackupView();
-                break;
-        }
-    }
-
-    // ============ Left rail buttons ============
-    private void ProjectsRail_Click(object sender, RoutedEventArgs e)
-    {
-        ActivateOperationsView();
-    }
-
-    private void AdminRail_Click(object sender, RoutedEventArgs e)
-    {
-        ActivateAdminView();
-    }
-
-    private void BackupsRail_Click(object sender, RoutedEventArgs e)
-    {
-        ActivateBackupView();
-    }
-
-    // ============ Projects search & selection ============
-    private void ProjectSearchBox_TextChanged(object sender, TextChangedEventArgs e)
-    {
-        if (_isRestoring)
-            return;
-
-        var q = ProjectSearchBox.Text?.Trim();
-        if (string.IsNullOrWhiteSpace(q))
-        {
-            ProjectsList.ItemsSource = _allProjects;
+            if (ProjectsList.Items.Count > 0 && ProjectsList.SelectedIndex < 0)
+                ProjectsList.SelectedIndex = 0;
         }
         else
         {
-            ProjectsList.ItemsSource = _allProjects
-                .Where(p => p.Name.Contains(q, StringComparison.OrdinalIgnoreCase))
-                .ToList();
+            CollapseExplorer();
         }
-
-        if (ProjectsList.Items.Count > 0)
-            ProjectsList.SelectedIndex = 0;
     }
 
-    private async void ProjectsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private async void SectionRail_Click(object sender, RoutedEventArgs e)
     {
-        if (_isRestoring || _activeView != ActiveView.Operations)
+        if ((sender as FrameworkElement)?.Tag is not DesktopSection section)
             return;
 
-        var p = ProjectsList.SelectedItem as Project;
+        ActivateSection(section);
+        if (section.ActivateAsync != null)
+            await section.ActivateAsync();
+    }
+
+    // ============ Projects search & selection ============
+    private async void ProjectsList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_isRestoring || !_activeSection.ShowProjectExplorer)
+            return;
+
+        var p = ProjectsList.SelectedItem as ProjectListItemDto;
         if (p == null)
             return;
 
@@ -257,22 +182,13 @@ public partial class MainWindow : Window
         if (_isRestoring)
             return;
 
-        var dlg = new PromptTextDialog(ResourceHelper.GetString("MainWindow_NewProjectDialogTitle", "New Project"))
+        var project = await _projects.CreateAsync();
+        if (project != null)
         {
-            Owner = this
-        };
-        if (dlg.ShowDialog() != true) return;
-
-        var createdProject = await _sender.Send(new CreateProjectCommand(dlg.Value!, DateTime.Today));
-
-        _allProjects = (await _sender.Send(new ListProjectsQuery())).ToList();
-        await RefreshProjectsList();
-        var row = _allProjects.FirstOrDefault(x => x.Id == createdProject.Id);
-        if (row != null)
-        {
-            ProjectsList.SelectedItem = row;
-            ActivateOperationsView();
-            await _opsView.ShowProject(row);
+            ProjectsList.SelectedItem = project;
+            ActivateSection(Sections.First(section =>
+                section.Content is OperationsView));
+            await _opsView.ShowProject(project);
         }
     }
 
@@ -281,41 +197,13 @@ public partial class MainWindow : Window
         if (_isRestoring)
             return;
 
-        if (ProjectsList.SelectedItem is not Project selectedProject)
-        {
-            MessageBox.Show(
-                ResourceHelper.GetString("MainWindow_RemoveProjectSelectFirst", "Select a project to remove."),
-                ResourceHelper.GetString("MainWindow_RemoveProjectTitle", "Remove Project"),
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-            return;
-        }
-
-        var confirmation = MessageBox.Show(
-            string.Format(
-                ResourceHelper.GetString(
-                    "MainWindow_RemoveProjectConfirmFormat",
-                    "Remove project \"{0}\"? This will delete all related buildings and data."),
-                selectedProject.Name),
-            ResourceHelper.GetString("MainWindow_RemoveProjectTitle", "Remove Project"),
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
-
-        if (confirmation != MessageBoxResult.Yes)
+        if (!await _projects.DeleteSelectedAsync())
             return;
 
-        var deleted = await _sender.Send(new DeleteProjectCommand(selectedProject.Id));
-        if (!deleted)
+        if (ProjectsList.SelectedItem is ProjectListItemDto project)
         {
-            await RefreshProjectsList();
-            return;
-        }
-
-        await RefreshProjectsList();
-
-        if (ProjectsList.SelectedItem is Project project)
-        {
-            ActivateOperationsView();
+            ActivateSection(Sections.First(section =>
+                section.Content is OperationsView));
             await _opsView.ShowProject(project);
         }
         else
@@ -324,94 +212,32 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Reporting_Click(object sender, RoutedEventArgs e)
-    {
-        if (_activeView != ActiveView.Operations)
-            MessageBox.Show("Passez à Projets pour exécuter des rapports liés à une sélection de projet.", "Rapports");
-        else
-            MessageBox.Show("TODO : ouvrir l'assistant de rapports / résumé mensuel.", "Rapports");
-    }
-
-    private void Export_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var dlg = new SaveFileDialog
-            {
-                Title = "Export (placeholder)",
-                Filter = "CSV files (*.csv)|*.csv|All files (*.*)|*.*",
-                FileName = "export.csv"
-            };
-            if (dlg.ShowDialog() == true)
-            {
-                File.WriteAllText(
-                    dlg.FileName,
-                    ResourceHelper.GetString("MainWindow_ExportPlaceholderContent", "This is a placeholder export.\n"));
-                MessageBox.Show(
-                    string.Format(ResourceHelper.GetString("MainWindow_ExportedToFormat", "Exported to:\n{0}"), dlg.FileName),
-                    ResourceHelper.GetString("MainWindow_ExportTitle", "Export"),
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Information);
-            }
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show(
-                string.Format(ResourceHelper.GetString("MainWindow_ExportFailedFormat", "Export failed:\n{0}"), ex.Message),
-                ResourceHelper.GetString("MainWindow_ExportTitle", "Export"),
-                MessageBoxButton.OK,
-                MessageBoxImage.Error);
-        }
-    }
-
     private async Task RefreshProjectsList(bool ignoreRestoringGuard = false)
     {
         if (ProjectsList == null || (_isRestoring && !ignoreRestoringGuard)) return;
 
-        var previouslySelectedId = (ProjectsList.SelectedItem as Project)?.Id;
+        var previouslySelectedId = _projects.SelectedProject?.Id;
+        await _projects.RefreshAsync(
+            previouslySelectedId,
+            selectFirst: _activeSection.ShowProjectExplorer);
 
-        _allProjects = (await _sender.Send(new ListProjectsQuery())).ToList();
-
-        ProjectsList.ItemsSource = _allProjects;
-
-        if (_activeView != ActiveView.Operations)
+        if (!_activeSection.ShowProjectExplorer)
         {
-            ProjectsList.SelectedItem = null;
-            ProjectsList.SelectedIndex = -1;
+            _projects.SelectedProject = null;
             return;
         }
 
-        if (_allProjects.Count == 0)
-        {
-            ProjectsList.SelectedItem = null;
-            ProjectsList.SelectedIndex = -1;
-            return;
-        }
-
-        if (previouslySelectedId.HasValue)
-        {
-            var match = _allProjects.FirstOrDefault(p => p.Id == previouslySelectedId.Value);
-            if (match != null)
-            {
-                ProjectsList.SelectedItem = match;
-                return;
-            }
-        }
-
-        if (ProjectsList.SelectedItem == null)
-            ProjectsList.SelectedIndex = 0;
+        if (_projects.SelectedProject == null)
+            _projects.SelectedProject = _projects.Projects.FirstOrDefault();
     }
 
     private Task PrepareForRestoreAsync()
     {
         _isRestoring = true;
-        _hourlyBackupTimer?.Stop();
+        _backupView.SuspendAutomaticBackups();
 
 
-        _allProjects.Clear();
-        ProjectsList.ItemsSource = null;
-        ProjectsList.SelectedItem = null;
-        ProjectsList.SelectedIndex = -1;
+        _projects.Clear();
 
         return Task.CompletedTask;
     }
@@ -420,13 +246,17 @@ public partial class MainWindow : Window
     {
         try
         {
-                BuildViews();
-            ShowActiveView();
+            _opsView.ClearProject();
+            await _changePublisher.PublishAsync(new OnSiteChange(
+                OnSiteChangeScope.AllData,
+                OnSiteChangeKind.Replaced));
+            ActivateSection(_activeSection);
             await RefreshProjectsList(ignoreRestoringGuard: true);
+            await _adminView.RefreshAfterDatabaseRestoreAsync();
         }
         finally
         {
-            _hourlyBackupTimer?.Start();
+            _backupView.StartAutomaticBackups();
             _isRestoring = false;
         }
     }

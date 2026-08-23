@@ -1,37 +1,34 @@
-using Kanstraction;
-using Kanstraction.Domain.Entities;
+using Kanstraction.OnSite.Application.Common;
 using System;
 using System.Globalization;
 using System.Windows.Data;
 
 namespace Kanstraction.Converters;
 
-public class WorkStatusToStringConverter : IValueConverter
+public sealed class WorkStatusToStringConverter : IValueConverter
 {
     public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
     {
-        if (value is WorkStatus status)
+        if (value is not WorkStatusDto status)
         {
-            var key = status switch
-            {
-                WorkStatus.NotStarted => "WorkStatus_NotStarted",
-                WorkStatus.Ongoing => "WorkStatus_Ongoing",
-                WorkStatus.Finished => "WorkStatus_Finished",
-                WorkStatus.Paid => "WorkStatus_Paid",
-                WorkStatus.Stopped => "WorkStatus_Stopped",
-                _ => null
-            };
-
-            if (key != null)
-            {
-                return ResourceHelper.GetString(key, status.ToString());
-            }
-
-            return status.ToString();
+            return value?.ToString() ?? string.Empty;
         }
 
-        return value?.ToString() ?? string.Empty;
+        var resourceKey = status switch
+        {
+            WorkStatusDto.NotStarted => "WorkStatus_NotStarted",
+            WorkStatusDto.Ongoing => "WorkStatus_Ongoing",
+            WorkStatusDto.Finished => "WorkStatus_Finished",
+            WorkStatusDto.Paid => "WorkStatus_Paid",
+            WorkStatusDto.Stopped => "WorkStatus_Stopped",
+            _ => null
+        };
+
+        return resourceKey is null
+            ? status.ToString()
+            : ResourceHelper.GetString(resourceKey, status.ToString());
     }
 
-    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        => throw new NotSupportedException();
 }

@@ -1,41 +1,31 @@
-using System.Collections.Generic;
-﻿using Kanstraction.Infrastructure.Data;
+﻿using Kanstraction.OnSite.Application.BuildingTypes.Queries.ListBuildingTypesForCreation;
 using System.Windows;
-using Microsoft.EntityFrameworkCore;
-
-using Kanstraction;
 
 namespace Kanstraction.Views;
 
 public partial class AddBuildingDialog : Window
 {
-    private readonly AppDbContext _db;
+    private readonly IReadOnlyList<BuildingTypeCreationOptionDto> _buildingTypes;
 
     public int? BuildingTypeId { get; private set; }
-    public string BuildingCode { get; private set; } = "";
+    public string BuildingCode { get; private set; } = string.Empty;
 
-    public AddBuildingDialog(AppDbContext db)
+    public AddBuildingDialog(IReadOnlyList<BuildingTypeCreationOptionDto> buildingTypes)
     {
         InitializeComponent();
-        _db = db;
+        _buildingTypes = buildingTypes;
         Loaded += OnLoaded;
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        // Load ACTIVE building types (ordered)
-        var types = await _db.BuildingTypes
-            .AsNoTracking()
-            .Where(t => t.IsActive)
-            .OrderBy(t => t.Name)
-            .ToListAsync();
-
-        CboType.ItemsSource = types;
-        if (types.Count > 0) CboType.SelectedIndex = 0;
+        CboType.ItemsSource = _buildingTypes;
+        if (_buildingTypes.Count > 0)
+            CboType.SelectedIndex = 0;
         TxtCode.Focus();
     }
 
-    private async void Create_Click(object sender, RoutedEventArgs e)
+    private void Create_Click(object sender, RoutedEventArgs e)
     {
         var code = TxtCode.Text?.Trim();
         if (string.IsNullOrWhiteSpace(code))
@@ -47,6 +37,7 @@ public partial class AddBuildingDialog : Window
                 MessageBoxImage.Warning);
             return;
         }
+
         if (CboType.SelectedValue is not int typeId)
         {
             MessageBox.Show(
@@ -57,85 +48,31 @@ public partial class AddBuildingDialog : Window
             return;
         }
 
-        // Optional (recommended): ensure code is unique within the current project.
-        // We can't know the current ProjectId here; OperationsView will validate after dialog returns if needed.
-        // If you want this dialog to receive a projectId for validation, pass it in ctor and check here.
-
-        BuildingTypeId = typeId;
-        BuildingCode = code;
-
-        // quick sanity check: the chosen type must have at least 1 preset assigned (not required, but nice)
-        var assignedStageIds = await _db.BuildingTypeStagePresets
-            .Where(x => x.BuildingTypeId == typeId)
-            .Select(x => x.StagePresetId)
-            .Distinct()
-            .ToListAsync();
-
-        if (assignedStageIds.Count == 0)
+        var selectedType = _buildingTypes.First(type => type.Id == typeId);
+        if (!selectedType.HasStagePresets)
         {
-            var res = MessageBox.Show(
+            var choice = MessageBox.Show(
                 ResourceHelper.GetString("AddBuildingDialog_NoPresetWarning", "This building type has no stage presets assigned. Create anyway?"),
                 ResourceHelper.GetString("AddBuildingDialog_NoPresetTitle", "No preset"),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Question);
-            if (res != MessageBoxResult.Yes) return;
+            if (choice != MessageBoxResult.Yes)
+                return;
         }
 
-        var requiredSubStageIds = assignedStageIds.Count == 0
-            ? new List<int>()
-            : await _db.SubStagePresets
-                .Where(s => assignedStageIds.Contains(s.StagePresetId))
-                .Select(s => s.Id)
-                .ToListAsync();
-
-        bool hasIncompleteDefaults = false;
-
-        if (requiredSubStageIds.Count > 0)
+        if (selectedType.HasIncompleteDefaults)
         {
-            var laborLookup = await _db.BuildingTypeSubStageLabors
-                .Where(x => x.BuildingTypeId == typeId && requiredSubStageIds.Contains(x.SubStagePresetId))
-                .ToDictionaryAsync(x => x.SubStagePresetId, x => x.LaborCost);
-
-            if (requiredSubStageIds.Any(id => !laborLookup.TryGetValue(id, out var cost) || cost == null))
-            {
-                hasIncompleteDefaults = true;
-            }
-
-            if (!hasIncompleteDefaults)
-            {
-                var requiredMaterials = await _db.MaterialUsagesPreset
-                    .Where(mu => requiredSubStageIds.Contains(mu.SubStagePresetId))
-                    .Select(mu => new { mu.SubStagePresetId, mu.MaterialId })
-                    .ToListAsync();
-
-                if (requiredMaterials.Count > 0)
-                {
-                    var materialLookup = await _db.BuildingTypeMaterialUsages
-                        .Where(x => x.BuildingTypeId == typeId && requiredSubStageIds.Contains(x.SubStagePresetId))
-                        .ToDictionaryAsync(x => (x.SubStagePresetId, x.MaterialId), x => x.Qty);
-
-                    if (requiredMaterials.Any(req => !materialLookup.TryGetValue((req.SubStagePresetId, req.MaterialId), out var qty) || qty == null))
-                    {
-                        hasIncompleteDefaults = true;
-                    }
-                }
-            }
-        }
-
-        if (hasIncompleteDefaults)
-        {
-            var res = MessageBox.Show(
+            var choice = MessageBox.Show(
                 ResourceHelper.GetString("AddBuildingDialog_IncompleteDefaultsWarning", "Some labor costs or material quantities for this building type are missing. Continue anyway?"),
                 ResourceHelper.GetString("AddBuildingDialog_IncompleteDefaultsTitle", "Missing defaults"),
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
-
-            if (res != MessageBoxResult.Yes)
-            {
+            if (choice != MessageBoxResult.Yes)
                 return;
-            }
         }
 
+        BuildingTypeId = typeId;
+        BuildingCode = code;
         DialogResult = true;
     }
 }

@@ -1,8 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <OutputType>WinExe</OutputType>
+    <OutputType>Library</OutputType>
     <TargetFramework>net9.0-windows7.0</TargetFramework>
+    <AssemblyName>Kanstraction.Presentation.Wpf</AssemblyName>
+    <RootNamespace>Kanstraction</RootNamespace>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
@@ -17,13 +19,10 @@
     <PackageReference Include="MahApps.Metro.IconPacks.FontAwesome" Version="6.1.0" />
     <PackageReference Include="MaterialDesignColors" Version="5.2.1" />
     <PackageReference Include="MaterialDesignThemes" Version="5.2.1" />
-    <PackageReference Include="ClosedXML" Version="0.102.4" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Kanstraction.Domain\Kanstraction.Domain.csproj" />
-    <ProjectReference Include="..\Kanstraction.Application\Kanstraction.Application.csproj" />
-    <ProjectReference Include="..\Kanstraction.Infrastructure\Kanstraction.Infrastructure.csproj" />
+    <ProjectReference Include="..\Kanstraction.OnSite.Application\Kanstraction.OnSite.Application.csproj" />
   </ItemGroup>
 
 </Project>

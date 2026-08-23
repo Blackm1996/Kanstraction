@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net9.0-windows7.0</TargetFramework>
+    <AssemblyName>Kanstraction.Desktop</AssemblyName>
+    <RootNamespace>Kanstraction.Desktop</RootNamespace>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <ApplicationIcon>..\Kanstraction\AppIcon.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Kanstraction\Kanstraction.csproj" />
+    <ProjectReference Include="..\Kanstraction.OnSite.Application\Kanstraction.OnSite.Application.csproj" />
+    <ProjectReference Include="..\Kanstraction.OnSite.Infrastructure\Kanstraction.OnSite.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MaterialDesignThemes" Version="5.2.1" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.8" />
+  </ItemGroup>
+</Project>

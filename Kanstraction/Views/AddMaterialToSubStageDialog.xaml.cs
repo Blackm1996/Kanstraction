@@ -1,67 +1,41 @@
-﻿using Kanstraction.Infrastructure.Data;
-using Kanstraction.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Kanstraction.OnSite.Application.Materials.Queries.ListAvailableMaterials;
 using System.Windows;
 using System.Windows.Controls;
 
-using Kanstraction;
-
 namespace Kanstraction.Views;
 
-/// <summary>
-/// Interaction logic for AddMaterialToSubStageDialog.xaml
-/// </summary>
 public partial class AddMaterialToSubStageDialog : Window
 {
-    private readonly AppDbContext _db;
-    private readonly int _subStageId;
+    private readonly IReadOnlyList<AvailableMaterialDto> _materials;
 
     public int? MaterialId { get; private set; }
     public decimal Qty { get; private set; }
 
-    public AddMaterialToSubStageDialog(AppDbContext db, int subStageId)
+    public AddMaterialToSubStageDialog(IReadOnlyList<AvailableMaterialDto> materials)
     {
         InitializeComponent();
-        _db = db;
-        _subStageId = subStageId;
+        _materials = materials;
         Loaded += OnLoaded;
     }
 
-    private async void OnLoaded(object sender, RoutedEventArgs e)
+    private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        // Load active materials that are NOT already used by this sub-stage
-        var usedIds = await _db.MaterialUsages
-            .Where(mu => mu.SubStageId == _subStageId)
-            .Select(mu => mu.MaterialId)
-            .ToListAsync();
-
-        var materials = await _db.Materials
-            .AsNoTracking()
-            .Include(m => m.MaterialCategory)
-            .Where(m => m.IsActive && !usedIds.Contains(m.Id))
-            .OrderBy(m => m.MaterialCategory != null ? m.MaterialCategory.Name : string.Empty)
-            .ThenBy(m => m.Name)
-            .ToListAsync();
-
-        CboMaterial.ItemsSource = materials;
-        if (materials.Count > 0) CboMaterial.SelectedIndex = 0;
+        CboMaterial.ItemsSource = _materials;
+        if (_materials.Count > 0)
+            CboMaterial.SelectedIndex = 0;
         TxtQty.Focus();
     }
 
     private void CboMaterial_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (CboMaterial.SelectedItem is Material m)
-            TxtUnit.Text = m.Unit ?? "";
-        else
-            TxtUnit.Text = "";
+        TxtUnit.Text = CboMaterial.SelectedItem is AvailableMaterialDto material
+            ? material.Unit
+            : string.Empty;
     }
 
     private void Add_Click(object sender, RoutedEventArgs e)
     {
-        if (CboMaterial.SelectedValue is not int matId)
+        if (CboMaterial.SelectedValue is not int materialId)
         {
             MessageBox.Show(
                 ResourceHelper.GetString("AddMaterialToSubStageDialog_SelectMaterial", "Select a material."),
@@ -70,7 +44,8 @@ public partial class AddMaterialToSubStageDialog : Window
                 MessageBoxImage.Warning);
             return;
         }
-        if (!decimal.TryParse(TxtQty.Text?.Trim(), out var qty) || qty < 0)
+
+        if (!decimal.TryParse(TxtQty.Text?.Trim(), out var quantity) || quantity < 0)
         {
             MessageBox.Show(
                 ResourceHelper.GetString("AddMaterialToSubStageDialog_InvalidQuantity", "Enter a valid quantity (>= 0)."),
@@ -80,8 +55,8 @@ public partial class AddMaterialToSubStageDialog : Window
             return;
         }
 
-        MaterialId = matId;
-        Qty = qty;
+        MaterialId = materialId;
+        Qty = quantity;
         DialogResult = true;
     }
 }
